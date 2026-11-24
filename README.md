@@ -93,7 +93,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 1 | Partida mais longa: modos de 60, 120 e 250 rodadas (feita na v5) |
 | 2 | Construção em turnos, fila por território, fim do limite de 2 construções (feita na v5) |
 | 3 | Recursos e zonas de especialização: terreno, jazidas, povoamento e lentes do mapa (feita na v6) |
-| 4 | Catálogo de construções, eras 1 a 3 |
+| 4 | Catálogo de construções, eras 1 a 3, e maravilhas do mundo (feita na v7) |
 | 5 | Estradas, portos e rede de bens |
 | 6 | Comércio e rotas |
 | 7 | Tecnologias e tropas por era |

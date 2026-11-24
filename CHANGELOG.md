@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## v7 — 24/11/2026 · Catálogo de construções (parte 4 do roteiro)
+
+**Parte 4: catálogo, eras 1 a 3** (C-01 a C-12, C-20 a C-26, C-40 a C-44, C-60 a C-65, C-70 a C-73, C-80 a C-85, C-90 a C-94, C-100 a C-106, C-200 a C-209)
+
+- 44 construções novas em cadeia. A zona abre a sua família e não ocupa vaga a mais: lavouras → fazenda, celeiro, irrigação, moinho, arrozal, plantação, engenho; pastagens → estância, haras, charqueada; pesqueiros → pesqueiro, salga; serrarias → serraria, carvoaria; minas → pedreira, mina, garimpo, fundição; mercado → caravançará, banco, bolsa; porto → armazém, companhia de comércio; biblioteca → academia, observatório, universidade; templo → mosteiro, grande templo; quartel → arsenal, polvorinho, academia militar; muralha → castelo, fortaleza abaluartada. Fora das zonas: ferraria, monumento, anfiteatro e teatro, aqueduto, saneamento, hospital, tribunal, paliçada e linha fortificada.
+- Quatro tipos de requisito: construção anterior no território, jazida no território (arroz, gado, cavalos, minério…), bem explorado no império (sal, bronze ou ferro, ferro e madeira, pedra, salitre) e era ou tecnologia. Rio, litoral, colina por perto e nível do território também contam.
+- Efeitos novos: prestígio e estabilidade por construção, bônus de defesa somados, defesa que vence todos os empates (castelo), +1 no ataque saindo de arsenal ou polvorinho, reforços (haras, academia militar), travessias (companhia de comércio), território que nunca se revolta (tribunal), celeiro que segura o nível na fome.
+- Povoamento: a vila só vira cidade com **aqueduto**, e a cidade só vira metrópole com **saneamento** (antes: mercado ou templo, e academia).
+- C-200 a C-209: **10 maravilhas do mundo**, uma só no mapa inteiro. Quem termina primeiro fica com ela e as outras filas a perdem: Grandes Pirâmides, Jardins Suspensos, Grande Biblioteca (tecnologias que duas rivais já têm), Farol Monumental, Grande Arena, Grande Muralha, Catedral Gótica, Rede de Caminhos do Império, Castelo do Senhor da Guerra e Observatório Imperial. Cada uma tem a sua janela de eras.
+- Interface: nas obras abertas só aparecem as que cabem em algum território seu; o botão **Catálogo** mostra todas, com custo, legado e o que falta.
+- Legado: cada construção tem o seu valor (as de economia de base valem 0). Com mais obras no jogo, o legado para vencer subiu para 150, 220 e 300; duração curta medida em 64 partidas: média de 46 rodadas (antes 43).
+- Nomes repetidos entre construções antigas e novas foram trocados (Scriptorium, Biblioteca Pública, Igreja, Igreja Matriz).
+
 ## v6 — 24/11/2026 · Terra, recursos e zonas (parte 3 do roteiro)
 
 **Parte 3: recursos e zonas** (M-01 a M-10, M-20, M-21, M-26, R-01 a R-04, R-07, R-20 a R-62 em parte, Z-01 a Z-11, S-02 a S-05, UI-01)

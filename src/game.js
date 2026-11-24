@@ -84,12 +84,15 @@ const nb = (i, k) => built(i, k) && !G.dis.has(i + ':' + k);
 const countB = (f, k) => owned(f).filter(i => nb(i, k)).length;
 const coastal = i => G.A[i].some(j => isSea(i, j));
 // zonas de recurso são economia, não legado
-const legacy = f => 2 * Fa(f).tech.length + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (k === 'mar' ? 5 : STRUCT[k].ter || STRUCT[k].coast ? 0 : 1), 0), 0);
+const legacy = f => 2 * Fa(f).tech.length + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (STRUCT[k].lg || 0), 0), 0);
 const minWin = () => Math.ceil(G.rounds / 3); // D-04: objetivo e legado só contam a partir daqui
 const evRound = e => 1 + Math.round((e.t - 1) * G.rounds * .5 / G.sc.turns); // eventos espalhados pela 1ª metade da partida
 const occupied = i => G.occ[i] > 0;
 const settled = f => owned(f).filter(i => !occupied(i)); // territórios que produzem (D-05)
-const sName = k => STRUCT[k].n[NG[G.era.cards]];
+const sName = k => { const n = STRUCT[k].n; return typeof n === 'string' ? n : n[NG[G.era.cards]]; };
+// parte 4: efeitos somados das construções ativas
+const hasW = (f, k) => real(f) && owned(f).some(i => nb(i, k)); // maravilha do mundo em posse de f
+const sumB = (f, p) => owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (nb(i, k) && STRUCT[k][p] || 0), 0), 0);
 const tName = k => TK[k].n[NG[G.era.cards]];
 const capOwner = i => G.order.find(f => Fa(f).capI === i && Fa(f).entered);
 const capsHeld = f => G.order.filter(o => Fa(o).entered && G.own[Fa(o).capI] === f).length;
@@ -102,6 +105,7 @@ function reinfOf(f) {
   const pop = T.reduce((s, i) => s + G.lv[i], 0); // S-03: cada nível de povoamento conta
   let r = Math.max(3, Math.floor(pop / 3)); parts.push([`povoamento ${pop} ÷ 3 (mín. 3)${oc ? `, ${oc} ocupado(s) não contam` : ''}`, r]);
   const g = goods(f), sg = ['fer', 'cav'].filter(d => g.has(d)); if (sg.length) { r += sg.length; parts.push([sg.map(d => DEP[d].n).join(' e '), sg.length]); } // R-32, R-62
+  const rf = sumB(f, 'rf'); if (rf) { r += rf; parts.push(['haras, academias e polvorinhos', rf]); }
   const q = countB(f, 'qua'); if (q) { r += q; parts.push([sName('qua'), q]); }
   if (has(f, 'log')) { r += 2; parts.push([tName('log'), 2]); }
   G.regT.forEach((ts, k) => { if (ts.length && ts.every(i => G.own[i] === f)) { const b = Math.max(1, Math.round(ts.length * .5)); r += b; parts.push([G.m.regions[k], b]); } });
@@ -112,7 +116,7 @@ function reinfOf(f) {
   return { r, parts };
 }
 const planesOf = f => (G.air ? (G.air.per ?? 1) * capsHeld(f) + countB(f, 'aer') : 0) + Fa(f).airX;
-const navOf = f => { const F = Fa(f); return F.nav + (F.ab === 'almirante' ? 1 : 0) + countB(f, 'por') + (has(f, 'nav') ? 1 : 0); };
+const navOf = f => { const F = Fa(f); return F.nav + (F.ab === 'almirante' ? 1 : 0) + countB(f, 'por') + (has(f, 'nav') ? 1 : 0) + sumB(f, 'nav'); };
 function objDone(f) {
   const F = Fa(f), o = F.obj;
   if (G.own[F.capI] !== f) return false;
@@ -162,7 +166,7 @@ function goods(f) { const s = new Set(); for (const i of settled(f)) worked(i).f
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
 function yieldOf(i) {
   const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i;
-  const y = { food: T.food + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0), prod: T.prod + (cap ? 2 : 0), gold: T.gold + (G.riv[i] ? 1 : 0) + (cap ? 1 : 0) + (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), sci: (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0) };
+  const y = { pre: 0, stab: 0, food: T.food + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0) + (hasW(f, 'jar') ? 1 : 0), prod: T.prod + (cap ? 2 : 0), gold: T.gold + (G.riv[i] ? 1 : 0) + (cap ? 1 : 0) + (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), sci: (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0) };
   for (const k of G.bld[i]) {
     const S = STRUCT[k]; if (!S.y || !nb(i, k)) continue;
     for (const [r, v] of Object.entries(S.y)) y[r] += v;
@@ -180,7 +184,7 @@ const growOk = i => !LEVEL[G.lv[i]].req || LEVEL[G.lv[i]].req.some(k => nb(i, k)
 function grow(f) {
   for (const i of settled(f)) {
     G.food[i] += yieldOf(i).food - foodUse(i);
-    if (G.food[i] < 0) { G.food[i] = 0; if (G.lv[i] > 1) { G.lv[i]--; log(f, `Fome em ${tname(i)}: volta a ser ${LEVEL[G.lv[i]].n.toLowerCase()}.`); } }
+    if (G.food[i] < 0) { G.food[i] = 0; if (G.lv[i] > 1 && !nb(i, 'cel')) { G.lv[i]--; log(f, `Fome em ${tname(i)}: volta a ser ${LEVEL[G.lv[i]].n.toLowerCase()}.`); } }
     else if (G.lv[i] < 4 && G.food[i] >= growNeed(i)) {
       if (growOk(i)) { G.food[i] -= growNeed(i); G.lv[i]++; log(f, `${tname(i)} cresce e vira ${LEVEL[G.lv[i]].n.toLowerCase()}.`); }
       else G.food[i] = growNeed(i);
@@ -190,33 +194,57 @@ function grow(f) {
 function income(f) {
   const F = Fa(f), T = settled(f);
   const diff = f !== G.player && !G.auto ? (G.diff === 2 ? 2 : G.diff === 0 ? -1 : 0) : 0;
-  const y = T.reduce((s, i) => { const v = yieldOf(i); s.gold += v.gold; s.sci += v.sci; return s; }, { gold: 0, sci: 0 });
+  const y = T.reduce((s, i) => { const v = yieldOf(i); for (const r in s) s[r] += v[r]; return s; }, { gold: 0, sci: 0, pre: 0, stab: 0 });
   return {
     gold: Math.max(1, y.gold + diff),
-    sci: 1 + y.sci,
-    pre: capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
+    sci: Math.round((1 + y.sci) * (hasW(f, 'obi') ? 1.25 : 1)), stab: y.stab,
+    pre: y.pre + capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
   };
 }
 const paOf = f => ECON.pa + (has(f, 'adm') ? 1 : 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => has(f, 'con') ? 1 : ECON.troop;
 // ---------- obras em turnos (parte 2: P-01 a P-04, P-08, P-11) ----------
 // pedra barateia muralhas, templos e maravilhas; madeira, portos, oficinas e quartéis (R-25, R-26)
-const CHEAP = { ped: ['for', 'tem', 'mar'], mad: ['por', 'ofi', 'qua'] };
-const pCost = (f, k) => { const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)); return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1)); };
+const CHEAP = { ped: ['for', 'tem', 'mar', 'cas', 'cat', 'aqu'], mad: ['por', 'ofi', 'qua', 'pal', 'ser'] };
+const STONE = ['for', 'tem', 'mon', 'pdr', 'cas', 'cat']; // Grandes Pirâmides (C-200)
+const pCost = (f, k) => {
+  const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)), p = STONE.includes(k) && hasW(f, 'pir');
+  return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1) * (p ? .75 : 1));
+};
 const qMax = f => has(f, 'adm') ? 5 : 3;
 function prodOf(i) {
   return real(G.own[i]) ? Math.max(1, yieldOf(i).prod) : 0;
 }
 const queued = (i, k) => G.q[i].some(x => x.k === k);
 const hasWonder = f => owned(f).some(j => built(j, 'mar') || queued(j, 'mar'));
+const eraLv = () => ERA_LV[G.sc.tech] ?? 1;
+const wwTaken = k => G.bld.some(b => b.includes(k)); // maravilha do mundo já existe em algum lugar
+const goodOk = (f, alts) => { const g = goods(f); return alts.some(a => a.split('+').every(d => g.has(d))); };
+// parte 4: requisitos de uma obra que não dependem do território (era, tecnologia, bens, maravilhas)
+function reqF(f, k) {
+  const S = STRUCT[k];
+  if (S.air && !G.air) return 'sem aviação nesta era';
+  if (S.era != null && eraLv() < S.era) return 'era posterior';
+  if (S.eraMax != null && eraLv() > S.eraMax) return 'de uma era anterior';
+  if (S.tech && !has(f, S.tech)) return 'exige ' + tName(S.tech);
+  if (S.wonder && !S.ww && (!has(f, S.req) || hasWonder(f))) return 'exige ' + tName(S.req) + ' (uma por facção)';
+  if (S.ww && wwTaken(k)) return 'já construída no mundo';
+  if (S.good && !goodOk(f, S.good)) return 'exige ' + S.good.map(a => a.split('+').map(d => DEP[d].n).join(' e ')).join(' ou ') + ' explorado';
+  if (S.needE && !countB(f, S.needE)) return 'exige ' + sName(S.needE) + ' no império';
+  return '';
+}
 function canQueue(f, k, i) {
   const S = STRUCT[k];
   if (G.own[i] !== f || built(i, k) || queued(i, k) || G.q[i].length >= qMax(f)) return false;
   if (S.sea && !coastal(i)) return false;
   if (S.z && (zoneFree(i) < 1 || !zoneOk(k, i))) return false;
-  if (S.air && !G.air) return false;
-  if (S.wonder && (!has(f, S.req) || hasWonder(f))) return false;
-  return true;
+  if (!S.z && (S.coast && !coastal(i) || S.lv && G.lv[i] < S.lv)) return false;
+  if (S.need && ![].concat(S.need).some(b => built(i, b))) return false;
+  if (S.dep && !S.dep.some(d => G.dep[i].includes(d))) return false;
+  if (S.rioReq && !G.riv[i]) return false;
+  if (S.near && ![i, ...G.A[i]].some(j => S.near.includes(G.ter[j]))) return false;
+  if (S.ww && owned(f).some(j => queued(j, k))) return false;
+  return !reqF(f, k);
 }
 // turnos que faltam para cada item da fila, somando a produção atual em sequência
 function qEta(i) {
@@ -228,6 +256,7 @@ const canRush = (f, i, n) => { const x = G.q[i][n]; return !!x && G.own[i] === f
 function finishWork(i, n) {
   const f = G.own[i], x = G.q[i].splice(n, 1)[0]; G.bld[i].push(x.k); Fa(f).nB++;
   log(f, `${fname(f)} conclui ${sName(x.k)} em ${tname(i)}.`);
+  if (STRUCT[x.k].ww) for (let j = 0; j < G.N; j++) { const n0 = G.q[j].length; G.q[j] = G.q[j].filter(y => y.k !== x.k); if (G.q[j].length < n0 && real(G.own[j])) log(G.own[j], `${fname(G.own[j])} perde a obra de ${sName(x.k)}: outra facção terminou primeiro.`); }
 }
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
@@ -379,7 +408,9 @@ function playCard(f, h, target, t2) {
 // bônus no maior dado da defesa: construção fortificada +1, e mais +1 por carta, muralha da capital ou Defesa Tenaz (máx. +2)
 // M-03 a M-06: floresta e selva +1 com 3+ tropas; colinas e montanhas +1
 const terrDef = j => { const t = TERR[G.ter[j]].def; return t === 'h' || t === 'm' || (t === 'f' && G.tr[j] >= 3) ? 1 : 0; };
-function defBonus(j) { const d = G.own[j]; return terrDef(j) + (nb(j, 'for') ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
+// parte 4: construções com def (muralha, castelo, paliçada…) e a Grande Muralha (só contra ataque por terra)
+const bldDef = j => G.bld[j].reduce((s, k) => s + (nb(j, k) && STRUCT[k].def && G.tr[j] >= (STRUCT[k].defMin || 0) ? STRUCT[k].def : 0), 0);
+function defBonus(j, i) { const d = G.own[j]; return terrDef(j) + bldDef(j) + (hasW(d, 'gmu') && !(i != null && isSea(i, j)) ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
 // D-07: distância, por território próprio, até a base de suprimento mais próxima (capital, quartel ou porto)
 function supplyDist(f) {
   const dist = Array(G.N).fill(99), q = owned(f).filter(i => i === Fa(f).capI || nb(i, 'qua') || nb(i, 'por'));
@@ -387,10 +418,10 @@ function supplyDist(f) {
   for (let h = 0; h < q.length; h++) { const i = q[h]; for (const j of G.A[i]) if (G.own[j] === f && dist[j] > dist[i] + 1) { dist[j] = dist[i] + 1; q.push(j); } }
   return dist;
 }
-const lowSupply = (i) => real(G.own[i]) && supplyDist(G.own[i])[i] > ECON.sup;
+const lowSupply = (i) => real(G.own[i]) && supplyDist(G.own[i])[i] > ECON.sup + (hasW(G.own[i], 'rce') ? 2 : 0);
 function diceFor(i, j) {
   const a = G.own[i], A = Fa(a);
-  let ad = Math.min(3, G.tr[i] - 1); if (isSea(i, j) && A.ab !== 'almirante' && !nb(i, 'por') && !(A.real && has(a, 'nav'))) ad = Math.min(2, ad);
+  let ad = Math.min(3, G.tr[i] - 1); if (isSea(i, j) && A.ab !== 'almirante' && !nb(i, 'por') && !(A.real && (has(a, 'nav') || hasW(a, 'frl')))) ad = Math.min(2, ad);
   if (ad > 1 && lowSupply(i)) ad--;
   if (ad > 1 && TERR[G.ter[j]].def === 'w') ad--; // M-10: pântano
   return [ad, Math.min(3, G.tr[j])];
@@ -398,9 +429,10 @@ function diceFor(i, j) {
 function roll(i, j) {
   const a = G.own[i], A = Fa(a), [ad, dd] = diceFor(i, j);
   const R = Array.from({ length: ad }, d6).sort((x, y) => y - x), D = Array.from({ length: dd }, d6).sort((x, y) => y - x);
-  if (A.ofs) R[0] = Math.min(6, R[0] + 1);
-  D[0] = Math.min(6, D[0] + defBonus(j));
-  const ties = TERR[G.ter[j]].def !== 'm' && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))); // M-06: em montanha o atacante sempre perde empates
+  const up = (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0);
+  if (up) R[0] = Math.min(6, R[0] + up);
+  D[0] = Math.min(6, D[0] + defBonus(j, i));
+  const ties = TERR[G.ter[j]].def !== 'm' && !G.bld[j].some(k => STRUCT[k].tie && nb(j, k)) && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))); // M-06: em montanha o atacante sempre perde empates
   let al = 0, dl = 0; const res = [];
   for (let k = 0; k < Math.min(ad, dd); k++) { const w = R[k] > D[k] || (R[k] === D[k] && ties); w ? dl++ : al++; res.push(w); }
   G.tr[i] -= al; G.tr[j] -= dl;
@@ -446,7 +478,9 @@ function airStrike(f, j) {
 function beginTurn(f) {
   const F = Fa(f);
   // A-49: o cansaço de guerra come a recuperação de estabilidade
-  F.stab = Math.max(0, Math.min(100, F.stab + 2 + (F.ab === 'carisma' ? 3 : 0) + 2 * countB(f, 'tem') + Math.min(4, luxOf(f)) - Math.floor(F.ww / 5)));
+  F.stab = Math.max(0, Math.min(100, F.stab + 2 + (F.ab === 'carisma' ? 3 : 0) + 2 * countB(f, 'tem') + Math.min(4, luxOf(f)) + Math.min(6, income(f).stab) - Math.floor(F.ww / 5)));
+  // Grande Biblioteca (C-202): tecnologias que duas outras facções já têm
+  if (hasW(f, 'gbi')) TECH.forEach(t => { if (!has(f, t.k) && G.order.filter(o => o !== f && Fa(o).alive && has(o, t.k)).length >= 2) { F.tech.push(t.k); log(f, `A Grande Biblioteca dá ${tName(t.k)} a ${fname(f)}.`); } });
   owned(f).forEach(i => { if (G.fort[i] > 0) G.fort[i]--; if (G.occ[i] > 0) G.occ[i]--; });
   F.conq = false; F.cq = 0; F.ofs = false; G.phase = 'ref'; G.sel = G.tgt = null; G.card = null; G.mode = null; G.seaUsed = new Set(); G.mv = []; G.arr = [];
   for (const [i, n] of Object.entries(F.recQ)) if (G.own[i] === f) G.tr[i] += n;
@@ -457,7 +491,7 @@ function beginTurn(f) {
   F.pa = paOf(f); F.camp = F.recOn = F.tradeOn = F.bldOn = false;
   if (F.stab < 35) {
     let p = (35 - F.stab) / 35 * .5; if (F.ab === 'carisma') p /= 2;
-    const all = owned(f).filter(i => i !== F.capI), occ = all.filter(occupied), cand = occ.length ? occ : all;
+    const all = owned(f).filter(i => i !== F.capI && !nb(i, 'tri')), occ = all.filter(occupied), cand = occ.length ? occ : all;
     if (cand.length && rnd() < p) {
       const i = cand[Math.floor(rnd() * cand.length)];
       G.own[i] = 'reb'; G.tr[i] = Math.max(2, G.tr[i]); G.rl[i] = 'Revoltosos'; F.stab += 8;
@@ -695,7 +729,18 @@ function aiBVal(f, k, i) {
     case 'aer': return 3.4 - .9 * n;
     case 'mar': return 7;
   }
-  if (!S.ter && !S.coast) return 0;
+  if (!S.z) { // parte 4: catálogo, avaliado pelos rendimentos e efeitos
+    const W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8, pre: .5, stab: F.stab < 60 ? .7 : .2 };
+    let v = Object.entries(S.y || {}).reduce((s, [r, a]) => s + a * W[r], 0) + (S.lg ? .6 : 0) + (S.ww ? 4.5 : 0) + (S.nav ? .8 : 0) + (S.rf ? 2.2 : 0);
+    if (S.def) v += th >= G.tr[i] * .7 ? 2 * S.def : .2;
+    if (S.atk) v += th ? 1.6 : .3;
+    const near = G.lv[i] < 4 && G.food[i] >= growNeed(i) * .5;
+    if (k === 'aqu') v += G.lv[i] === 2 && near ? 3.5 : 0;
+    if (k === 'san') v += G.lv[i] === 3 && near ? 3 : .3;
+    if (k === 'tri') v += F.stab < 40 ? 2.5 : 0;
+    if (k === 'cel') v += .6;
+    return v - .15 * n;
+  }
   // zonas de recurso: rendimento novo + jazidas que passam a ser exploradas
   const y = { ...S.y }, g = goods(f), W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8 };
   if (k === 'agr' && G.riv[i]) y.food++;
@@ -1020,6 +1065,24 @@ function qHtml(i) {
     return `<li>${STRUCT[x.k].ic} ${esc(sName(x.k))} ${pbar(x.p, c)} <span class="hint">${x.p}/${c} ⚒ · ${isFinite(eta[n]) ? eta[n] + ' turno(s)' : 'parada'}</span> ${btn}</li>`;
   }).join('') + '</ul>';
 }
+// parte 4: catálogo com todas as construções e o que falta para cada uma
+function reqText(k) {
+  const S = STRUCT[k], me = G.player, r = [];
+  if (S.z) r.push('zona ' + ZONE[S.z].toLowerCase() + ' (ocupa vaga)');
+  if (S.need) r.push('exige ' + [].concat(S.need).map(sName).join(' ou ') + ' no território');
+  if (S.dep) r.push('jazida: ' + S.dep.map(d => DEP[d].n).join(', '));
+  if (S.rioReq) r.push('rio');
+  if (S.coast || S.sea) r.push('litoral');
+  if (S.ter) r.push('terreno: ' + [...S.ter].map(t => TERR[t].n).join(', ') + (S.rio ? ' ou rio' : '') + (S.dz ? ' ou jazida da zona' : ''));
+  if (S.near) r.push('colina ou montanha no território ou ao lado');
+  if (S.lv) r.push(LEVEL[S.lv].n.toLowerCase() + ' ou maior');
+  const m = reqF(me, k); if (m) r.push('<b>' + esc(m) + '</b>');
+  return r.join(' · ');
+}
+function catalogModal() {
+  const me = G.player, rows = Object.keys(STRUCT).filter(k => !STRUCT[k].air || G.air).map(k => { const S = STRUCT[k], ok = owned(me).some(i => canQueue(me, k, i)); return `<div class="tech${ok ? '' : ' off'}"><div><b>${S.ic} ${esc(sName(k))}</b> <span class="hint">${pCost(me, k)}⚒${S.up ? ' · ' + S.up + '💰/t' : ''}${S.lg ? ' · legado ' + S.lg : ''}</span><br><span class="hint">${esc(S.fx)}</span><br><span class="hint">${ok ? '✓ disponível' : reqText(k)}</span></div></div>`; }).join('');
+  modal(`<h2>Catálogo de construções</h2><p class="hint">Cadeias: a zona abre as construções dela; algumas pedem bens explorados em qualquer território seu.</p><div class="techs">${rows}</div>`, [['Fechar']]);
+}
 function worksModal() {
   const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me);
   const rows = T.map(i => `<div class="tech"><div><b>${esc(tname(i))}</b> <span class="hint">${prodOf(i)} ⚒/turno${occupied(i) ? ' · ocupado' : ''} · ${G.bld[i].length ? G.bld[i].map(k => esc(sName(k)) + (nb(i, k) ? '' : ' (desativada)')).join(', ') : 'sem construções'}</span>${qHtml(i)}</div></div>`).join('');
@@ -1147,7 +1210,9 @@ function renderSide() {
   } else if (G.phase === 'atk') {
     const noPA = F.pa < 1, tc = troopCost(me);
     const Bt = (a, k, label, title, dis, on) => `<button class="ab2 ${on ? 'on' : ''}" data-a="${a}" data-k="${k}" title="${esc(title)}" ${dis ? 'disabled' : ''}>${label}</button>`;
-    const blds = Object.keys(STRUCT).filter(k => !STRUCT[k].air || G.air).map(k => { const S = STRUCT[k], c = pCost(me, k); return Bt('bld', k, `${S.ic} ${esc(sName(k))} <small>${c}⚒${S.up ? ' · ' + S.up + '💰/t' : ''}</small>`, S.fx + (S.up ? ` Manutenção: ${S.up} ouro por turno.` : ''), !F.bldOn || (S.wonder && (!has(me, S.req) || hasWonder(me))), G.mode === 'bld:' + k); }).join('');
+    // parte 4: só aparecem as obras que cabem em algum território seu agora; o catálogo mostra o resto
+    const avail = F.bldOn ? Object.keys(STRUCT).filter(k => owned(me).some(i => canQueue(me, k, i))) : [];
+    const blds = avail.map(k => { const S = STRUCT[k], c = pCost(me, k); return Bt('bld', k, `${S.ic} ${esc(sName(k))} <small>${c}⚒${S.up ? ' · ' + S.up + '💰/t' : ''}</small>`, S.fx + (S.up ? ` Manutenção: ${S.up} ouro por turno.` : ''), false, G.mode === 'bld:' + k); }).join('') + `<button class="ab2" data-a="catalog">Catálogo (${Object.keys(STRUCT).length - avail.length} bloqueadas)</button>`;
     ph = `<h4>Ações <span class="pa" title="Pontos de ação">${'●'.repeat(F.pa)}${'○'.repeat(Math.max(0, paOf(me) - F.pa))}</span></h4>
       <p class="hint">Cada ação gasta 1 ponto. Guerra, obras, ciência e política disputam o mesmo turno.</p>
       <div class="grp"><b>⚔ Militar</b><div class="row">
@@ -1216,7 +1281,8 @@ function rules() {
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
-  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também mercado ou templo) e metrópole (exige academia). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
+  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também aqueduto) e metrópole (exige saneamento). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
+  <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Freios da guerra.</b> Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>2. Ações.</b> Você tem 3 pontos de ação por turno (4 com a primeira tecnologia de administração). Cada ação gasta 1 ponto e pode ser repetida:</p>
@@ -1288,6 +1354,7 @@ document.addEventListener('click', e => {
   else if (a === 'rules') rules();
   else if (a === 'menu') { if (G && !G.over) modal('<h2>Sair da partida?</h2><p>A partida fica salva do início do seu último turno.</p>', [['Sair', showSetup], ['Continuar jogando']]); else showSetup(); }
   else if (!G) return;
+  else if (a === 'catalog') catalogModal();
   else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }
   else if (a === 'zin') zoomBtn(1 / 1.4); else if (a === 'zout') zoomBtn(1.4); else if (a === 'zfit') { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); }
   else if (a === 'toAtk') toPhase('atk'); else if (a === 'toMov') toPhase('mov'); else if (a === 'end') playerEnd();

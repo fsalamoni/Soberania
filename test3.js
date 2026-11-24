@@ -63,6 +63,12 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   // parte 3: zonas pedem terreno ou jazida e cabem no nível do território
   ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.ix['Rio Grande do Sul']; const a = S.act('fa', 'bld', 'flo', i) !== '', b = S.act('fa', 'bld', 'pec', i) === ''; S.act('fa', 'unq', i, 2); return a && b && G.q[i].length === 2; }), 'zona florestal recusada na pradaria, pecuária aceita');
   ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.own.findIndex((o, j) => o === 'fa' && G.lv[j] === 1 && j !== G.F.fa.capI && !G.q[j].length); if (i < 0) return 'skip'; const z = Object.keys(S.STRUCT).filter(k => S.STRUCT[k].z && S.act('fa', 'bld', k, i) === ''); return z.length === 1; }), 'aldeia aceita só uma zona');
+  // parte 4: cadeia (banco exige mercado pronto) e catálogo
+  ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.ix['Rio Grande do Sul']; G.F.fa.tech.push('com'); const r = S.act('fa', 'bld', 'ban', i) !== ''; G.F.fa.tech.pop(); return r; }), 'banco recusado sem mercado pronto');
+  await p.click('[data-a=catalog]');
+  ok(await p.evaluate(() => document.querySelectorAll('#modal .tech').length > 40), 'catálogo lista as construções');
+  await p.screenshot({ path: shot('catalogo') });
+  await p.click('#modal [data-m="0"]');
   await p.click('[data-a=lens][data-l=ter]');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.ix['Rio Grande do Sul']; return document.querySelector(`#map path[data-i="${i}"]`)?.getAttribute('fill') === '#93a24a' || document.querySelectorAll('#map [fill="#93a24a"]').length > 0; }), 'lente de terreno recolore o mapa');
   await p.screenshot({ path: shot('lente-terreno') });
