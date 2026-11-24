@@ -1,5 +1,44 @@
 # Histórico de versões
 
+## v5 — 24/11/2026 · Partidas longas e obras em turnos (partes 1 e 2 do roteiro)
+
+Pedido: partidas bem mais longas que 30 ou 40 rodadas, com versões curta, média e longa, e a implementação do levantamento de sistemas, começando pelas partes 1 e 2.
+
+**Parte 1: partida mais longa** (D-01 a D-07, D-10, D-11, A-44, A-49, V-09)
+
+- D-01: duração escolhida na tela inicial: **Curta (60 rodadas)**, **Média (120)** ou **Longa (250)**. Obras e tecnologias custam ×1, ×2 ou ×4. Os eventos do cenário se espalham pela primeira metade da partida.
+- D-02: o objetivo ganhou uma segunda etapa: além da meta militar, ter metade do legado da vitória por legado.
+- D-03: o objetivo precisa ficar cumprido por 2, 3 ou 4 turnos seguidos, conforme a duração.
+- D-04: objetivo e legado só valem a partir de 1/3 da partida. Dominação vale sempre, mas uma aliança que fica sem inimigo antes disso se desfaz em trégua e os antigos aliados passam a disputar o mapa.
+- D-05: território conquistado fica **ocupado** por 3 turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar.
+- D-06 e A-49: **cansaço de guerra**. Cada turno em campanha soma 1, perder território soma 2; turnos de paz tiram 2 e festividades tiram 3. A cada 5 pontos, −1 de estabilidade por turno.
+- D-07: **linha de suprimento**. Atacar de um território a mais de 3 passos da capital, de um quartel ou de um porto custa 1 dado.
+- D-10: a IA evita campanhas quando está cansada da guerra ou instável.
+- A-44: **soldo**. Tropas acima de 3 por território custam 1 ouro a cada 3 por turno; sem ouro, desertam.
+- D-11: 3 espaços de salvamento, exportar a partida em arquivo e importar de volta.
+- V-09: no fim das rodadas continua vencendo quem mais cresceu (territórios ganhos, capitais, alvos do objetivo e legado).
+- Freios extras de ritmo: cada facção conquista no máximo 1 território por turno (2 com a tecnologia de doutrina militar), e toda capital soma +1 ao maior dado de defesa em qualquer era.
+- Legado para vencer: 90, 130 ou 180 conforme a duração, até o dobro em mapas grandes.
+
+**Parte 2: construção em turnos e sem limite** (P-01 a P-04, P-08 a P-11, UI-02, UI-06)
+
+- Fim do limite de 2 construções por território: agora vale uma de cada tipo.
+- P-01: cada construção custa **produção ⚒**. Cada território produz 1 (+2 na capital, +2 com a nova **Oficina**), e a produção vai para a obra do topo da fila.
+- P-02: fila de até 3 obras por território (5 com a tecnologia de administração); o excesso de produção passa à obra seguinte.
+- P-03: a ação **Ordenar obras** (1 ponto de ação) abre todas as filas no turno: pôr, retirar e apressar quantas vezes quiser.
+- P-04: apressar com ouro: 2 por ponto de produção que falta (3 na maravilha), nunca no turno em que a obra começou.
+- P-08: quem conquista fica com metade do progresso das obras locais; maravilha em andamento se perde.
+- P-09: a pesquisa anda em turnos. Escolher a tecnologia não gasta ação; o saber acumulado vai para ela.
+- P-10: tropas recrutadas chegam no início do turno seguinte.
+- P-11: **manutenção** das construções em ouro por turno; sem ouro, a mais cara fica desativada naquele turno.
+- UI-02: o painel do território mostra produção, fila com barras de progresso, turnos restantes, ocupação, suprimento e recrutas a caminho.
+- UI-06: painel **Obras do império** com todas as filas, apressar e retirar.
+- A IA usa filas, escolhe pesquisa, apressa com o ouro que sobra e respeita a manutenção.
+
+Ficaram para depois: P-05 (mutirão), P-06 (ajuda entre territórios, chega com as estradas da parte 5), P-07 (obra parada por falta de bem, chega com os recursos da parte 3), P-12 e P-13.
+
+Equilíbrio medido com `npm test` (curta, IA contra IA): partidas entre as rodadas 20 e 61, média por cenário de 31 a 61. Na média, a maioria passa de 80 rodadas; na longa, quase todas vão até o fim. Salvamentos da v4 não são compatíveis.
+
 ## v4 — 24/11/2026 · Turno de governo
 
 Pedido: a jogabilidade da v3 tinha pouca estratégia.

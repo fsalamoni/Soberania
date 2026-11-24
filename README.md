@@ -17,15 +17,21 @@ Hoje o jogo é solo contra IAs, em 16 cenários:
 | Moderna e contemporânea | Europa 1805, Primeira Guerra (1914), Guerra Civil dos EUA (1861), Regências do Brasil (1835), Segunda Guerra (1939), Guerra Fria |
 | Fantasia original | Dois mundos próprios (alta fantasia e intriga de casas nobres) |
 
-### O turno (v4)
+### Duração (v5)
 
-1. **Produção:** ouro, saber e prestígio, conforme territórios e construções.
-2. **Reforços:** metade dos territórios (mínimo 3), mais bônus de região completa e de capitais.
-3. **3 pontos de ação:** campanha (necessária para atacar), recrutar, construir, pesquisar, sociedade (festividades, influenciar neutros, agitadores) e economia (impostos, comércio).
-4. **Ataques** com dados: até 3 no ataque e 3 na defesa; após vencer, move no máximo o número de dados usados.
+Cada partida escolhe a duração: **Curta (60 rodadas)**, **Média (120)** ou **Longa (250)**. Quanto mais longa, mais caras ficam obras e tecnologias (×1, ×2, ×4) e mais turnos o objetivo precisa ser mantido (2, 3, 4). Objetivo e legado só valem a partir de 1/3 da partida. Os eventos históricos se espalham pela primeira metade. Em partidas IA contra IA, a curta termina entre as rodadas 20 e 61 (média por cenário de 30 a 60), a média quase sempre passa de 80 e a longa costuma ir até o fim.
+
+### O turno (v5)
+
+1. **Início:** renda de ouro, saber e prestígio; manutenção (soldo das tropas e das construções); a produção ⚒ de cada território avança a fila de obras; o saber avança a pesquisa escolhida; recrutas do turno anterior chegam.
+2. **Reforços:** 1 a cada 3 territórios não ocupados (mínimo 3), mais região completa, capitais e quartéis.
+3. **3 pontos de ação:** campanha (necessária para atacar), recrutar, ordenar obras (abre todas as filas no turno), sociedade (festividades, influenciar neutros, agitadores) e economia (impostos, comércio). Escolher a pesquisa não gasta ação.
+4. **Ataques** com dados: até 3 no ataque e 3 na defesa; após vencer, move no máximo o número de dados usados. No máximo 1 conquista por turno (2 com a doutrina militar).
 5. **Remanejamento:** cada tropa sobrando anda uma vez para um território vizinho, sempre fica 1.
 
-Vitória pelo objetivo militar do cenário, por 30 pontos de legado (tecnologias, obras e maravilhas) ou por domínio do mapa.
+Freios contra a bola de neve: território conquistado fica ocupado por 3 turnos, cansaço de guerra, linha de suprimento, soldo das tropas e capitais com +1 na defesa. Uma aliança que fica sem inimigo antes de 1/3 da partida se desfaz em trégua.
+
+Vitória pelo objetivo do cenário (etapa militar + legado mínimo, mantidos por turnos seguidos), por legado (tecnologias, obras e maravilha) ou por domínio do mapa. No fim das rodadas vence quem mais cresceu.
 
 ## Estrutura do repositório
 
@@ -33,6 +39,7 @@ Vitória pelo objetivo militar do cenário, por 30 pontos de legado (tecnologias
 index.html            jogo compilado (arquivo único, gerado pelo build)
 build.js              junta shell + mapas + dados + jogo em index.html
 test3.js              teste automático (Playwright): IA contra IA em todos os cenários + capturas de tela
+tools/sim.js          simulação IA contra IA por duração (curta, média, longa), para equilíbrio
 src/
   shell.html          HTML e CSS da interface, com marcadores __MAPS__, __DATA__, __GAME__
   rules.js            habilidades de líder, tecnologia por era, cartas, ações e construções
@@ -55,7 +62,10 @@ Requisitos: Node 18+.
 npm run build          # gera index.html a partir de src/ e maps/
 npm test               # roda partidas automáticas em todos os cenários (precisa do Playwright)
 REP=5 ONLY=sengoku node test3.js   # 5 partidas de um cenário, para medir equilíbrio
+LEN=m SC=reg,ww2 REP=4 node tools/sim.js   # partidas IA contra IA em outra duração (c, m, l), com estado final por facção
 ```
+
+`tools/sim.js` mostra, por partida, a rodada final, o motivo, o vencedor e, por facção, territórios, tecnologias, obras concluídas, estabilidade, ouro, cansaço de guerra e campanhas declaradas. `LOG=1` imprime a crônica da partida mais curta.
 
 O teste imprime, por partida: cenário, facção, rodada final, motivo da vitória, vencedor e contagens de ações (construções, pesquisas, influência, campanhas, cartas, bombardeios). Termina com `sem erros` quando nada quebrou. As capturas ficam em `shots/` (ignorado pelo git).
 
@@ -74,8 +84,8 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 
 | Parte | Tema |
 | --- | --- |
-| 1 | Partida mais longa (30 a 40 rodadas) |
-| 2 | Construção em turnos, fila por território, fim do limite de 2 construções |
+| 1 | Partida mais longa: modos de 60, 120 e 250 rodadas (feita na v5) |
+| 2 | Construção em turnos, fila por território, fim do limite de 2 construções (feita na v5) |
 | 3 | Recursos e zonas de especialização |
 | 4 | Catálogo de construções, eras 1 a 3 |
 | 5 | Estradas, portos e rede de bens |
@@ -90,4 +100,4 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 14 | Modo Civilização (mapa aleatório, do zero até hoje) |
 | 15 | Acabamento (tutorial, histórico, modos opcionais) |
 
-Próximo passo sugerido: partes 1 e 2.
+Próximo passo sugerido: parte 3 (recursos e zonas) ou parte 5 (estradas, portos e rede de bens).

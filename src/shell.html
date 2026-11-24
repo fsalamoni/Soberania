@@ -59,7 +59,12 @@ p{margin:.35em 0}
 .fp em{font-style:normal;color:var(--mute);font-size:12px}
 .fp small{color:var(--mute);font-size:12px}
 .startrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
-#diff{display:flex;gap:4px}
+#diff,#len{display:flex;gap:4px;flex-wrap:wrap}
+#len .on{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+label.file{cursor:pointer;border:1px solid var(--line);background:var(--deck2);border-radius:6px;padding:7px 11px;font-size:14px}
+ul.q{list-style:none;margin:4px 0;padding:0;font-size:12.5px}
+ul.q li{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:3px 0}
+ul.q .bar{width:60px}
 .note{color:var(--mute);font-size:12px;margin-top:22px}
 
 /* jogo */
@@ -190,12 +195,12 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
     <p id="pickTech"></p>
     <p class="hint">Escolha sua facção. As outras são controladas pelo computador.</p>
     <div id="facsPick"></div>
-    <div class="startrow"><div><span class="hint">Dificuldade</span><div id="diff"></div></div><div class="row"><button data-a="rules">Como jogar</button><button class="pri" data-a="start">Começar partida</button></div></div>
+    <div class="startrow"><div><span class="hint">Dificuldade</span><div id="diff"></div></div><div><span class="hint">Duração</span><div id="len"></div></div><div class="row"><button data-a="rules">Como jogar</button><button class="pri" data-a="start">Começar partida</button></div></div>
   </section>
   <p class="note">Os cenários de fantasia são mundos originais criados para o jogo, inspirados no gênero da fantasia épica. Fronteiras históricas são aproximadas a partir de mapas atuais.</p>
 </div>
 <div id="game" hidden>
-  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="menu">Menu</button></header>
+  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
