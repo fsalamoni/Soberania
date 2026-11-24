@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## v6 — 24/11/2026 · Terra, recursos e zonas (parte 3 do roteiro)
+
+**Parte 3: recursos e zonas** (M-01 a M-10, M-20, M-21, M-26, R-01 a R-04, R-07, R-20 a R-62 em parte, Z-01 a Z-11, S-02 a S-05, UI-01)
+
+- M-01 a M-10: os 412 territórios dos 11 mapas ganharam **terreno** (planície, pradaria, floresta, selva, colinas, montanhas, deserto, estepe, tundra, pântano), **rio** e **jazidas**, com geografia real nos mapas históricos (`src/geo.js`; `node tools/check-geo.js` confere).
+- Terreno na defesa: colinas e montanhas +1 no maior dado; floresta e selva +1 com 3 ou mais tropas; em montanha o empate é sempre da defesa; quem ataca pântano usa 1 dado a menos.
+- R-01 a R-04 e M-20, M-21: **rendimento por território**. Comida, produção, ouro e saber vêm do terreno, do rio (+1 comida e +1 ouro), do litoral (+1 comida), do nível, das zonas e das jazidas exploradas. O ouro deixou de ser "1 a cada 3 territórios".
+- S-02 a S-05: **povoamento** em 4 níveis: aldeia, vila, cidade e metrópole. A comida que sobra enche o estoque; vila exige estoque, cidade também mercado ou templo, metrópole também academia. Cada nível consome mais comida, a fome faz encolher e a conquista tira um nível. Vila dá +1 ouro, cidade +1 saber, metrópole +1 ouro e +1 saber; a cada 3 cidades, +1 ponto de ação (até +2). Os reforços passam a contar a soma dos níveis.
+- Z-01 a Z-11: **zonas**. Vagas por território = nível. Zonas de recurso novas: agrícola, pecuária, pesqueira, florestal e mineração, cada uma com o terreno certo. Mercado, academia (vila ou maior), quartel, templo e porto viraram as zonas comercial, científica, militar, religiosa e portuária. Oficina, fortificação, aeródromo e maravilha não ocupam vaga. **Polo**: cada vizinho seu com a mesma zona dá +1 no rendimento principal, até +3.
+- R-20 a R-62 (parte) e R-07: jazidas só rendem quando a zona certa existe no território. Cada tipo de **luxo** explorado dá +1 de estabilidade por turno (até +4). Ferro e cavalos dão +1 tropa de reforço cada; pedra barateia muralha, templo e maravilha em 25%; madeira, porto, oficina e quartel. Carvão e salitre só aparecem da era da pólvora em diante; petróleo, no século XX.
+- UI-01: **lentes do mapa** (Dono, Terreno, Zonas, Recursos) no canto do mapa. O painel do território mostra terreno, nível, vagas, jazidas (✓ = explorada), comida, estoque e o que falta para crescer.
+- IA: avalia zonas de recurso pelo rendimento e pelas jazidas novas que passam a ser exploradas.
+- Zonas de recurso não contam para o legado, para o ritmo não acelerar. Duração medida em 64 partidas curtas: média 46 rodadas (antes 44); médias: média 100 de 120.
+- Fora desta parte: Z-12 a Z-17 (parte 12), M-11, M-22 a M-25 (sem dados de lago, delta, passo e estreito), R-05, R-06, R-08 a R-10 e estoques de bens estratégicos (parte 5). O texto de ajuda deixou de citar outro jogo pelo nome.
+
 ## v5 — 24/11/2026 · Partidas longas e obras em turnos (partes 1 e 2 do roteiro)
 
 Pedido: partidas bem mais longas que 30 ou 40 rodadas, com versões curta, média e longa, e a implementação do levantamento de sistemas, começando pelas partes 1 e 2.

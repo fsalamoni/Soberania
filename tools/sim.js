@@ -16,7 +16,10 @@ const fs = require('fs'), path = require('path');
       const G = S.G; G.auto = G.fast = true;
       await S.loop();
       const st = G.order.map(x => { const F = G.F[x]; return `${x}:${G.own.filter(o => o === x).length}t/${F.tech.length}k/${F.nB}b/${Math.round(F.stab)}s/${F.gold}g/${F.ww}w/${F.nC || 0}c`; }).join(' ');
-      res.push({ sc: sc.id, r: G.round, why: G.why, w: G.winner, st, log: G.log.slice(0, 40).reverse().map(l => l[2] + ' ' + l[1]) });
+      // parte 3: territórios de facções por nível (aldeia/vila/cidade/metrópole) e zonas de recurso construídas
+      const lv = [1, 2, 3, 4].map(n => G.lv.filter((v, i) => v === n && G.F[G.own[i]].real).length).join('/');
+      const zn = G.bld.flat().filter(k => S.STRUCT[k].ter || S.STRUCT[k].coast).length;
+      res.push({ sc: sc.id, r: G.round, why: G.why, w: G.winner, st: st + ` | níveis ${lv} zonas ${zn}`, log: G.log.slice(0, 40).reverse().map(l => l[2] + ' ' + l[1]) });
     }
     return res;
   }, [process.env.SC || '', process.env.LEN || 'c', +(process.env.REP || 3)]);

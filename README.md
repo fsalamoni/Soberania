@@ -23,13 +23,17 @@ Cada partida escolhe a duração: **Curta (60 rodadas)**, **Média (120)** ou **
 
 ### O turno (v5)
 
-1. **Início:** renda de ouro, saber e prestígio; manutenção (soldo das tropas e das construções); a produção ⚒ de cada território avança a fila de obras; o saber avança a pesquisa escolhida; recrutas do turno anterior chegam.
-2. **Reforços:** 1 a cada 3 territórios não ocupados (mínimo 3), mais região completa, capitais e quartéis.
+1. **Início:** renda de ouro, saber e prestígio somada território a território; manutenção (soldo das tropas e das construções); a produção ⚒ de cada território avança a fila de obras; a comida que sobra faz o território crescer; o saber avança a pesquisa escolhida; recrutas do turno anterior chegam.
+2. **Reforços:** soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), ferro e cavalos explorados, mais região completa, capitais e quartéis.
 3. **3 pontos de ação:** campanha (necessária para atacar), recrutar, ordenar obras (abre todas as filas no turno), sociedade (festividades, influenciar neutros, agitadores) e economia (impostos, comércio). Escolher a pesquisa não gasta ação.
 4. **Ataques** com dados: até 3 no ataque e 3 na defesa; após vencer, move no máximo o número de dados usados. No máximo 1 conquista por turno (2 com a doutrina militar).
 5. **Remanejamento:** cada tropa sobrando anda uma vez para um território vizinho, sempre fica 1.
 
 Freios contra a bola de neve: território conquistado fica ocupado por 3 turnos, cansaço de guerra, linha de suprimento, soldo das tropas e capitais com +1 na defesa. Uma aliança que fica sem inimigo antes de 1/3 da partida se desfaz em trégua.
+
+### Terra e zonas (v6)
+
+Cada território tem terreno, talvez rio e litoral, e jazidas (veja as lentes Terreno e Recursos no canto do mapa). A comida que sobra enche o estoque e o território cresce de aldeia para vila, cidade e metrópole; cada nível abre uma vaga de zona. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) pedem o terreno certo e exploram as jazidas; mercado, academia, quartel, templo e porto são as zonas comercial, científica, militar, religiosa e portuária. Zonas iguais vizinhas formam polo. Luxos explorados dão estabilidade; ferro e cavalos, reforços; pedra e madeira, obras mais baratas. Colinas, montanhas e florestas ajudam a defesa, e pântano atrapalha o ataque.
 
 Vitória pelo objetivo do cenário (etapa militar + legado mínimo, mantidos por turnos seguidos), por legado (tecnologias, obras e maravilha) ou por domínio do mapa. No fim das rodadas vence quem mais cresceu.
 
@@ -40,9 +44,11 @@ index.html            jogo compilado (arquivo único, gerado pelo build)
 build.js              junta shell + mapas + dados + jogo em index.html
 test3.js              teste automático (Playwright): IA contra IA em todos os cenários + capturas de tela
 tools/sim.js          simulação IA contra IA por duração (curta, média, longa), para equilíbrio
+tools/check-geo.js    confere se src/geo.js cobre todos os territórios dos mapas
 src/
   shell.html          HTML e CSS da interface, com marcadores __MAPS__, __DATA__, __GAME__
-  rules.js            habilidades de líder, tecnologia por era, cartas, ações e construções
+  rules.js            habilidades de líder, tecnologia por era, cartas, ações e construções, zonas e níveis de povoamento
+  geo.js              terreno, rio e jazidas de cada território dos 11 mapas, tabelas de terreno e de jazidas
   data.js, data2.js   cenários e facções
   game.js             motor do jogo: turnos, combate, IA, interface
 maps/
@@ -86,7 +92,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | --- | --- |
 | 1 | Partida mais longa: modos de 60, 120 e 250 rodadas (feita na v5) |
 | 2 | Construção em turnos, fila por território, fim do limite de 2 construções (feita na v5) |
-| 3 | Recursos e zonas de especialização |
+| 3 | Recursos e zonas de especialização: terreno, jazidas, povoamento e lentes do mapa (feita na v6) |
 | 4 | Catálogo de construções, eras 1 a 3 |
 | 5 | Estradas, portos e rede de bens |
 | 6 | Comércio e rotas |

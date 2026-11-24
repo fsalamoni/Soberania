@@ -61,16 +61,32 @@ const LEN = {
 // Construções (v5, parte 2): pc = custo em produção (× k da duração), up = manutenção em ouro por turno (P-11).
 // Ficam no território e mudam de dono na conquista. Sem limite por território: uma de cada tipo.
 const STRUCT = {
-  ofi: { pc: 6, up: 0, ic: '⚒', fx: '+2 de produção neste território: as obras daqui andam mais rápido.', n: { ant: 'Oficina de Artesãos', med: 'Ferraria', pol: 'Manufatura', mod: 'Fábrica', fan: 'Forja Rúnica' } },
-  mer: { pc: 8, up: 0, ic: '💰', fx: '+2 ouro por turno.', n: { ant: 'Fórum', med: 'Feira', pol: 'Banco', mod: 'Centro Financeiro', fan: 'Guilda' } },
-  aca: { pc: 10, up: 1, ic: '🔬', fx: '+2 saber por turno.', n: { ant: 'Biblioteca', med: 'Mosteiro', pol: 'Universidade', mod: 'Laboratório', fan: 'Torre Arcana' } },
-  qua: { pc: 8, up: 1, ic: '⚔', fx: '+1 tropa grátis por turno. Permite recrutar aqui, além da capital, e serve de base de suprimento.', n: { ant: 'Acampamento', med: 'Quartel', pol: 'Quartel', mod: 'Base Militar', fan: 'Caserna' } },
+  ofi: { pc: 6, up: 0, y: { prod: 2 }, ic: '⚒', fx: '+2 de produção neste território: as obras daqui andam mais rápido.', n: { ant: 'Oficina de Artesãos', med: 'Ferraria', pol: 'Manufatura', mod: 'Fábrica', fan: 'Forja Rúnica' } },
+  mer: { pc: 8, up: 0, z: 'com', y: { gold: 2 }, ic: '💰', fx: 'Zona comercial: +2 ouro por turno.', n: { ant: 'Fórum', med: 'Feira', pol: 'Banco', mod: 'Centro Financeiro', fan: 'Guilda' } },
+  aca: { pc: 10, up: 1, z: 'sci', lv: 2, y: { sci: 2 }, ic: '🔬', fx: 'Zona científica: +2 saber por turno. Exige vila ou maior.', n: { ant: 'Biblioteca', med: 'Mosteiro', pol: 'Universidade', mod: 'Laboratório', fan: 'Torre Arcana' } },
+  qua: { pc: 8, up: 1, z: 'mil', y: { prod: 1 }, ic: '⚔', fx: '+1 tropa grátis por turno. Permite recrutar aqui, além da capital, e serve de base de suprimento.', n: { ant: 'Acampamento', med: 'Quartel', pol: 'Quartel', mod: 'Base Militar', fan: 'Caserna' } },
   for: { pc: 10, up: 1, ic: '⛨', fx: '+1 no maior dado de defesa deste território.', n: { ant: 'Muralha', med: 'Castelo', pol: 'Fortaleza', mod: 'Bunker', fan: 'Bastião' } },
-  tem: { pc: 8, up: 1, ic: '⭐', fx: '+1 prestígio e +2 estabilidade por turno.', n: { ant: 'Templo', med: 'Catedral', pol: 'Teatro', mod: 'Rádio', fan: 'Santuário' } },
-  por: { pc: 8, up: 1, ic: '⚓', fx: '+1 travessia marítima por turno, ataques pelo mar daqui usam 3 dados, e serve de base de suprimento. Só no litoral.', sea: 1, n: { ant: 'Porto', med: 'Porto', pol: 'Estaleiro', mod: 'Base Naval', fan: 'Cais' } },
+  tem: { pc: 8, up: 1, z: 'rel', ic: '⭐', fx: '+1 prestígio e +2 estabilidade por turno.', n: { ant: 'Templo', med: 'Catedral', pol: 'Teatro', mod: 'Rádio', fan: 'Santuário' } },
+  por: { pc: 8, up: 1, z: 'por', y: { gold: 1 }, ic: '⚓', fx: '+1 travessia marítima por turno, ataques pelo mar daqui usam 3 dados, e serve de base de suprimento. Só no litoral.', sea: 1, n: { ant: 'Porto', med: 'Porto', pol: 'Estaleiro', mod: 'Base Naval', fan: 'Cais' } },
   aer: { pc: 10, up: 2, ic: '✈', fx: '+1 unidade aérea por turno. Só em eras com aviação ou criaturas voadoras.', air: 1, n: { ant: 'Aeródromo', med: 'Aeródromo', pol: 'Aeródromo', mod: 'Aeródromo', fan: 'Ninho' } },
   mar: { pc: 40, up: 0, ic: '🏛', fx: '+5 de legado e +2 prestígio por turno. Uma por facção; exige a tecnologia das grandes obras.', wonder: 1, req: 'arq', n: { ant: 'Coliseu', med: 'Grande Catedral', pol: 'Exposição Universal', mod: 'Programa Espacial', fan: 'Torre do Mundo' } },
+  // Zonas de recurso (parte 3: Z-02 a Z-06). ter = terrenos aceitos; dz = também aceita se houver jazida desta zona; rio = aceita com rio.
+  agr: { pc: 6, up: 0, z: 'agr', ter: 'pch', rio: 1, y: { food: 3 }, ic: '🌾', fx: 'Zona agrícola: +3 comida. Explora trigo, arroz, milho e as plantações de luxo. Em planície, pradaria, colinas ou com rio.', n: { ant: 'Lavouras', med: 'Campos Feudais', pol: 'Fazendas', mod: 'Agroindústria', fan: 'Campos Férteis' } },
+  pec: { pc: 6, up: 0, z: 'pec', ter: 'ce', dz: 1, y: { food: 2, prod: 1 }, ic: '🐄', fx: 'Zona pecuária: +2 comida e +1 produção. Explora gado e cavalos. Em pradaria e estepe, ou onde houver rebanho.', n: { ant: 'Pastagens', med: 'Pastagens', pol: 'Estâncias', mod: 'Frigoríficos', fan: 'Pastos' } },
+  pes: { pc: 6, up: 0, z: 'pes', coast: 1, y: { food: 2, gold: 1 }, ic: '🐟', fx: 'Zona pesqueira: +2 comida e +1 ouro. Explora peixe, pérolas e âmbar. Só no litoral.', n: { ant: 'Pesqueiros', med: 'Pesqueiros', pol: 'Pescarias', mod: 'Frota Pesqueira', fan: 'Redes Encantadas' } },
+  flo: { pc: 6, up: 0, z: 'flo', ter: 'fst', y: { prod: 2 }, ic: '🪵', fx: 'Zona florestal: +2 produção. Explora madeira e peles. Em floresta, selva ou taiga.', n: { ant: 'Lenhadores', med: 'Serrarias', pol: 'Serrarias', mod: 'Madeireiras', fan: 'Bosque dos Druidas' } },
+  min: { pc: 8, up: 0, z: 'min', ter: 'hm', dz: 1, y: { prod: 3 }, ic: '⛏', fx: 'Zona de mineração: +3 produção. Explora pedra, metais, sal, carvão e petróleo. Em colinas e montanhas, ou onde houver jazida mineral.', n: { ant: 'Minas', med: 'Minas', pol: 'Minas', mod: 'Mineradoras', fan: 'Minas Anãs' } },
 };
+// Zonas (parte 3): cada construção com z ocupa uma vaga; vagas = nível do território (Z-01, S-02 a S-05).
+// Polo: +1 no primeiro rendimento de y por vizinho seu com a mesma zona, até +3.
+const ZONE = { agr: 'Agrícola', pec: 'Pecuária', pes: 'Pesqueira', flo: 'Florestal', min: 'Mineração', com: 'Comercial', por: 'Portuária', rel: 'Religiosa', mil: 'Militar', sci: 'Científica' };
+// Povoamento (S-02 a S-05): consumo de comida = 2 × nível − 1; para subir, estoque = need × k da duração e a construção pedida.
+const LEVEL = [null,
+  { n: 'Aldeia', ic: '·', need: 20 },
+  { n: 'Vila', ic: '•', need: 40, req: ['mer', 'tem'] },
+  { n: 'Cidade', ic: '●', need: 80, req: ['aca'] },
+  { n: 'Metrópole', ic: '◉' },
+];
 // Árvore de tecnologias: nível 1, 2 (exige uma do nível 1) e 3 (exige duas do nível 2).
 // Custo em saber = cost × 2 × k da duração; a pesquisa avança por turnos (P-09).
 const TECH = [

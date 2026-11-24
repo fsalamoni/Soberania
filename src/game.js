@@ -1,4 +1,4 @@
-// Soberania v5: motor do jogo (guerra no estilo War + turno de governo com ações), IA e interface.
+// Soberania v6: motor do jogo (guerra de conquista + governo com ações, terreno, zonas e povoamento), IA e interface.
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const rnd = Math.random, d6 = () => 1 + Math.floor(rnd() * 6);
@@ -39,12 +39,18 @@ function newGame(sc, player, diff, len) {
   for (const [n, v] of Object.entries(sc.neuT || {})) g.tr[need(n)] = v;
   expand(m, sc.off || []).forEach(n => { const i = need(n); g.own[i] = 'off'; g.tr[i] = 0; });
   g.relics = (sc.relics || []).map(need);
+  // parte 3: terreno, rio e jazidas (src/geo.js); jazidas de eras futuras ficam escondidas
+  const geo = GEO[sc.map] || {}, elv = ERA_LV[sc.tech] ?? 1;
+  g.ter = []; g.riv = []; g.dep = [];
+  m.terr.forEach((t, i) => { const [a, b] = (geo[t.n] || 'p').split(' '); g.ter[i] = a[0]; g.riv[i] = a.includes('r'); g.dep[i] = (b || '').split(',').filter(d => d && (DEP[d].era || 0) <= elv); });
+  g.lv = Array(N).fill(1); g.food = Array(N).fill(0);
   for (const d of sc.f) {
     const F = { ...d, real: true, stab: d.st, cards: [], alive: true, entered: !d.late, capI: need(d.cap), passive: !!d.passive, reinf: 0, conq: false, ofs: false, airX: 0, planes: 0, navLeft: 0, nav: d.nav || 1, gold: 3, sci: 0, pre: 2, tech: [], pa: 0, camp: false, recOn: false, tradeOn: false, bldOn: false, res: null, ww: 0, hold: 0, recQ: {}, upk: 0, nB: 0, cq: 0 };
     F.obj = objOf(d, m, g.relics);
     if (F.obj.hold) F.obj.hold.forEach(need);
     expand(m, d.t).forEach(n => { const i = need(n); g.own[i] = d.id; g.tr[i] = d.tr || 3; });
     for (const [n, v] of Object.entries(d.trT || {})) g.tr[need(n)] = v;
+    expand(m, d.t).forEach(n => g.lv[need(n)] = elv >= 3 ? 2 : 1); g.lv[F.capI] = elv >= 3 ? 4 : 3;
     if (d.t.length) g.tr[F.capI] = Math.max(g.tr[F.capI], d.ctr || (d.tr || 3) + 2);
     g.F[d.id] = F; g.order.push(d.id);
   }
@@ -77,7 +83,8 @@ const built = (i, k) => G.bld[i].includes(k);
 const nb = (i, k) => built(i, k) && !G.dis.has(i + ':' + k);
 const countB = (f, k) => owned(f).filter(i => nb(i, k)).length;
 const coastal = i => G.A[i].some(j => isSea(i, j));
-const legacy = f => 2 * Fa(f).tech.length + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (k === 'mar' ? 5 : 1), 0), 0);
+// zonas de recurso são economia, não legado
+const legacy = f => 2 * Fa(f).tech.length + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (k === 'mar' ? 5 : STRUCT[k].ter || STRUCT[k].coast ? 0 : 1), 0), 0);
 const minWin = () => Math.ceil(G.rounds / 3); // D-04: objetivo e legado só contam a partir daqui
 const evRound = e => 1 + Math.round((e.t - 1) * G.rounds * .5 / G.sc.turns); // eventos espalhados pela 1ª metade da partida
 const occupied = i => G.occ[i] > 0;
@@ -92,7 +99,9 @@ const real = f => Fa(f).real;
 
 function reinfOf(f) {
   const F = Fa(f), T = settled(f), oc = owned(f).length - T.length, parts = [];
-  let r = Math.max(3, Math.floor(T.length / 3)); parts.push([`${T.length} territórios ÷ 3 (mín. 3)${oc ? `, ${oc} ocupado(s) não contam` : ''}`, r]);
+  const pop = T.reduce((s, i) => s + G.lv[i], 0); // S-03: cada nível de povoamento conta
+  let r = Math.max(3, Math.floor(pop / 3)); parts.push([`povoamento ${pop} ÷ 3 (mín. 3)${oc ? `, ${oc} ocupado(s) não contam` : ''}`, r]);
+  const g = goods(f), sg = ['fer', 'cav'].filter(d => g.has(d)); if (sg.length) { r += sg.length; parts.push([sg.map(d => DEP[d].n).join(' e '), sg.length]); } // R-32, R-62
   const q = countB(f, 'qua'); if (q) { r += q; parts.push([sName('qua'), q]); }
   if (has(f, 'log')) { r += 2; parts.push([tName('log'), 2]); }
   G.regT.forEach((ts, k) => { if (ts.length && ts.every(i => G.own[i] === f)) { const b = Math.max(1, Math.round(ts.length * .5)); r += b; parts.push([G.m.regions[k], b]); } });
@@ -137,24 +146,66 @@ const score = f => { const F = Fa(f); return owned(f).length - (F.t0 || 0) + 2 *
 function log(f, msg) { G.log.unshift([f, msg, G.round]); if (G.log.length > 80) G.log.pop(); }
 
 // ---------- governo: recursos e ações ----------
+// ---------- parte 3: terreno, zonas, jazidas e povoamento (M-01 a M-10, M-20, M-21, Z-01 a Z-11, R-20 a R-62, S-02 a S-05) ----------
+const zonesAt = i => G.bld[i].filter(k => STRUCT[k].z);
+const zoneFree = i => G.lv[i] - zonesAt(i).length - G.q[i].filter(x => STRUCT[x.k].z).length;
+function zoneOk(k, i) {
+  const S = STRUCT[k];
+  if (S.lv && G.lv[i] < S.lv) return false;
+  if (S.coast) return coastal(i);
+  if (!S.ter) return true;
+  return S.ter.includes(G.ter[i]) || (S.rio && G.riv[i]) || (S.dz && G.dep[i].some(d => DEP[d].z === S.z));
+}
+// jazidas exploradas: a zona da jazida está ativa no território e ele não está ocupado
+const worked = i => G.dep[i].filter(d => G.bld[i].some(k => STRUCT[k].z === DEP[d].z && nb(i, k)));
+function goods(f) { const s = new Set(); for (const i of settled(f)) worked(i).forEach(d => s.add(d)); return s; }
+const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
+function yieldOf(i) {
+  const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i;
+  const y = { food: T.food + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0), prod: T.prod + (cap ? 2 : 0), gold: T.gold + (G.riv[i] ? 1 : 0) + (cap ? 1 : 0) + (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), sci: (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0) };
+  for (const k of G.bld[i]) {
+    const S = STRUCT[k]; if (!S.y || !nb(i, k)) continue;
+    for (const [r, v] of Object.entries(S.y)) y[r] += v;
+    if (k === 'mer' && real(f) && has(f, 'com')) y.gold++;
+    if (k === 'agr' && G.riv[i]) y.food++;
+    if (S.z) { const r = Object.keys(S.y)[0]; y[r] += Math.min(3, G.A[i].filter(j => G.own[j] === f && nb(j, k)).length); } // polo
+  }
+  for (const d of worked(i)) for (const [r, v] of Object.entries(DEP[d].y)) y[r] += v;
+  if (occupied(i)) for (const r in y) y[r] = Math.floor(y[r] / 2);
+  return y;
+}
+const foodUse = i => 2 * G.lv[i] - 1;
+const growNeed = i => LEVEL[G.lv[i]].need * G.len.k;
+const growOk = i => !LEVEL[G.lv[i]].req || LEVEL[G.lv[i]].req.some(k => nb(i, k));
+function grow(f) {
+  for (const i of settled(f)) {
+    G.food[i] += yieldOf(i).food - foodUse(i);
+    if (G.food[i] < 0) { G.food[i] = 0; if (G.lv[i] > 1) { G.lv[i]--; log(f, `Fome em ${tname(i)}: volta a ser ${LEVEL[G.lv[i]].n.toLowerCase()}.`); } }
+    else if (G.lv[i] < 4 && G.food[i] >= growNeed(i)) {
+      if (growOk(i)) { G.food[i] -= growNeed(i); G.lv[i]++; log(f, `${tname(i)} cresce e vira ${LEVEL[G.lv[i]].n.toLowerCase()}.`); }
+      else G.food[i] = growNeed(i);
+    }
+  }
+}
 function income(f) {
-  const F = Fa(f), T = settled(f).length, m = countB(f, 'mer');
+  const F = Fa(f), T = settled(f);
   const diff = f !== G.player && !G.auto ? (G.diff === 2 ? 2 : G.diff === 0 ? -1 : 0) : 0;
+  const y = T.reduce((s, i) => { const v = yieldOf(i); s.gold += v.gold; s.sci += v.sci; return s; }, { gold: 0, sci: 0 });
   return {
-    gold: Math.max(1, Math.ceil(T / 3) + m * (2 + (has(f, 'com') ? 1 : 0)) + diff),
-    sci: 1 + 2 * countB(f, 'aca'),
+    gold: Math.max(1, y.gold + diff),
+    sci: 1 + y.sci,
     pre: capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
   };
 }
-const paOf = f => ECON.pa + (has(f, 'adm') ? 1 : 0);
+const paOf = f => ECON.pa + (has(f, 'adm') ? 1 : 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => has(f, 'con') ? 1 : ECON.troop;
 // ---------- obras em turnos (parte 2: P-01 a P-04, P-08, P-11) ----------
-const pCost = (f, k) => Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1));
+// pedra barateia muralhas, templos e maravilhas; madeira, portos, oficinas e quartéis (R-25, R-26)
+const CHEAP = { ped: ['for', 'tem', 'mar'], mad: ['por', 'ofi', 'qua'] };
+const pCost = (f, k) => { const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)); return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1)); };
 const qMax = f => has(f, 'adm') ? 5 : 3;
 function prodOf(i) {
-  const f = G.own[i]; if (!real(f)) return 0;
-  const p = 1 + (i === Fa(f).capI ? 2 : 0) + (nb(i, 'ofi') ? 2 : 0);
-  return occupied(i) ? Math.floor(p / 2) : p;
+  return real(G.own[i]) ? Math.max(1, yieldOf(i).prod) : 0;
 }
 const queued = (i, k) => G.q[i].some(x => x.k === k);
 const hasWonder = f => owned(f).some(j => built(j, 'mar') || queued(j, 'mar'));
@@ -162,6 +213,7 @@ function canQueue(f, k, i) {
   const S = STRUCT[k];
   if (G.own[i] !== f || built(i, k) || queued(i, k) || G.q[i].length >= qMax(f)) return false;
   if (S.sea && !coastal(i)) return false;
+  if (S.z && (zoneFree(i) < 1 || !zoneOk(k, i))) return false;
   if (S.air && !G.air) return false;
   if (S.wonder && (!has(f, S.req) || hasWonder(f))) return false;
   return true;
@@ -325,7 +377,9 @@ function playCard(f, h, target, t2) {
 
 // ---------- combate ----------
 // bônus no maior dado da defesa: construção fortificada +1, e mais +1 por carta, muralha da capital ou Defesa Tenaz (máx. +2)
-function defBonus(j) { const d = G.own[j]; return (nb(j, 'for') ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
+// M-03 a M-06: floresta e selva +1 com 3+ tropas; colinas e montanhas +1
+const terrDef = j => { const t = TERR[G.ter[j]].def; return t === 'h' || t === 'm' || (t === 'f' && G.tr[j] >= 3) ? 1 : 0; };
+function defBonus(j) { const d = G.own[j]; return terrDef(j) + (nb(j, 'for') ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
 // D-07: distância, por território próprio, até a base de suprimento mais próxima (capital, quartel ou porto)
 function supplyDist(f) {
   const dist = Array(G.N).fill(99), q = owned(f).filter(i => i === Fa(f).capI || nb(i, 'qua') || nb(i, 'por'));
@@ -338,6 +392,7 @@ function diceFor(i, j) {
   const a = G.own[i], A = Fa(a);
   let ad = Math.min(3, G.tr[i] - 1); if (isSea(i, j) && A.ab !== 'almirante' && !nb(i, 'por') && !(A.real && has(a, 'nav'))) ad = Math.min(2, ad);
   if (ad > 1 && lowSupply(i)) ad--;
+  if (ad > 1 && TERR[G.ter[j]].def === 'w') ad--; // M-10: pântano
   return [ad, Math.min(3, G.tr[j])];
 }
 function roll(i, j) {
@@ -345,7 +400,7 @@ function roll(i, j) {
   const R = Array.from({ length: ad }, d6).sort((x, y) => y - x), D = Array.from({ length: dd }, d6).sort((x, y) => y - x);
   if (A.ofs) R[0] = Math.min(6, R[0] + 1);
   D[0] = Math.min(6, D[0] + defBonus(j));
-  const ties = A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'));
+  const ties = TERR[G.ter[j]].def !== 'm' && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))); // M-06: em montanha o atacante sempre perde empates
   let al = 0, dl = 0; const res = [];
   for (let k = 0; k < Math.min(ad, dd); k++) { const w = R[k] > D[k] || (R[k] === D[k] && ties); w ? dl++ : al++; res.push(w); }
   G.tr[i] -= al; G.tr[j] -= dl;
@@ -359,6 +414,7 @@ function eliminate(d, a) {
 function conquer(i, j, n) {
   const a = G.own[i], d = G.own[j];
   G.own[j] = a; G.tr[j] = n; G.tr[i] -= n; G.fort[j] = 0; delete G.rl[j];
+  G.lv[j] = Math.max(1, G.lv[j] - 1); G.food[j] = 0; // saque e fuga: o território perde um nível
   G.arr[j] = n; // tropas que entraram por conquista já se moveram neste turno
   // P-08: o conquistador fica com metade do progresso das obras; maravilha em andamento se perde
   G.q[j] = real(a) ? G.q[j].filter(x => !STRUCT[x.k].wonder).map(x => ({ ...x, p: Math.floor(x.p / 2) })).slice(0, qMax(a)) : [];
@@ -390,13 +446,13 @@ function airStrike(f, j) {
 function beginTurn(f) {
   const F = Fa(f);
   // A-49: o cansaço de guerra come a recuperação de estabilidade
-  F.stab = Math.max(0, Math.min(100, F.stab + 2 + (F.ab === 'carisma' ? 3 : 0) + 2 * countB(f, 'tem') - Math.floor(F.ww / 5)));
+  F.stab = Math.max(0, Math.min(100, F.stab + 2 + (F.ab === 'carisma' ? 3 : 0) + 2 * countB(f, 'tem') + Math.min(4, luxOf(f)) - Math.floor(F.ww / 5)));
   owned(f).forEach(i => { if (G.fort[i] > 0) G.fort[i]--; if (G.occ[i] > 0) G.occ[i]--; });
   F.conq = false; F.cq = 0; F.ofs = false; G.phase = 'ref'; G.sel = G.tgt = null; G.card = null; G.mode = null; G.seaUsed = new Set(); G.mv = []; G.arr = [];
   for (const [i, n] of Object.entries(F.recQ)) if (G.own[i] === f) G.tr[i] += n;
   F.recQ = {};
   const inc = income(f); F.gold += inc.gold; F.sci += inc.sci; F.pre += inc.pre;
-  payUpkeep(f); produce(f); research(f);
+  payUpkeep(f); produce(f); grow(f); research(f);
   F.navLeft = navOf(f); F.planes = planesOf(f);
   F.pa = paOf(f); F.camp = F.recOn = F.tradeOn = F.bldOn = false;
   if (F.stab < 35) {
@@ -522,14 +578,14 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ }; });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function restore(s) {
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -639,7 +695,15 @@ function aiBVal(f, k, i) {
     case 'aer': return 3.4 - .9 * n;
     case 'mar': return 7;
   }
-  return 0;
+  if (!S.ter && !S.coast) return 0;
+  // zonas de recurso: rendimento novo + jazidas que passam a ser exploradas
+  const y = { ...S.y }, g = goods(f), W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8 };
+  if (k === 'agr' && G.riv[i]) y.food++;
+  y[Object.keys(S.y)[0]] += Math.min(3, G.A[i].filter(j => G.own[j] === f && built(j, k)).length);
+  let v = 0;
+  for (const d of G.dep[i]) if (DEP[d].z === S.z) { for (const [r, a] of Object.entries(DEP[d].y)) y[r] = (y[r] || 0) + a; if (!g.has(d)) v += DEP[d].lux ? 1.2 : d === 'fer' || d === 'cav' ? 1 : 0; }
+  for (const [r, a] of Object.entries(y)) v += a * W[r];
+  return v;
 }
 function aiPick(f, i) {
   if (occupied(i)) return null;
@@ -818,15 +882,18 @@ function initPan() {
 function renderMap() {
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
-    P[i].setAttribute('fill', o === 'reb' ? 'url(#hatch)' : F.c);
+    const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
+    P[i].setAttribute('fill', L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
     P[i].classList.toggle('off', o === 'off');
     const g = B[i]; g.toggleAttribute('hidden', o === 'off');
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
-    const ics = G.bld[i].map(k => STRUCT[k].ic);
+    const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : G.bld[i].map(k => STRUCT[k].ic);
+    if (L === 'ter') ics.unshift(TERR[G.ter[i]].ic + (G.riv[i] ? '〰' : ''), LEVEL[G.lv[i]].ic);
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
     g.classList.toggle('lightbg', light(F.c));
   }
+  document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;
   const p = (j, c) => hl.push(`<path d="${G.m.terr[j].d}" class="${c}"/>`);
   if (G.sel != null) p(G.sel, 'hs');
@@ -839,6 +906,7 @@ function renderMap() {
   if (G.tgt != null) p(G.tgt, 'hx');
   $('#hl').innerHTML = hl.join('');
 }
+const ZC = { agr: '#8fae3c', pec: '#b69a52', pes: '#3f8fb0', flo: '#2f7a42', min: '#857868', com: '#c9a227', por: '#2f5f8f', rel: '#9a6ac0', mil: '#a33b33', sci: '#3fa7a0' };
 function light(c) { const n = parseInt(c.slice(1), 16); return ((n >> 16) * .3 + ((n >> 8) & 255) * .59 + (n & 255) * .11) > 165; }
 
 // ---------- interação ----------
@@ -1006,7 +1074,7 @@ function showAir(f, j, r, ai) {
 function showBattlePanel(last) {
   const i = G.sel, j = G.tgt, b = bt(); placeB(j);
   const [ad, dd] = diceFor(i, j), d = G.own[j], me = Fa(G.player);
-  const notes = [isSea(i, j) ? 'desembarque pelo mar' : '', defBonus(j) ? 'defesa +1 no maior dado' : '', me.ofs ? 'ofensiva +1' : ''].filter(Boolean).join(' · ');
+  const notes = [isSea(i, j) ? 'desembarque pelo mar' : '', TERR[G.ter[j]].n.toLowerCase(), defBonus(j) ? `defesa +${defBonus(j)} no maior dado` : '', TERR[G.ter[j]].def === 'w' ? 'pântano: 1 dado a menos' : '', TERR[G.ter[j]].def === 'm' ? 'montanha: empate é da defesa' : '', me.ofs ? 'ofensiva +1' : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="bh"><b style="color:${me.c}">${esc(tname(i))}</b> <span>${G.tr[i]}</span> ⚔ <b style="color:${Fa(d).c}">${esc(tname(j))}</b> <span>${G.tr[j]}</span></div>
   ${last ? diceRows(last) : `<div class="dice"><div>${'<span class="die att ghost">?</span>'.repeat(ad)}</div><div>${'<span class="die def ghost">?</span>'.repeat(dd)}</div></div>`}
   <p class="bm">${last ? `Você perde ${last.al}, defesa perde ${last.dl}. ` : ''}${ad} contra ${dd} dados${notes ? ' · ' + notes : ''}. Empate fica com a defesa${me.ab === 'tatico' ? ', exceto para você (Gênio Tático)' : ''}.</p>
@@ -1086,7 +1154,7 @@ function renderSide() {
         ${Bt('act', 'camp', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'Libera ataques e aviação neste turno.' + (has(me, 'dou') ? ' Grátis pela sua doutrina.' : ''), F.camp || (noPA && !has(me, 'dou')), F.camp)}
         ${Bt('act', 'rec', F.recOn ? `Comprar tropas <small>${tc}💰</small>` : `Recrutar <small>${tc}💰/tropa</small>`, `Abre o recrutamento: compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, !F.recOn && (noPA || F.gold < tc), G.mode === 'rec')}
         ${F.camp && G.air && F.planes ? Bt('air', '', `✈ ${esc(G.air.n)} (${F.planes})`, 'Bombardeie um alvo ao alcance. Não gasta ação.', false, G.mode === 'air') : ''}</div></div>
-      <div class="grp"><b>🏛 Obras</b> <span class="hint">fila de até ${qMax(me)} por território; a produção ⚒ de cada território avança a obra do topo. Uma de cada tipo por território; mudam de dono na conquista.</span><div class="row">
+      <div class="grp"><b>🏛 Obras</b> <span class="hint">fila de até ${qMax(me)} por território; a produção ⚒ de cada território avança a obra do topo. Uma de cada tipo por território. Zonas (🌾🐄🐟🪵⛏💰🔬⚔⭐⚓) ocupam vagas: aldeia 1, vila 2, cidade 3, metrópole 4. Mudam de dono na conquista.</span><div class="row">
         ${Bt('act', 'obras', F.bldOn ? 'Obras abertas' : 'Ordenar obras', '1 ação por turno: ponha, retire e apresse obras em todas as filas.', !F.bldOn && noPA, F.bldOn)}<button class="ab2" data-a="works">Obras do império</button></div>
         ${F.bldOn ? `<div class="row">${blds}</div>` : ''}</div>
       <div class="grp"><b>🔬 Ciência</b><div class="row"><button class="ab2" data-a="techs">Árvore de tecnologias <small>${F.sci}🔬</small></button></div></div>
@@ -1109,7 +1177,13 @@ function renderSide() {
     const rel = o === 'off' ? 'Fora do mundo conhecido nesta era' : o === me ? 'Seu' : !real(o) ? (o === 'reb' ? (G.rl[i] || 'Rebeldes') : 'Neutro') : allied(me, o) ? 'Aliado' : peace(me, o) ? 'Trégua' : 'Inimigo';
     inf = `<h4>${esc(t.n)}</h4><p><i class="dot" style="background:${O.c}"></i>${esc(o === 'reb' ? (G.rl[i] || 'Rebeldes') : O.n)} · <b>${G.tr[i]}</b> tropas · ${rel}</p>
       <p class="hint">${esc(G.m.regions[t.r])}${co ? ' · capital de ' + esc(fname(co)) : ''}${G.relics.includes(i) ? ' · Runa Antiga' : ''}${G.bld[i].length ? ' · ' + G.bld[i].map(k => esc(sName(k)) + (nb(i, k) ? '' : ' (desativada: sem ouro)')).join(', ') : ''}${G.fort[i] > 0 ? ' · fortificado' : ''}${occupied(i) ? ` · ocupado por mais ${G.occ[i]} turno(s): não conta para renda e reforços, produção pela metade` : ''}${o === me && lowSupply(i) ? ' · longe do suprimento: ataca com 1 dado a menos' : ''}${G.phase === 'mov' && my && o === me ? ` · pode mover ${G.mv[i] || 0}` : ''}${o === me && F.recQ[i] ? ` · +${F.recQ[i]} recruta(s) chegando` : ''}</p>`;
-    if (o === me) inf += `<p class="hint">Produção: ${prodOf(i)} ⚒ por turno</p>${qHtml(i)}`;
+    if (o !== 'off') {
+      const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
+      inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}</p>
+        <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
+      if (real(o)) { const y = yieldOf(i); inf += `<p class="hint">Rende 🍞 ${y.food} (consome ${foodUse(i)}${G.lv[i] < 4 ? `, estoque ${G.food[i]}/${growNeed(i)}${growOk(i) ? '' : ' · para crescer: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}` : ''}) · ⚒ ${prodOf(i)} · 💰 ${y.gold} · 🔬 ${y.sci}</p>`; }
+    }
+    if (o === me) inf += qHtml(i);
   }
   $('#info').innerHTML = inf || '<p class="hint">Clique num território para ver detalhes. Arraste para mover o mapa, role ou use + e − para zoom.</p>';
   $('#cards').innerHTML = `<h4>Cartas <span class="hint">${F.cards.length}/5 · ganhe uma por turno em que conquistar · usar não gasta ação</span></h4>` + (F.cards.length ? F.cards.map((c, h) => `<button class="card ${G.card && G.card.h === h ? 'on' : ''}" data-a="card" data-h="${h}" ${my ? '' : 'disabled'}><b>${esc(cardName(c))}</b><span>${esc(cardFx(c))}</span></button>`).join('') : '<p class="hint">Nenhuma carta.</p>');
@@ -1139,11 +1213,12 @@ function rules() {
   modal(`<h2>Como jogar</h2>
   <p><b>Duração.</b> Partida curta (60 rodadas), média (120) ou longa (250). Quanto mais longa, mais caras ficam obras e tecnologias e mais turnos o objetivo precisa ser mantido. Os eventos históricos se espalham pela primeira metade da partida.</p>
   <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (2, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida; a dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
-  <p><b>Recursos.</b> No início do turno você recebe 💰 ouro (1 a cada 3 territórios, mais mercados), 🔬 saber (1, mais academias) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
-  <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (1, +2 na capital, +2 com oficina) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
+  <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
+  <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
+  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também mercado ou templo) e metrópole (exige academia). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Freios da guerra.</b> Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
-  <p><b>1. Reforços.</b> Tropas grátis: 1 a cada 3 territórios não ocupados (mínimo 3), mais regiões completas, capitais e quartéis.</p>
+  <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>2. Ações.</b> Você tem 3 pontos de ação por turno (4 com a primeira tecnologia de administração). Cada ação gasta 1 ponto e pode ser repetida:</p>
   <ul>
   <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno. Sem campanha, não há guerra.</li>
@@ -1152,7 +1227,7 @@ function rules() {
   <li><b>🤝 Festividades</b> (+15 de estabilidade), <b>Influenciar</b> (anexa um vizinho neutro ou rebelde com prestígio, sem lutar) e <b>Agitadores</b> (rival perde estabilidade).</li>
   <li><b>💰 Impostos</b> (ouro agora, estabilidade cai) e <b>Comércio</b> (troque recursos 2 por 1).</li>
   </ul>
-  <p><b>Combate.</b> Como no War: ataque e defesa rolam até 3 dados, compara-se do maior para o menor e o empate fica com a defesa. Ao vencer, você move até o número de dados da última rolagem. Fortificações e capitais somam +1 ao maior dado da defesa. Cada facção conquista no máximo 1 território por turno (2 com a doutrina militar).</p>
+  <p><b>Combate.</b> Como nos jogos clássicos de conquista: ataque e defesa rolam até 3 dados, compara-se do maior para o menor e o empate fica com a defesa. Ao vencer, você move até o número de dados da última rolagem. Fortificações, capitais, colinas, montanhas e florestas com 3+ tropas somam +1 ao maior dado da defesa; em montanha o empate é sempre da defesa, e quem ataca um pântano usa 1 dado a menos. Cada facção conquista no máximo 1 território por turno (2 com a doutrina militar).</p>
   <p><b>Mar e ar.</b> Atravessar uma linha tracejada gasta uma travessia da frota; o desembarque usa no máximo 2 dados, ou 3 saindo de um porto. Nas eras com aviação, cada capital e aeródromo dá uma unidade aérea que bombardeia durante a campanha: o antiaéreo pode derrubá-la, e ela não conquista.</p>
   <p><b>3. Remanejamento.</b> Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos, e 1 tropa fica sempre.</p>
   <p><b>Cartas de benefício.</b> Você ganha uma por turno em que conquistar. Usar uma carta não gasta ação.</p>
@@ -1213,6 +1288,7 @@ document.addEventListener('click', e => {
   else if (a === 'rules') rules();
   else if (a === 'menu') { if (G && !G.over) modal('<h2>Sair da partida?</h2><p>A partida fica salva do início do seu último turno.</p>', [['Sair', showSetup], ['Continuar jogando']]); else showSetup(); }
   else if (!G) return;
+  else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }
   else if (a === 'zin') zoomBtn(1 / 1.4); else if (a === 'zout') zoomBtn(1.4); else if (a === 'zfit') { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); }
   else if (a === 'toAtk') toPhase('atk'); else if (a === 'toMov') toPhase('mov'); else if (a === 'end') playerEnd();
   else if (a === 'all') addAll();
@@ -1238,4 +1314,4 @@ document.addEventListener('change', e => { if (e.target.id === 'fast' && G) G.fa
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && G && !G.busy && !G.pend) { hideBattle(); G.sel = null; G.card = null; G.mode = null; render(); } });
 
 initPan(); showSetup();
-window.__sob = { get G() { return G; }, startScenario, loop, SCEN, resume, render, act };
+window.__sob = { get G() { return G; }, startScenario, loop, SCEN, resume, render, act, STRUCT };
