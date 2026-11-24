@@ -104,6 +104,9 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 #lens{position:absolute;left:10px;top:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:60%}
 #lens button{padding:4px 9px;font-size:12px;background:#17212dd9}
 #lens button.on{border-color:var(--brass);color:var(--brass)}
+#roads line{stroke:#d8c28a;stroke-linecap:round;pointer-events:none}
+#roads .rd1{stroke-width:2.2;stroke-dasharray:5 3;opacity:.85}
+#roads .rd2{stroke-width:3.2;opacity:.95}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#000c;border:1px solid var(--brass);padding:7px 14px;border-radius:8px;font-size:13px;max-width:90%;text-align:center}
 #battle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}
@@ -205,7 +208,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 <div id="game" hidden>
   <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
-    <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button></div>
+    <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
   <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>
@@ -340,6 +343,10 @@ const STRUCT = {
   fab: { pc: 14, up: 1, need: 'for', era: 2, def: 1, ic: '⭐', fx: 'Fortaleza abaluartada (C-103): +1 no maior dado de defesa.', n: 'Fortaleza Abaluartada' },
   bkr: { pc: 14, up: 1, era: 3, def: 2, ic: '🧱', fx: 'Linha fortificada (C-104): +2 no maior dado de defesa.', n: 'Linha Fortificada' },
   acm: { pc: 12, up: 1, need: 'qua', rf: 1, lg: 1, ic: '🎖', fx: 'Academia militar (C-106): +1 tropa de reforço por turno.', n: { ant: 'Escola de Gladiadores', med: 'Ordem de Cavalaria', pol: 'Academia Militar', mod: 'Escola de Guerra', fan: 'Academia de Heróis' } },
+  // parte 5: estradas e estaleiro (C-121, C-122, C-127). road = nível da estrada; custo ×2 em montanha e pântano, ×1,5 em deserto (L-11)
+  est: { pc: 4, road: 1, ic: '🛤', fx: 'Estrada (C-121): liga o território à rede de bens se um vizinho seu também tiver estrada, e no remanejamento as tropas andam até 2 territórios pela estrada.', n: { ant: 'Estrada', med: 'Estrada', pol: 'Estrada', mod: 'Rodovia', fan: 'Estrada' } },
+  pav: { pc: 6, road: 2, need: 'est', tech: 'eng', ic: '🛣', fx: 'Estrada pavimentada (C-122): pela estrada as tropas andam até 3 territórios no remanejamento, e +1 ouro com mercado. Exige engenharia.', n: { ant: 'Via Pavimentada', med: 'Calçada Real', pol: 'Estrada de Macadame', mod: 'Autoestrada', fan: 'Via Encantada' } },
+  stl: { pc: 8, up: 1, need: 'por', good: ['mad'], nav: 1, y: { prod: 1 }, ic: '🚢', fx: 'Estaleiro (C-127): +1 travessia por turno e +1 produção. Exige porto e madeira ligada à rede.', n: { ant: 'Estaleiro', med: 'Estaleiro', pol: 'Arsenal Naval', mod: 'Estaleiro Naval', fan: 'Doca Encantada' } },
   // Maravilhas do mundo (C-200 a C-209): uma só no mundo; quem termina primeiro fica com ela, as outras filas a perdem.
   pir: { pc: 36, ww: 1, era: 0, eraMax: 1, need: 'mon', ic: '🔺', fx: 'Grandes Pirâmides (C-200): suas muralhas, templos, monumentos e pedreiras custam 25% menos.', n: 'Grandes Pirâmides' },
   jar: { pc: 36, ww: 1, era: 0, eraMax: 1, need: 'faz', ic: '🌺', fx: 'Jardins Suspensos (C-201): +1 comida em todos os seus territórios.', n: 'Jardins Suspensos' },
@@ -1067,7 +1074,25 @@ function zoneOk(k, i) {
 }
 // jazidas exploradas: a zona da jazida está ativa no território e ele não está ocupado
 const worked = i => G.dep[i].filter(d => G.bld[i].some(k => STRUCT[k].z === DEP[d].z && nb(i, k)));
-function goods(f) { const s = new Set(); for (const i of settled(f)) worked(i).forEach(d => s.add(d)); return s; }
+// ---------- parte 5: rede de bens (L-01 a L-03, L-05, C-120 a C-122, C-126) ----------
+// rede = capital + territórios seus ligados por estrada (os dois lados com estrada) ou entre portos;
+// a trilha (C-120) liga também os vizinhos por terra de quem está na rede.
+const road = i => nb(i, 'pav') ? 2 : nb(i, 'est') ? 1 : 0;
+function netOf(f) {
+  const F = Fa(f), core = new Set(); if (!real(f) || G.own[F.capI] !== f) return { core, linked: core };
+  const q = [F.capI]; core.add(F.capI);
+  const ports = () => owned(f).filter(i => nb(i, 'por'));
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h], nx = G.A[i].filter(j => G.own[j] === f && !isSea(i, j) && road(j) && (road(i) || i === F.capI));
+    if (nb(i, 'por')) nx.push(...ports());
+    for (const j of nx) if (!core.has(j)) { core.add(j); q.push(j); }
+  }
+  const linked = new Set(core); core.forEach(i => G.A[i].forEach(j => { if (G.own[j] === f && !isSea(i, j)) linked.add(j); }));
+  return { core, linked };
+}
+const goodsAt = T => { const s = new Set(); for (const i of T) if (!occupied(i)) worked(i).forEach(d => s.add(d)); return s; };
+const goods = f => goodsAt(netOf(f).linked);
+const goodsAll = f => goodsAt(owned(f));
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
 function yieldOf(i) {
   const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i;
@@ -1112,9 +1137,10 @@ const troopCost = f => has(f, 'con') ? 1 : ECON.troop;
 // pedra barateia muralhas, templos e maravilhas; madeira, portos, oficinas e quartéis (R-25, R-26)
 const CHEAP = { ped: ['for', 'tem', 'mar', 'cas', 'cat', 'aqu'], mad: ['por', 'ofi', 'qua', 'pal', 'ser'] };
 const STONE = ['for', 'tem', 'mon', 'pdr', 'cas', 'cat']; // Grandes Pirâmides (C-200)
-const pCost = (f, k) => {
+const pCost = (f, k, i) => {
   const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)), p = STONE.includes(k) && hasW(f, 'pir');
-  return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1) * (p ? .75 : 1));
+  const t = STRUCT[k].road && i != null ? ({ m: 2, w: 2, d: 1.5 }[G.ter[i]] || 1) : 1; // L-11
+  return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1) * (p ? .75 : 1) * t);
 };
 const qMax = f => has(f, 'adm') ? 5 : 3;
 function prodOf(i) {
@@ -1134,7 +1160,10 @@ function reqF(f, k) {
   if (S.tech && !has(f, S.tech)) return 'exige ' + tName(S.tech);
   if (S.wonder && !S.ww && (!has(f, S.req) || hasWonder(f))) return 'exige ' + tName(S.req) + ' (uma por facção)';
   if (S.ww && wwTaken(k)) return 'já construída no mundo';
-  if (S.good && !goodOk(f, S.good)) return 'exige ' + S.good.map(a => a.split('+').map(d => DEP[d].n).join(' e ')).join(' ou ') + ' explorado';
+  if (S.good && !goodOk(f, S.good)) { // UI-03: diz se o bem existe mas está fora da rede
+    const all = goodsAll(f), off = S.good.some(a => a.split('+').every(d => all.has(d)));
+    return 'exige ' + S.good.map(a => a.split('+').map(d => DEP[d].n).join(' e ')).join(' ou ') + (off ? ' ligado à rede: você explora, mas fora dela; ligue com estrada ou porto' : ' explorado');
+  }
   if (S.needE && !countB(f, S.needE)) return 'exige ' + sName(S.needE) + ' no império';
   return '';
 }
@@ -1154,9 +1183,9 @@ function canQueue(f, k, i) {
 // turnos que faltam para cada item da fila, somando a produção atual em sequência
 function qEta(i) {
   const p = prodOf(i), f = G.own[i]; let acc = 0;
-  return G.q[i].map(x => { acc += pCost(f, x.k) - x.p; return p ? Math.ceil(acc / p) : Infinity; });
+  return G.q[i].map(x => { acc += pCost(f, x.k, i) - x.p; return p ? Math.ceil(acc / p) : Infinity; });
 }
-const rushCost = (f, i, n) => { const x = G.q[i][n]; return x ? (pCost(f, x.k) - x.p) * (STRUCT[x.k].wonder ? ECON.rushW : ECON.rush) : 0; };
+const rushCost = (f, i, n) => { const x = G.q[i][n]; return x ? (pCost(f, x.k, i) - x.p) * (STRUCT[x.k].wonder ? ECON.rushW : ECON.rush) : 0; };
 const canRush = (f, i, n) => { const x = G.q[i][n]; return !!x && G.own[i] === f && Fa(f).bldOn && x.t < G.round && Fa(f).gold >= rushCost(f, i, n); };
 function finishWork(i, n) {
   const f = G.own[i], x = G.q[i].splice(n, 1)[0]; G.bld[i].push(x.k); Fa(f).nB++;
@@ -1168,9 +1197,9 @@ function produce(f) {
   for (const i of owned(f)) {
     let p = prodOf(i);
     while (p > 0 && G.q[i].length) {
-      const x = G.q[i][0], use = Math.min(p, pCost(f, x.k) - x.p);
+      const x = G.q[i][0], use = Math.min(p, pCost(f, x.k, i) - x.p);
       x.p += use; p -= use;
-      if (x.p >= pCost(f, x.k)) finishWork(i, 0);
+      if (x.p >= pCost(f, x.k, i)) finishWork(i, 0);
     }
   }
 }
@@ -1323,7 +1352,20 @@ function supplyDist(f) {
   for (let h = 0; h < q.length; h++) { const i = q[h]; for (const j of G.A[i]) if (G.own[j] === f && dist[j] > dist[i] + 1) { dist[j] = dist[i] + 1; q.push(j); } }
   return dist;
 }
-const lowSupply = (i) => real(G.own[i]) && supplyDist(G.own[i])[i] > ECON.sup + (hasW(G.own[i], 'rce') ? 2 : 0);
+// L-04 e L-05: remanejamento. Vizinho seu sempre; pela estrada até 2 territórios (3 com pavimentada), todos com estrada;
+// de um porto seu para qualquer outro porto seu.
+function moveDests(f, i) {
+  const out = new Set(G.A[i].filter(j => G.own[j] === f)), r = road(i);
+  if (r) {
+    let fr = [i]; const seen = new Set([i]);
+    for (let s = 0; s < r + 1; s++) fr = fr.flatMap(a => G.A[a].filter(b => G.own[b] === f && !isSea(a, b) && road(b) && !seen.has(b) && seen.add(b)));
+    seen.forEach(j => out.add(j));
+  }
+  if (nb(i, 'por')) owned(f).forEach(j => { if (nb(j, 'por')) out.add(j); });
+  out.delete(i); return [...out];
+}
+// L-08: na rede de bens não falta suprimento; fora dela vale a distância até capital, quartel ou porto
+const lowSupply = (i) => real(G.own[i]) && !netOf(G.own[i]).linked.has(i) && supplyDist(G.own[i])[i] > ECON.sup + (hasW(G.own[i], 'rce') ? 2 : 0);
 function diceFor(i, j) {
   const a = G.own[i], A = Fa(a);
   let ad = Math.min(3, G.tr[i] - 1); if (isSea(i, j) && A.ab !== 'almirante' && !nb(i, 'por') && !(A.real && (has(a, 'nav') || hasW(a, 'frl')))) ad = Math.min(2, ad);
@@ -1644,6 +1686,8 @@ function aiBVal(f, k, i) {
     if (k === 'san') v += G.lv[i] === 3 && near ? 3 : .3;
     if (k === 'tri') v += F.stab < 40 ? 2.5 : 0;
     if (k === 'cel') v += .6;
+    if (k === 'est') { const nt = netOf(f); v += !nt.core.has(i) && G.A[i].some(j => nt.core.has(j) && road(j) + (j === F.capI) > 0) ? 1.4 + (worked(i).length ? 1 : 0) + G.A[i].filter(j => G.own[j] === f && worked(j).length && !nt.linked.has(j)).length : .2; }
+    if (k === 'pav') v += .3;
     return v - .15 * n;
   }
   // zonas de recurso: rendimento novo + jazidas que passam a ser exploradas
@@ -1783,7 +1827,7 @@ function buildMap() {
   if (m.bg) h += `<path d="${m.bg}" class="bgl"/>`;
   h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g>';
   h += '<g class="sealinks">' + m.sea.map(([a, b, w]) => { const A = m.terr[a], C = m.terr[b]; if (!w) return `<line x1="${A.x}" y1="${A.y}" x2="${C.x}" y2="${C.y}"/>`; const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/>`; }).join('') + '</g>';
-  h += '<g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
+  h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
   svg.innerHTML = h;
   P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')];
   setVB();
@@ -1830,10 +1874,11 @@ function initPan() {
   new ResizeObserver(() => G && setVB()).observe(svg);
 }
 function renderMap() {
+  const net = G.lens === 'net' ? netOf(G.player) : null;
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
     const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
-    P[i].setAttribute('fill', L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
+    P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
     P[i].classList.toggle('off', o === 'off');
     const g = B[i]; g.toggleAttribute('hidden', o === 'off');
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
@@ -1843,6 +1888,10 @@ function renderMap() {
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
     g.classList.toggle('lightbg', light(F.c));
   }
+  // parte 5: estradas como linhas entre vizinhos que têm estrada (do mesmo dono)
+  const T = G.m.terr, rl = [];
+  for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) rl.push(`<line x1="${T[i].x}" y1="${T[i].y}" x2="${T[j].x}" y2="${T[j].y}" class="rd${Math.min(road(i), road(j))}"/>`);
+  $('#roads').innerHTML = rl.join('');
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;
   const p = (j, c) => hl.push(`<path d="${G.m.terr[j].d}" class="${c}"/>`);
@@ -1851,7 +1900,7 @@ function renderMap() {
   if (md) for (let j = 0; j < G.N; j++) if (md(j)) p(j, G.mode === 'air' || G.mode === 'agit' ? 'ha' : 'hm');
   else if (my && G.sel != null && G.tgt == null) {
     if (G.phase === 'atk') G.A[G.sel].filter(j => canAtk(me, G.sel, j)).forEach(j => p(j, 'ht'));
-    if (G.phase === 'mov' && (G.mv[G.sel] || 0) > 0) G.A[G.sel].filter(j => G.own[j] === me && seaOk(me, G.sel, j)).forEach(j => p(j, 'hm'));
+    if (G.phase === 'mov' && (G.mv[G.sel] || 0) > 0) moveDests(me, G.sel).filter(j => seaOk(me, G.sel, j)).forEach(j => p(j, 'hm'));
   }
   if (G.tgt != null) p(G.tgt, 'hx');
   $('#hl').innerHTML = hl.join('');
@@ -1898,7 +1947,7 @@ function onTerr(i) {
     else G.sel = i;
   } else if (G.phase === 'mov') {
     if (G.tgt != null) return;
-    if (G.sel != null && G.own[G.sel] === me && (G.mv[G.sel] || 0) > 0 && G.own[i] === me && G.A[G.sel].includes(i)) {
+    if (G.sel != null && G.own[G.sel] === me && (G.mv[G.sel] || 0) > 0 && moveDests(me, G.sel).includes(i)) {
       if (!seaOk(me, G.sel, i)) return toast('Sem frota disponível para atravessar o mar.');
       G.tgt = i; showMovePanel();
     } else G.sel = i;
@@ -1965,7 +2014,7 @@ function qHtml(i) {
   const me = G.player, F = Fa(me), mine = G.own[i] === me, eta = qEta(i);
   if (!G.q[i].length) return '<p class="hint">Fila vazia.</p>';
   return '<ul class="q">' + G.q[i].map((x, n) => {
-    const c = pCost(G.own[i], x.k), rc = rushCost(me, i, n);
+    const c = pCost(G.own[i], x.k, i), rc = rushCost(me, i, n);
     const btn = mine && G.turnF === me ? (F.bldOn ? `<button class="mini" data-a="rush" data-i="${i}" data-n="${n}" ${canRush(me, i, n) ? '' : 'disabled'} title="${x.t >= G.round ? 'Não dá para apressar no turno em que a obra começou.' : ''}">Apressar ${rc}💰</button><button class="mini" data-a="unq" data-i="${i}" data-n="${n}" title="Retirar da fila (perde o progresso)">✕</button>` : '') : '';
     return `<li>${STRUCT[x.k].ic} ${esc(sName(x.k))} ${pbar(x.p, c)} <span class="hint">${x.p}/${c} ⚒ · ${isFinite(eta[n]) ? eta[n] + ' turno(s)' : 'parada'}</span> ${btn}</li>`;
   }).join('') + '</ul>';
@@ -2149,7 +2198,7 @@ function renderSide() {
       <p class="hint">${esc(G.m.regions[t.r])}${co ? ' · capital de ' + esc(fname(co)) : ''}${G.relics.includes(i) ? ' · Runa Antiga' : ''}${G.bld[i].length ? ' · ' + G.bld[i].map(k => esc(sName(k)) + (nb(i, k) ? '' : ' (desativada: sem ouro)')).join(', ') : ''}${G.fort[i] > 0 ? ' · fortificado' : ''}${occupied(i) ? ` · ocupado por mais ${G.occ[i]} turno(s): não conta para renda e reforços, produção pela metade` : ''}${o === me && lowSupply(i) ? ' · longe do suprimento: ataca com 1 dado a menos' : ''}${G.phase === 'mov' && my && o === me ? ` · pode mover ${G.mv[i] || 0}` : ''}${o === me && F.recQ[i] ? ` · +${F.recQ[i]} recruta(s) chegando` : ''}</p>`;
     if (o !== 'off') {
       const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
-      inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}</p>
+      inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
         <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
       if (real(o)) { const y = yieldOf(i); inf += `<p class="hint">Rende 🍞 ${y.food} (consome ${foodUse(i)}${G.lv[i] < 4 ? `, estoque ${G.food[i]}/${growNeed(i)}${growOk(i) ? '' : ' · para crescer: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}` : ''}) · ⚒ ${prodOf(i)} · 💰 ${y.gold} · 🔬 ${y.sci}</p>`; }
     }
@@ -2188,6 +2237,7 @@ function rules() {
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
   <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também aqueduto) e metrópole (exige saneamento). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
+  <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Freios da guerra.</b> Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>2. Ações.</b> Você tem 3 pontos de ação por turno (4 com a primeira tecnologia de administração). Cada ação gasta 1 ponto e pode ser repetida:</p>

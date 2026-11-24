@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## v8 — 24/11/2026 · Estradas, portos e rede de bens (parte 5 do roteiro)
+
+**Parte 5** (C-120 a C-122, C-126, C-127, L-01 a L-05, L-07, L-08, L-11, UI-03)
+
+- L-01, L-02: **rede de bens**. A capital, os territórios seus ligados a ela por **estrada** (C-121; os dois lados precisam ter) e os portos seus (C-126, ligados entre si) formam a rede. A **trilha** (C-120) liga ainda os vizinhos por terra de quem está na rede. Só os bens explorados na rede contam para requisitos de obras, reforços de ferro e cavalos, luxos e descontos de pedra e madeira.
+- L-03: conquistar um território de passagem corta a rede (L-07: quem conquista fica com a estrada).
+- L-04: no remanejamento, pela estrada as tropas andam até 2 territórios; com **estrada pavimentada** (C-122, exige engenharia), até 3.
+- L-05: de um porto seu as tropas vão a qualquer outro porto seu no remanejamento.
+- L-08: território na rede nunca fica sem suprimento; fora dela vale a distância da v5.
+- L-11: estrada custa o dobro em montanha e pântano e 50% a mais em deserto.
+- C-127: **estaleiro** (porto + madeira na rede): +1 travessia e +1 produção.
+- UI-03: o catálogo diz quando o bem existe mas está fora da rede. O painel do território diz se ele está na rede, ligado por trilha ou fora. Estradas aparecem no mapa como linhas, e a nova lente **Rede** pinta a rede.
+- IA: constrói estradas para ligar territórios com jazidas à rede.
+- Fora desta parte: destruir estradas ao recuar (L-07, segunda metade), C-123 a C-125, C-128, C-129, L-06, L-09, L-10 (parte 12).
+
 ## v7 — 24/11/2026 · Catálogo de construções (parte 4 do roteiro)
 
 **Parte 4: catálogo, eras 1 a 3** (C-01 a C-12, C-20 a C-26, C-40 a C-44, C-60 a C-65, C-70 a C-73, C-80 a C-85, C-90 a C-94, C-100 a C-106, C-200 a C-209)

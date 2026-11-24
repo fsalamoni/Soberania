@@ -69,6 +69,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => document.querySelectorAll('#modal .tech').length > 40), 'catálogo lista as construções');
   await p.screenshot({ path: shot('catalogo') });
   await p.click('#modal [data-m="0"]');
+  // parte 5: estrada nos dois lados liga a rede e aparece no mapa; remanejamento anda 2 pela estrada
+  ok(await p.evaluate(() => { const G = window.__sob.G, a = G.ix['Rio Grande do Sul'], b = G.ix['Santa Catarina']; if (G.own[b] !== 'fa') return 'skip'; G.bld[a].push('est'); G.bld[b].push('est'); window.__sob.render(); const n = document.querySelectorAll('#roads line').length; G.bld[a].pop(); G.bld[b].pop(); window.__sob.render(); return n === 1; }), 'estrada entre dois territórios aparece no mapa');
+  await p.click('[data-a=lens][data-l=net]');
+  await p.screenshot({ path: shot('lente-rede') });
   await p.click('[data-a=lens][data-l=ter]');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.ix['Rio Grande do Sul']; return document.querySelector(`#map path[data-i="${i}"]`)?.getAttribute('fill') === '#93a24a' || document.querySelectorAll('#map [fill="#93a24a"]').length > 0; }), 'lente de terreno recolore o mapa');
   await p.screenshot({ path: shot('lente-terreno') });

@@ -125,6 +125,10 @@ const STRUCT = {
   fab: { pc: 14, up: 1, need: 'for', era: 2, def: 1, ic: '⭐', fx: 'Fortaleza abaluartada (C-103): +1 no maior dado de defesa.', n: 'Fortaleza Abaluartada' },
   bkr: { pc: 14, up: 1, era: 3, def: 2, ic: '🧱', fx: 'Linha fortificada (C-104): +2 no maior dado de defesa.', n: 'Linha Fortificada' },
   acm: { pc: 12, up: 1, need: 'qua', rf: 1, lg: 1, ic: '🎖', fx: 'Academia militar (C-106): +1 tropa de reforço por turno.', n: { ant: 'Escola de Gladiadores', med: 'Ordem de Cavalaria', pol: 'Academia Militar', mod: 'Escola de Guerra', fan: 'Academia de Heróis' } },
+  // parte 5: estradas e estaleiro (C-121, C-122, C-127). road = nível da estrada; custo ×2 em montanha e pântano, ×1,5 em deserto (L-11)
+  est: { pc: 4, road: 1, ic: '🛤', fx: 'Estrada (C-121): liga o território à rede de bens se um vizinho seu também tiver estrada, e no remanejamento as tropas andam até 2 territórios pela estrada.', n: { ant: 'Estrada', med: 'Estrada', pol: 'Estrada', mod: 'Rodovia', fan: 'Estrada' } },
+  pav: { pc: 6, road: 2, need: 'est', tech: 'eng', ic: '🛣', fx: 'Estrada pavimentada (C-122): pela estrada as tropas andam até 3 territórios no remanejamento, e +1 ouro com mercado. Exige engenharia.', n: { ant: 'Via Pavimentada', med: 'Calçada Real', pol: 'Estrada de Macadame', mod: 'Autoestrada', fan: 'Via Encantada' } },
+  stl: { pc: 8, up: 1, need: 'por', good: ['mad'], nav: 1, y: { prod: 1 }, ic: '🚢', fx: 'Estaleiro (C-127): +1 travessia por turno e +1 produção. Exige porto e madeira ligada à rede.', n: { ant: 'Estaleiro', med: 'Estaleiro', pol: 'Arsenal Naval', mod: 'Estaleiro Naval', fan: 'Doca Encantada' } },
   // Maravilhas do mundo (C-200 a C-209): uma só no mundo; quem termina primeiro fica com ela, as outras filas a perdem.
   pir: { pc: 36, ww: 1, era: 0, eraMax: 1, need: 'mon', ic: '🔺', fx: 'Grandes Pirâmides (C-200): suas muralhas, templos, monumentos e pedreiras custam 25% menos.', n: 'Grandes Pirâmides' },
   jar: { pc: 36, ww: 1, era: 0, eraMax: 1, need: 'faz', ic: '🌺', fx: 'Jardins Suspensos (C-201): +1 comida em todos os seus territórios.', n: 'Jardins Suspensos' },
