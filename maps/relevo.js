@@ -9,7 +9,12 @@ const [, , ID, TILES, Z, EX, W50] = process.argv;
 const NM = path.join(__dirname, 'node_modules');
 const MAPS = JSON.parse(fs.readFileSync(path.join(__dirname, 'maps.json'), 'utf8')), m = MAPS[ID];
 // projeção de cada mapa, igual ao maps-build.mjs / japao-real.mjs (roda no navegador, com d3 e topojson carregados)
+// euProj do maps-build.mjs / real.mjs para um quadro lon/lat
+const EU = (lon0, lon1, lat0, lat1) => `(() => { const W = ${m.w}, H = ${m.h}; const densify = ring => { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; };
+  return d3.geoConicConformal().rotate([${-(lon0 + lon1) / 2}, 0]).parallels([40, 60]).fitExtent([[4, 4], [W - 4, H - 4]], { type: 'Polygon', coordinates: [densify([[${lon0}, ${lat0}], [${lon0}, ${lat1}], [${lon1}, ${lat1}], [${lon1}, ${lat0}], [${lon0}, ${lat0}]])] }); })()`;
+const DRY = { europa1805: 1, europa1914: 1 }; // mapas que pegam o cinturão desértico do norte
 const PROJ = {
+  europa1805: EU(-11, 43, 33, 63), europa1914: EU(-11, 52, 22, 63),
   japao: `(() => { const W = 1000, H = 620, w50 = WORLD50;
     const clipHalf = (ring, f) => { const out = []; for (let i = 0; i < ring.length; i++) { const A = ring[i], Bp = ring[(i + 1) % ring.length], da = f(A), db = f(Bp); if (da <= 0) out.push(A); if ((da <= 0) !== (db <= 0)) { const t = da / (da - db); out.push([A[0] + (Bp[0] - A[0]) * t, A[1] + (Bp[1] - A[1]) * t]); } } return out; };
     const densify = ring => { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; };
@@ -25,7 +30,7 @@ const PROJ = {
   const b = await chromium.launch(), p = await b.newPage();
   for (const f of ['d3-array/dist/d3-array.min.js', 'd3-geo/dist/d3-geo.min.js', 'topojson-client/dist/topojson-client.min.js']) await p.addScriptTag({ path: path.join(NM, f) });
   if (W50) await p.evaluate(s => { window.WORLD50 = JSON.parse(s); }, fs.readFileSync(W50, 'utf8'));
-  const out = await p.evaluate(async ({ m, tiles, z, ex, projSrc }) => {
+  const out = await p.evaluate(async ({ m, tiles, z, ex, projSrc, dry }) => {
     const proj = eval(projSrc), S = 1.6, PW = Math.round(m.w * S), PH = Math.round(m.h * S);
     // mosaico de elevação
     const tx0 = Math.min(...tiles.map(t => t.x)), ty0 = Math.min(...tiles.map(t => t.y)), TW = (Math.max(...tiles.map(t => t.x)) - tx0 + 1) * 256, TH = (Math.max(...tiles.map(t => t.y)) - ty0 + 1) * 256;
@@ -48,13 +53,15 @@ const PROJ = {
     const sh = new ImageData(PW, PH), co = new ImageData(PW, PH);
     const ramp = [[0, [118, 150, 92]], [150, [148, 170, 104]], [400, [190, 184, 120]], [800, [176, 148, 98]], [1400, [150, 118, 86]], [2000, [142, 128, 116]], [2700, [196, 190, 184]], [3300, [246, 244, 240]]];
     const tint = h => { for (let i = 1; i < ramp.length; i++) if (h <= ramp[i][0]) { const [h0, a] = ramp[i - 1], [h1, c] = ramp[i], t = (h - h0) / (h1 - h0); return a.map((v, j) => v + (c[j] - v) * t); } return ramp[ramp.length - 1][1]; };
+    // cinturão desértico (Saara, Arábia): abaixo de ~34°N a terra baixa puxa para areia, de leve até 30°N e toda abaixo de 28°N
+    const sand = [218, 196, 146], desert = (c, lat, h) => { if (!dry || lat > 34) return c; const t = Math.min(1, (34 - lat) / 6) * Math.max(0, 1 - h / 1600); return c.map((v, j) => v + (sand[j] - v) * t); };
     for (let y = 1; y < PH - 1; y++) for (let x = 1; x < PW - 1; x++) {
       const k = y * PW + x; if (land[k * 4 + 3] < 128) continue;
       const dzdx = (H[k + 1] - H[k - 1]) / (2 * pm) * ex, dzdy = (H[k + PW] - H[k - PW]) / (2 * pm) * ex;
       const nl = Math.hypot(dzdx, dzdy, 1), s = Math.max(0, (-dzdx * Lx - dzdy * Ly + Lz) / nl), v = s / Lz;
       const g = Math.round(255 * Math.min(1, .22 + .78 * Math.min(1.1, v) / 1.1 + .06));
       sh.data.set([g, g, g, 255], k * 4);
-      const c = tint(H[k]), f = Math.max(.42, Math.min(1.18, .25 + .75 * v));
+      const c = desert(tint(H[k]), LL[2 * k + 1], H[k]), f = Math.max(.42, Math.min(1.18, .25 + .75 * v));
       co.data.set([Math.min(255, c[0] * f), Math.min(255, c[1] * f), Math.min(255, c[2] * f), 255], k * 4);
     }
     // estradas: caminho mais barato entre os centros de dois vizinhos, só por dentro dos dois territórios.
@@ -88,7 +95,7 @@ const PROJ = {
     }
     const enc = async id => { const c = new OffscreenCanvas(PW, PH); c.getContext('2d').putImageData(id, 0, 0); const bl = await c.convertToBlob({ type: 'image/webp', quality: .82 }); return [...new Uint8Array(await bl.arrayBuffer())]; };
     return { s: await enc(sh), c: await enc(co), pm, roads };
-  }, { m, tiles, z: +Z, ex: +EX, projSrc: PROJ[ID] });
+  }, { m, tiles, z: +Z, ex: +EX, projSrc: PROJ[ID], dry: !!DRY[ID] });
   const D = path.join(__dirname, 'relevo'); fs.mkdirSync(D, { recursive: true });
   fs.writeFileSync(path.join(D, ID + '-s.webp'), Buffer.from(out.s)); fs.writeFileSync(path.join(D, ID + '-c.webp'), Buffer.from(out.c));
   fs.writeFileSync(path.join(D, ID + '-r.json'), JSON.stringify(out.roads));

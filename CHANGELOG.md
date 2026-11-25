@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## v31 — 25/11/2026 · Europa com divisas reais e relevo de verdade
+
+A reforma visual feita no Japão chega aos dois mapas da Europa: o de 1805 (cenário napoleônico) e o de 1914 (Grande Guerra).
+
+- **Divisas reais.** Os territórios eram recortes retos de países por caixas de latitude e longitude. Agora são somas de divisões administrativas reais (departamentos, regiões, províncias; Natural Earth admin-1 1:10m, domínio público).
+  - A divisão entra no território quando o seu centro cai no país e na caixa da definição antiga. Por isso as divisas internas (França Norte e Sul, as três Alemanhas, as Rússias, Itália, Turquia) seguem limites de verdade, em vez de linhas retas.
+  - Ilhas distantes (Canárias, Açores, Svalbard) ficam de fora pelo quadro do mapa.
+  - A terra fora do jogo (Rússia além dos Urais, Saara, Oriente Médio) também é desenhada com as divisões reais.
+  - Novo script: `maps/real.mjs` (genérico; os próximos mapas entram por configuração).
+- **Simplificação que respeita a topologia.** Os pontos são encaixados numa grade e simplificados por Douglas-Peucker, mas só entre as pontas de cada divisa. Assim os dois vizinhos simplificam a divisa do mesmo jeito e não sobram frestas. Cada mapa ficou com cerca de 160 KB.
+- **Relevo real** (AWS Terrain Tiles), com estradas que contornam serras, nos dois mapas: Alpes, Pireneus, Cárpatos, Cáucaso, Atlas e os planaltos da Anatólia e do Irã.
+- **Cinturão desértico.** Na visão Relevo, a terra baixa ao sul de 34°N puxa para a cor de areia (Saara e Arábia), em vez de verde. A transição é gradual e as montanhas mantêm as próprias cores.
+- As vizinhanças foram recalculadas pelas divisas reais; as travessias por mar foram mantidas.
+- O arquivo do jogo passa de 1,5 MB para 2,4 MB por causa dos desenhos e do relevo.
 ## v30 — 25/11/2026 · Japão sem faixas cinzas nem frestas
 
 Correções que o Flavio apontou no mapa do Japão.
