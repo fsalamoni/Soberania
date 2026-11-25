@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v19 — 25/11/2026 · Revisão geral de usabilidade
+
+Revisão depois do roteiro completo, olhando o jogo no computador e no celular.
+
+- Capitais não podem ser atacadas na primeira rodada. Antes, um povo podia ser eliminado antes de jogar a primeira vez.
+- Reforços: o botão travado agora diz quantas tropas faltam posicionar ("Posicione 3 tropas para seguir").
+- Reforços: bônus negativos aparecem como "-1", não mais "+-1".
+- Sem pesquisa escolhida, o painel traz um botão "Escolher pesquisa" que abre a árvore.
+- Celular: barra do topo mais compacta, abas da tela inicial quebram linha em vez de sair da tela, lentes do mapa não encostam no zoom.
+- Fim de partida: o gráfico de pontos diz o intervalo de rodadas e que as cores são as da tabela.
+- O texto do modo Civilização fala do futuro próximo (era 8), não mais da Era da Informação.
+
 ## v18 — 25/11/2026 · Acabamento (parte 15 do roteiro)
 
 **Parte 15** (UI-09 a UI-12, UI-14, E-35, crises de era, S-23, T-21, K-120 a K-122)

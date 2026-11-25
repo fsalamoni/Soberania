@@ -87,7 +87,7 @@ function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; 
 // probe: a IA avalia ataques antes de declarar campanha
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
 const cqMax = f => ECON.cq + (has(f, 'dou') ? 1 : 0);
-const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j);
+const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round === 1 && real(G.own[j]) && Fa(G.own[j]).capI === j); // capitais protegidas na 1ª rodada
 // conjunto refeito quando a lista de tecnologias muda (push ou troca); a lista fica longa nos cenários modernos
 const has = (f, k) => { const F = Fa(f), t = F && F.tech; if (!t) return false; if (F.tS !== t || F.tN !== t.length) { F.tS = t; F.tN = t.length; F.tSet = new Set(t); } return F.tSet.has(k); };
 // nb: construção ativa (desativada por falta de ouro não conta); built: existe no território
@@ -824,7 +824,7 @@ function civScenario(o) {
   const tribes = pick(Math.round(N * .1)), ruins = pick(Math.max(3, Math.round(N / 12))), nat = pick(Math.max(2, Math.round(N / 20)));
   return {
     id: 'civ', map: 'civ', era: 'Civilização', tech: o.era || 'ant', yr: -3000, y: 'mundo gerado', n: 'Modo Civilização', turns: 30, civ: o,
-    d: `Mapa aleatório (${S.n.toLowerCase()}, ${CIV_TYPE[o.type].toLowerCase()}), semente ${o.seed}. Cada povo começa com uma aldeia; o resto é ermo a explorar e povoar. Funde aldeias, encontre ruínas, enfrente tribos e chegue até a Era da Informação.`,
+    d: `Mapa aleatório (${S.n.toLowerCase()}, ${CIV_TYPE[o.type].toLowerCase()}), semente ${o.seed}. Cada povo começa com uma aldeia; o resto é ermo a explorar e povoar. Funde aldeias, encontre ruínas, enfrente tribos e chegue ao futuro próximo.`,
     neu: 0, f, ev: [], rebels: tribes.map(i => [m.terr[i].n, 2 + Math.floor(R() * 2), 'Tribo ' + civName(R, used)]),
     ruins: ruins.map(i => m.terr[i].n), nat: nat.map(i => m.terr[i].n), _m: m, _geo: W.geo,
   };
@@ -933,7 +933,7 @@ function histChart() {
   const vals = H.flatMap(h => Object.values(h).filter(v => v != null)), lo = Math.min(0, ...vals), hi = Math.max(1, ...vals), W = 560, Hh = 160;
   const x = k => (k / (H.length - 1) * W).toFixed(1), y = v => (Hh - (v - lo) / (hi - lo) * Hh).toFixed(1);
   const lines = G.order.filter(f => Fa(f).entered).map(f => `<polyline fill="none" stroke="${Fa(f).c}" stroke-width="2" points="${H.map((h, k) => h[f] == null ? '' : x(k) + ',' + y(h[f])).filter(Boolean).join(' ')}"/>`).join('');
-  return `<h4>Pontos ao longo da partida</h4><svg class="hist" viewBox="-4 -4 ${W + 8} ${Hh + 8}" role="img" aria-label="Gráfico de pontos por facção"><line x1="0" y1="${y(0)}" x2="${W}" y2="${y(0)}" stroke="#ffffff22"/>${lines}</svg>`;
+  return `<h4>Pontos ao longo da partida</h4><svg class="hist" viewBox="-4 -4 ${W + 8} ${Hh + 8}" role="img" aria-label="Gráfico de pontos por facção"><line x1="0" y1="${y(0)}" x2="${W}" y2="${y(0)}" stroke="#ffffff22"/>${lines}</svg><p class="hint">Da rodada 1 à ${H.length}. As cores são as da tabela.</p>`;
 }
 const KEY_EV = /vence|perto da vitória|eliminad|perde a capital|Congresso Mundial:|O mundo entra|maravilha|funda a fé|surge em|Revolta|crise|Crise|Acidente|Era de ouro|era de ouro|sombria|heroica/;
 const timeline = () => G.log.filter(l => KEY_EV.test(l[1])).slice(0, 12).reverse().map(l => `<li><b>${l[2]}</b> ${esc(l[1])}</li>`).join('');
@@ -2258,7 +2258,7 @@ function renderSide() {
     <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
   $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda (rotas +${routeGold(me)}), −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
-    <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida: abra a árvore de tecnologias.'}</p>`;
+    <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida. <button class="mini" data-a="techs">Escolher pesquisa</button>'}</p>`;
   const forces = `<p class="forces">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '';
   if (G.over) ph = `<p>Partida encerrada.</p><button class="pri" data-a="menu">Novo jogo</button>`;
@@ -2266,10 +2266,10 @@ function renderSide() {
   else if (G.phase === 'ref') {
     const ri = reinfOf(me);
     ph = `<h4>Reforços: <b class="big">${F.reinf}</b> tropas</h4><p class="hint">Clique nos seus territórios para posicionar 1 tropa por clique.</p>
-      <p class="parts">${ri.parts.map(([n, v]) => `${esc(n)}${v ? ' +' + v : ''}`).join(' · ')}</p>
+      <p class="parts">${ri.parts.map(([n, v]) => `${esc(n)}${v ? (v > 0 ? ' +' : ' ') + v : ''}`).join(' · ')}</p>
       <p class="parts">Produção deste turno: +${inc.gold} 💰 · +${inc.sci} 🔬 · +${inc.pre} ⭐</p>
       <div class="row"><button data-a="all" ${F.reinf ? '' : 'disabled'}>Tudo no selecionado</button></div>
-      ${forces}<button class="pri wide" data-a="toAtk" ${F.reinf ? 'disabled' : ''}>Ir para as ações →</button>`;
+      ${forces}<button class="pri wide" data-a="toAtk" ${F.reinf ? 'disabled' : ''}>${F.reinf ? `Posicione ${F.reinf} tropa${F.reinf > 1 ? 's' : ''} para seguir` : 'Ir para as ações →'}</button>`;
   } else if (G.phase === 'atk') {
     const noPA = F.pa < 1, tc = troopCost(me);
     const Bt = (a, k, label, title, dis, on) => `<button class="ab2 ${on ? 'on' : ''}" data-a="${a}" data-k="${k}" title="${esc(title)}" ${dis ? 'disabled' : ''}>${label}</button>`;
