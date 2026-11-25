@@ -92,6 +92,14 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => /Idade Média/.test(document.querySelector('#modal').textContent) && /libera:/.test(document.querySelector('#modal').textContent) && window.__sob.G.F.fa.tech.includes('agri')), 'árvore por era mostra o que cada tecnologia libera');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 2; }), 'pesquisa escolhida sem gastar ação');
   await p.click('#modal [data-m="0"]');
+  await p.click('[data-a=govm]');
+  await p.screenshot({ path: shot('governo') });
+  ok(await p.evaluate(() => /Cívicas/.test(document.querySelector('#modal').textContent) && /atual/.test(document.querySelector('#modal').textContent) && !!window.__sob.G.F.fa.gov), 'painel de governo, cívicas e fé');
+  await p.click('#modal [data-m="0"]');
+  await p.click('[data-a=dipl]');
+  await p.screenshot({ path: shot('diplomacia') });
+  ok(await p.evaluate(() => /relação/.test(document.querySelector('#modal').textContent) && document.querySelectorAll('#modal [data-a=dprop]').length > 0), 'painel diplomático lista facções, relação e propostas');
+  await p.click('#modal [data-m="0"]');
   await p.click('[data-a=act][data-k=camp]');
   await p.screenshot({ path: shot('acoes') });
   await clickT('Rio Grande do Sul'); await clickT('Santa Catarina');

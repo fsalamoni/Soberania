@@ -19,7 +19,7 @@ const fs = require('fs'), path = require('path');
       // parte 3: territórios de facções por nível (aldeia/vila/cidade/metrópole) e zonas de recurso construídas
       const lv = [1, 2, 3, 4].map(n => G.lv.filter((v, i) => v === n && G.F[G.own[i]].real).length).join('/');
       const zn = G.bld.flat().filter(k => S.STRUCT[k].ter || S.STRUCT[k].coast).length;
-      res.push({ sc: sc.id, r: G.round, why: G.why, w: G.winner, st: st + ` | níveis ${lv} zonas ${zn} rotas ${(G.routes || []).length} pactos ${(G.pacts || []).length} alianças ${G.ally ? G.ally.size : 0} tréguas ${G.truce.size}`, log: G.log.slice(0, 40).reverse().map(l => l[2] + ' ' + l[1]) });
+      res.push({ sc: sc.id, r: G.round, why: G.why, w: G.winner, st: st + ` | níveis ${lv} zonas ${zn} rotas ${(G.routes || []).length} pactos ${(G.pacts || []).length} alianças ${G.ally ? G.ally.size : 0} tréguas ${G.truce.size} gov ${G.order.map(f => G.F[f].gov).join(",")} fés ${Object.keys(G.faiths || {}).length}`, log: G.log.slice(0, 40).reverse().map(l => l[2] + ' ' + l[1]) });
     }
     return res;
   }, [process.env.SC || '', process.env.LEN || 'c', +(process.env.REP || 3)]);

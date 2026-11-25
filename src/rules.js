@@ -246,3 +246,64 @@ const ARMY = {
 const OPEN = 'pcde'; // terreno aberto para a cavalaria
 TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
 const TK = Object.fromEntries(TECH.map(t => [t.k, t]));
+
+// ---------- parte 10: governo, cultura e fé (G-01 a G-08, G-20 a G-31, G-40, G-41, G-50 a G-53) ----------
+// árvore cívica (G-40): avança com cultura; cada cívica libera governos e políticas
+const CIVIC = [
+  { k: 'c_tri', e: 0, cost: 0, req: [], n: 'Tradição tribal' },
+  { k: 'c_lei', e: 0, cost: 8, req: ['c_tri'], n: 'Costume legal' },
+  { k: 'c_rit', e: 0, cost: 8, req: ['c_tri'], n: 'Ritos e festas' },
+  { k: 'c_fil', e: 0, cost: 14, req: ['c_lei'], n: 'Filosofia política' },
+  { k: 'c_est', e: 0, cost: 14, req: ['c_lei'], n: 'Estradas do reino' },
+  { k: 'c_teo', e: 1, cost: 22, req: ['c_rit', 'c_fil'], n: 'Ordem sagrada' },
+  { k: 'c_vas', e: 1, cost: 22, req: ['c_lei'], n: 'Vassalagem' },
+  { k: 'c_gui', e: 1, cost: 26, req: ['c_fil', 'c_est'], n: 'Ligas mercantes' },
+  { k: 'c_hum', e: 2, cost: 34, req: ['c_teo', 'c_gui'], n: 'Humanismo' },
+  { k: 'c_abs', e: 2, cost: 34, req: ['c_vas'], n: 'Absolutismo' },
+  { k: 'c_mer', e: 2, cost: 34, req: ['c_gui'], n: 'Mercantilismo' },
+  { k: 'c_ilu', e: 2, cost: 46, req: ['c_hum', 'c_abs'], n: 'Iluminismo' },
+];
+const CK = Object.fromEntries(CIVIC.map(c => [c.k, c]));
+// governos (G-01 a G-08): vagas de política por tipo (mil, eco, civ, rel)
+const GOV = {
+  tri: { n: 'Chefia tribal', c: 'c_tri', s: { mil: 1 }, fx: '+1 tropa nos reforços; −1 ouro por turno.' },
+  mon: { n: 'Monarquia', c: 'c_lei', s: { mil: 1, eco: 1 }, fx: '+2 estabilidade por turno.' },
+  rep: { n: 'República clássica', c: 'c_fil', s: { eco: 2, civ: 1 }, fx: '+1 ação e +1 ouro por mercado; cansaço de guerra dobrado.' },
+  teo: { n: 'Teocracia', c: 'c_teo', s: { mil: 1, civ: 1, rel: 1 }, fx: 'templos rendem +1 saber e mercenários se pagam com cultura; −10% de saber.' },
+  feu: { n: 'Feudalismo', c: 'c_vas', s: { mil: 2, eco: 1 }, fx: 'tropas custam 1 a menos e castelos 25% menos; corrupção +50%.' },
+  rme: { n: 'República mercantil', c: 'c_gui', s: { eco: 3, civ: 1 }, fx: '+1 rota e apressar obras 25% mais barato; reforços −25%.' },
+  abs: { n: 'Monarquia absoluta', c: 'c_abs', s: { mil: 2, eco: 2 }, fx: '+1 ação e maravilhas 25% mais baratas; −2 de felicidade.' },
+  dem: { n: 'Democracia liberal', c: 'c_ilu', s: { eco: 3, civ: 2 }, fx: '+2 ações e +25% de saber e ouro; eleição a cada 20 turnos: com o povo infeliz, perde as políticas.' },
+};
+// cartas de política (G-20 a G-31)
+const POL = {
+  csc: { n: 'Conscrição', t: 'mil', c: 'c_vas', fx: 'tropas 25% mais baratas; −1 felicidade.' },
+  dis: { n: 'Disciplina de ferro', t: 'mil', c: 'c_lei', fx: 'veteranos depois de 2 conquistas em vez de 3.' },
+  est: { n: 'Estradas imperiais', t: 'eco', c: 'c_est', fx: 'estradas pela metade do custo.' },
+  liv: { n: 'Livre comércio', t: 'eco', c: 'c_gui', fx: '+1 ouro por rota com outra facção.' },
+  pro: { n: 'Protecionismo', t: 'eco', c: 'c_mer', fx: '+1 produção por oficina; −5 de relação com todos.' },
+  mec: { n: 'Mecenato', t: 'civ', c: 'c_hum', fx: '+25% de cultura.' },
+  esc: { n: 'Escola para todos', t: 'civ', c: 'c_fil', fx: '+1 saber por biblioteca.' },
+  pao: { n: 'Pão e circo', t: 'civ', c: 'c_rit', fx: '+2 felicidade; −1 ouro por cidade.' },
+  amb: { n: 'Política ambiental', t: 'civ', c: 'c_ilu', fx: '+1 saúde em todos os territórios; −10% de ouro.' },
+  per: { n: 'Peregrinação', t: 'rel', c: 'c_teo', fx: '+1 prestígio por templo.' },
+  ppg: { n: 'Propaganda', t: 'civ', c: 'c_abs', fx: 'cansaço de guerra pesa a metade.' },
+  pol: { n: 'Polícia secreta', t: 'mil', c: 'c_abs', fx: 'agitadores rivais tiram metade da estabilidade.' },
+};
+const SLOTN = { mil: 'militar', eco: 'econômica', civ: 'civil', rel: 'religiosa' };
+// crenças fictícias (G-50 a G-52)
+const PANT = {
+  col: { n: 'Deusa das colheitas', fx: '+1 comida em territórios com rio.' },
+  frj: { n: 'Senhor da forja', fx: '+1 produção em territórios com mineração.' },
+  mar: { n: 'Espírito das marés', fx: '+1 ouro em territórios do litoral.' },
+  lar: { n: 'Guardiões do lar', fx: '+1 estabilidade por turno a cada 4 territórios.' },
+};
+const PRIN = {
+  diz: { n: 'Dízimo', t: 'f', fx: '+1 ouro a cada 3 territórios que seguem a fé.' },
+  se: { n: 'Sé luminosa', t: 'f', fx: '+2 prestígio por turno.' },
+  mis: { n: 'Missões', t: 'f', fx: 'a fé se espalha o dobro.' },
+  hos: { n: 'Hospitais da ordem', t: 's', fx: '+2 saúde nos territórios que seguem a fé.' },
+  dev: { n: 'Devoção', t: 's', fx: '+5 de estabilidade local nos territórios que seguem a fé.' },
+  gue: { n: 'Guerra santa', t: 's', fx: '+1 no maior dado de ataque contra território de outra fé.' },
+};
+const FAITH_N = ['Caminho das Sete Luzes', 'Fé do Sol Velado', 'Ordem da Chama Serena', 'Círculo das Águas', 'Doutrina do Monte Claro', 'Culto da Estrela Fixa', 'Senda dos Ancestrais', 'Igreja do Vento Norte'];

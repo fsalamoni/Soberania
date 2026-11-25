@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## v13 — 25/11/2026 · Governo, cultura e fé (parte 10 do roteiro)
+
+**Parte 10** (G-01 a G-08, G-20 a G-31, G-40, G-41, G-50 a G-53)
+
+- R-05 e G-40: **cultura** por turno (templos, monumentos, teatros, anfiteatros, catedrais, mosteiros, maravilhas e cidades-estado culturais) e **árvore cívica** de 12 cívicas em três eras, que liberam governos e políticas. Adotar uma cívica não gasta ação.
+- G-01 a G-08: **8 governos** com vagas de política e bônus próprios: Chefia tribal, Monarquia, República clássica, Teocracia, Feudalismo, República mercantil, Monarquia absoluta e Democracia liberal (com eleição a cada 20 turnos). Trocar de governo custa 1 ação e 2 turnos de anarquia, sem saber nem cultura. Cada facção começa com o melhor governo da sua era.
+- G-20 a G-31: **12 políticas** em vagas militares, econômicas, civis e religiosas: conscrição, disciplina de ferro, estradas imperiais, livre comércio, protecionismo, mecenato, escola para todos, pão e circo, política ambiental, peregrinação, propaganda e polícia secreta. Trocar é grátis no turno de uma cívica nova; fora dele, cada política nova custa 1 ação.
+- G-41: **influência cultural**. Facção com muito mais cultura que o vizinho conquista a lealdade de territórios dele; território leal e instável muda de lado sem guerra.
+- G-50: **panteão** (Misticismo e 10 de cultura): colheitas, forja, marés ou lar.
+- G-51 e G-52: **fundar uma fé** fictícia (panteão, templo, mosteiro e 30 de cultura) com um princípio de fundador (dízimo, sé luminosa, missões) e um de seguidor (hospitais da ordem, devoção, guerra santa).
+- G-53: a fé se espalha pela vizinhança e pelas rotas; templos de outra fé resistem. Mesma fé dá +10 de relação.
+- Painel **Governo e fé** com governo, políticas, cívicas e crenças. A IA adota cívicas, troca de governo, preenche políticas, escolhe panteão e funda fés.
+- Fora desta parte: G-09 a G-11 (governos industriais, parte 12), G-42, G-43 (obras e turismo, parte 13), G-54 (cisma, parte 11).
+
 ## v12 — 25/11/2026 · Diplomacia (parte 9 do roteiro)
 
 **Parte 9** (DP-01 a DP-08, DP-20 a DP-25, DP-30 a DP-32, IA-06, IA-07, UI-08)
