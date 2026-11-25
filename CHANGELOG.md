@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## v14 — 25/11/2026 · Personagens e eventos (parte 11 do roteiro)
+
+**Parte 11** (F-01 a F-03, F-10 a F-16, F-30 a F-38, E-10 a E-13, E-20 a E-34)
+
+- F-01 e F-02: cada facção tem um **líder** com nome e o traço da facção. Nas monarquias, a sucessão vem a cada 25 a 40 turnos; nas repúblicas, há eleição a cada 20. O novo líder sorteia um traço. E-28: sucessão com estabilidade abaixo de 30 abre uma crise, e um quarto dos territórios apoia um pretendente rebelde.
+- F-03: **governadores** (intendente: obras 25% mais rápidas; prefeito: +15 de estabilidade local; tesoureiro: +2 ouro). Você tem 1, mais 1 a cada 4 cívicas, e os nomeia no painel do território.
+- F-10 a F-16: **grandes figuras**. Cientista, engenheiro, mercador, artista, general, almirante e profeta acumulam pontos com as construções certas (o general, com conquistas). Quem chega primeiro ao custo leva a figura, e o custo sobe 50% para todos. As figuras ficam no painel **Personagens** para usar quando quiser.
+- F-30 a F-38: **espionagem** (exige Escrita; 1 ação e 3 ouro): ver obras e tropas, roubar tecnologia, sabotar obra, sabotar rota, fomentar revolta e propaganda (exige Imprensa). O dado precisa passar do risco mais a defesa do alvo (polícia secreta, tribunal, prefeito). O espião pego custa −20 de relação e dá motivo de guerra ao alvo.
+- E-10 a E-13: **pontos de era** por marcos (maravilha, a primeira do mundo vale mais; fé fundada; capital tomada; rota marítima). A cada quarto da partida vem uma era de ouro (+1 ação e +5 de estabilidade local), sombria (−10 de estabilidade) ou heroica (de sombria direto a muitos pontos: +2 ações).
+- E-20 a E-34: **eventos**. Quarentena na epidemia, peste continental na Idade Média, seca, enchente, terremoto, corrida do ouro, invenção inesperada, mecenas, crise financeira (eras industriais em diante), horda nômade na estepe e no deserto, e cisma da fé com reforma. A revolta camponesa e a migração em massa trazem escolhas para o jogador.
+- A IA nomeia governadores, usa as figuras e rouba tecnologia de quem está à frente.
+- Fora desta parte: E-25 (clima, parte 12). G-54 (cisma) entrou aqui.
+
 ## v13 — 25/11/2026 · Governo, cultura e fé (parte 10 do roteiro)
 
 **Parte 10** (G-01 a G-08, G-20 a G-31, G-40, G-41, G-50 a G-53)
