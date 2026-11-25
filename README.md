@@ -96,7 +96,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 4 | Catálogo de construções, eras 1 a 3, e maravilhas do mundo (feita na v7) |
 | 5 | Estradas, portos e rede de bens (feita na v8) |
 | 6 | Comércio e rotas (feita na v9) |
-| 7 | Tecnologias e tropas por era |
+| 7 | Tecnologias e tropas por era (feita na v10) |
 | 8 | População e sociedade |
 | 9 | Diplomacia |
 | 10 | Governo, cultura e fé |

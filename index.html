@@ -390,6 +390,83 @@ const TECH = [
   { k: 'arq', t: 3, cost: 11, req: ['eng', 'ret'], fx: 'Permite construir a sua Maravilha (+5 de legado).', n: { ant: 'Arquitetura', med: 'Arte Gótica', pol: 'Iluminismo', mod: 'Ciência de Ponta', fan: 'Alta Magia' } },
   { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Declarar campanha não gasta ponto de ação, e você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
 ];
+// ---------- parte 7: árvore de tecnologias por era (K-01 a K-59) ----------
+// e = era da tecnologia (0 Antiguidade, 1 Idade Média, 2 Idade Moderna). No início, cada facção já conhece as
+// tecnologias das eras anteriores à do cenário (sem as doutrinas) e as cinco básicas da Antiguidade.
+// As 10 tecnologias da v4 continuam como doutrinas e marcos da árvore (Moeda = K-13, Engenharia = K-20, Bússola = K-38).
+const T7 = (k, e, cost, req, n, fx) => ({ k, e, t: e + 1, cost, req, n, fx });
+TECH.push(
+  T7('agri', 0, 3, [], 'Agricultura', 'K-01: zona agrícola e fazenda.'),
+  T7('dom', 0, 3, [], 'Domesticação', 'K-02: zona pecuária e estância; revela os cavalos.'),
+  T7('pesc', 0, 3, [], 'Pesca e barcos', 'K-03: zona pesqueira e pesqueiro.'),
+  T7('mnr', 0, 3, [], 'Mineração', 'K-04: zona de mineração e mina; revela cobre e estanho.'),
+  T7('mis', 0, 3, [], 'Misticismo', 'K-05: zona religiosa e templo.'),
+  T7('cer', 0, 4, ['agri'], 'Cerâmica e ofícios', 'K-06: oficina e celeiro.'),
+  T7('bro', 0, 4, ['mnr'], 'Ferramentas de bronze', 'K-07: fundição e serraria; lanceiros (com bronze ou ferro na rede).'),
+  T7('esc', 0, 4, ['cer'], 'Escrita', 'K-08: zona científica (biblioteca).'),
+  T7('alv', 0, 4, ['mnr'], 'Alvenaria', 'K-09: pedreira, muralha, monumento e Grandes Pirâmides.'),
+  T7('rod', 0, 4, ['dom'], 'Roda', 'K-10: estrada.'),
+  T7('irr', 0, 4, ['agri'], 'Irrigação', 'K-11: canal de irrigação, arrozal e Jardins Suspensos.'),
+  T7('cos', 0, 4, ['pesc'], 'Navegação costeira', 'K-12: porto e Farol Monumental.'),
+  T7('lei', 0, 5, ['esc'], 'Código de leis', 'K-14: tribunal.'),
+  T7('ferr', 0, 5, ['bro'], 'Fundição do ferro', 'K-15: ferraria; revela o ferro; legiões (com ferro na rede).'),
+  T7('equ', 0, 5, ['rod'], 'Equitação', 'K-16: haras; cavalaria leve (com cavalos na rede).'),
+  T7('fil', 0, 5, ['lei', 'mis'], 'Filosofia', 'K-17: academia.'),
+  T7('mat', 0, 5, ['com'], 'Matemática', 'K-18: armas de cerco: no ataque, construções de defesa valem 1 a menos.'),
+  T7('civ', 0, 6, ['alv', 'mat'], 'Construção civil', 'K-19: anfiteatro, aqueduto e Grande Arena.'),
+  T7('ast', 0, 6, ['mat', 'mis'], 'Astronomia', 'K-21: observatório.'),
+  T7('dis', 0, 6, ['ferr'], 'Disciplina militar', 'K-22: quartel.'),
+  T7('feu', 1, 7, ['lei', 'dis'], 'Feudalismo', 'K-30: base das ordens de cavalaria e das levas.'),
+  T7('teo', 1, 7, ['fil'], 'Teologia', 'K-31: mosteiro e grande templo.'),
+  T7('cst', 1, 8, ['eng', 'feu'], 'Castelos', 'K-32: castelo e Castelo do Senhor da Guerra.'),
+  T7('mec', 1, 8, ['eng', 'mat'], 'Mecânica', 'K-33: moinho e engenho; besteiros (+1 na defesa com muralha).'),
+  T7('cpe', 1, 8, ['equ', 'feu'], 'Estribo e cavalaria pesada', 'K-34: cavaleiros (com cavalos e ferro na rede).'),
+  T7('bnc', 1, 8, ['com', 'teo'], 'Bancos', 'K-35: banco.'),
+  T7('edu', 1, 8, ['teo', 'fil'], 'Educação', 'K-36: universidade.'),
+  T7('got', 1, 9, ['cst', 'teo'], 'Arquitetura gótica', 'K-37: Catedral Gótica.'),
+  T7('gui', 1, 9, ['bnc', 'mec'], 'Guildas', 'K-39: +1 produção em cada oficina.'),
+  T7('pvr', 1, 9, ['mec', 'teo'], 'Pólvora', 'K-40: polvorinho.'),
+  T7('imp', 2, 10, ['edu', 'gui'], 'Imprensa', 'K-50: +1 saber por universidade.'),
+  T7('oce', 2, 10, ['nav', 'ast'], 'Navegação oceânica', 'K-51: companhia de comércio; caravelas (+1 travessia).'),
+  T7('msq', 2, 10, ['pvr'], 'Mosquete', 'K-52: mosqueteiros (com salitre na rede): +1 no ataque e na defesa.'),
+  T7('art', 2, 11, ['pvr', 'mat'], 'Artilharia', 'K-53: antes de cada ataque, 1 dado de canhão mata 1 defensor com 5 ou 6 (com salitre na rede).'),
+  T7('fmo', 2, 11, ['art'], 'Fortificação moderna', 'K-54: fortaleza abaluartada.'),
+  T7('cie', 2, 12, ['imp', 'ast'], 'Método científico', 'K-55: +10% de saber.'),
+  T7('eco', 2, 11, ['bnc', 'imp'], 'Economia', 'K-56: bolsa de valores.'),
+  T7('dra', 2, 10, ['imp'], 'Drama e artes', 'K-57: teatro.'),
+  T7('estr', 2, 12, ['msq', 'edu'], 'Estratégia', 'K-59: academia militar.'),
+);
+// marcos antigos dentro da árvore nova, e as doutrinas com novos pré-requisitos
+Object.assign(TECH.find(t => t.k === 'com'), { e: 0, cost: 5, req: ['esc', 'bro'], fx: 'K-13: zona comercial (mercado) e caravançará. Cada mercado rende +1 ouro, e o câmbio troca 3 por 2.' });
+Object.assign(TECH.find(t => t.k === 'eng'), { e: 0, cost: 6, req: ['civ', 'rod'], fx: 'K-20: estrada pavimentada; obras custam 25% menos produção.' });
+Object.assign(TECH.find(t => t.k === 'nav'), { e: 1, cost: 8, req: ['cos', 'ast'], fx: 'K-38: armazém alfandegário; +1 travessia, e todo ataque pelo mar usa 3 dados.' });
+const DOCT = { adm: [0, ['lei']], tat: [0, ['dis']], ret: [0, ['fil']], log: [0, ['eng']], arq: [0, ['civ', 'fil']], con: [1, ['feu']], dou: [1, ['con', 'log']] };
+for (const [k, [e, req]] of Object.entries(DOCT)) Object.assign(TECH.find(t => t.k === k), { e, req, doc: 1 });
+TECH.forEach(t => { t.t = t.e + 1; });
+// o que cada tecnologia libera no catálogo (substitui os requisitos de tecnologia da parte 4)
+const UNLOCK = {
+  agri: ['agr', 'faz'], dom: ['pec', 'etc'], pesc: ['pes', 'psq'], mnr: ['min', 'mna', 'gar'], mis: ['tem'],
+  cer: ['ofi', 'cel', 'chq', 'slg'], bro: ['fun', 'ser'], esc: ['aca'], alv: ['pdr', 'for', 'mon', 'pir'], rod: ['est'], irr: ['irr', 'arz', 'jar'],
+  cos: ['por', 'frl'], com: ['mer', 'car', 'pla'], lei: ['tri'], ferr: ['frr'], equ: ['har'], fil: ['acd', 'gbi'],
+  civ: ['anf', 'aqu', 'col'], eng: ['pav', 'san'], ast: ['obs'], dis: ['qua', 'ars'], teo: ['mos', 'cat', 'hos'], cst: ['cas', 'csg'],
+  mec: ['moi', 'egh', 'rce'], bnc: ['ban'], edu: ['uni'], got: ['cgo'], nav: ['arm', 'stl'], pvr: ['pov'], oce: ['cia'],
+  fmo: ['fab'], eco: ['bol'], dra: ['tea'], estr: ['acm']
+};
+for (const [t, ks] of Object.entries(UNLOCK)) ks.forEach(k => { if (STRUCT[k]) STRUCT[k].tech = t; });
+STRUCT.obi.tech = 'cie';
+// jazidas que só aparecem com a tecnologia (K-02, K-04, K-15)
+const REVEAL = { cav: 'dom', cob: 'mnr', est: 'mnr', fer: 'ferr' };
+// tropas por era (A-01 a A-07): a melhor tropa disponível da facção dá o bônus; exige tecnologia e bem na rede
+const ARMY = {
+  lan: { n: 'Lanceiros', tech: 'bro', good: ['cob+est', 'fer'], fx: 'defesa vence empates contra cavalaria' },
+  leg: { n: 'Legiões', tech: 'ferr', good: ['fer'], fx: '+1 no maior dado de ataque' },
+  cav: { n: 'Cavalaria leve', tech: 'equ', good: ['cav'], fx: '+1 no maior dado de ataque em terreno aberto' },
+  kni: { n: 'Cavaleiros', tech: 'cpe', good: ['cav+fer'], fx: '+1 no maior dado de ataque em terreno aberto e vence empates nele' },
+  bes: { n: 'Besteiros', tech: 'mec', good: [], fx: '+1 no maior dado de defesa em território com muralha' },
+  msq: { n: 'Mosqueteiros', tech: 'msq', good: ['sli'], fx: '+1 no maior dado de ataque e de defesa' },
+};
+const OPEN = 'pcde'; // terreno aberto para a cavalaria
+TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
 const TK = Object.fromEntries(TECH.map(t => [t.k, t]));
 // v5, parte 3 (M-01 a M-10, M-20, R-20 a R-62): terreno, rio e jazidas de cada território.
 // Formato: 'Território': 'T[r] jazida,jazida'. T = terreno (TERR), r = rio. Geografia real e aproximada.
@@ -947,7 +1024,7 @@ function newGame(sc, player, diff, len) {
   const m = MAPS[sc.map], ix = idxOf(m), N = m.terr.length;
   const need = n => { if (!(n in ix)) throw Error(sc.id + ': território desconhecido ' + n); return ix[n]; };
   const L = LEN[len] || LEN.c;
-  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu || 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), sel: null, tgt: null, over: false, fast: false, auto: false };
+  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu || 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], win: Array(N).fill(0), dug: Array(N).fill(0), acted: new Set(), F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), sel: null, tgt: null, over: false, fast: false, auto: false };
   g.A = Array.from({ length: N }, () => []);
   for (const [a, b] of m.adj) { g.A[a].push(b); g.A[b].push(a); }
   g.seaK = new Set(m.sea.map(([a, b]) => a * 1e4 + b).concat(m.sea.map(([a, b]) => b * 1e4 + a)));
@@ -964,6 +1041,8 @@ function newGame(sc, player, diff, len) {
   for (const d of sc.f) {
     const F = { ...d, real: true, stab: d.st, cards: [], alive: true, entered: !d.late, capI: need(d.cap), passive: !!d.passive, reinf: 0, conq: false, ofs: false, airX: 0, planes: 0, navLeft: 0, nav: d.nav || 1, gold: 3, sci: 0, pre: 2, tech: [], pa: 0, camp: false, recOn: false, tradeOn: false, bldOn: false, res: null, ww: 0, hold: 0, recQ: {}, upk: 0, nB: 0, cq: 0 };
     F.obj = objOf(d, m, g.relics);
+    // parte 7: começa sabendo as tecnologias das eras anteriores (sem doutrinas) e as básicas da Antiguidade
+    F.tech = TECH.filter(t => !t.doc && (t.e < Math.min(3, elv) || (t.e === 0 && !t.req.length))).map(t => t.k); F.tech0 = F.tech.length;
     if (F.obj.hold) F.obj.hold.forEach(need);
     expand(m, d.t).forEach(n => { const i = need(n); g.own[i] = d.id; g.tr[i] = d.tr || 3; });
     for (const [n, v] of Object.entries(d.trT || {})) g.tr[need(n)] = v;
@@ -994,14 +1073,14 @@ function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; 
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
 const cqMax = f => ECON.cq + (has(f, 'dou') ? 1 : 0);
 const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j);
-const has = (f, k) => Fa(f).tech.includes(k);
+const has = (f, k) => (Fa(f).tech || []).includes(k);
 // nb: construção ativa (desativada por falta de ouro não conta); built: existe no território
 const built = (i, k) => G.bld[i].includes(k);
 const nb = (i, k) => built(i, k) && !G.dis.has(i + ':' + k);
 const countB = (f, k) => owned(f).filter(i => nb(i, k)).length;
 const coastal = i => G.A[i].some(j => isSea(i, j));
 // zonas de recurso são economia, não legado
-const legacy = f => 2 * Fa(f).tech.length + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (STRUCT[k].lg || 0), 0), 0);
+const legacy = f => 2 * (Fa(f).tech.length - (Fa(f).tech0 || 0)) + owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (STRUCT[k].lg || 0), 0), 0);
 const minWin = () => Math.ceil(G.rounds / 3); // D-04: objetivo e legado só contam a partir daqui
 const evRound = e => 1 + Math.round((e.t - 1) * G.rounds * .5 / G.sc.turns); // eventos espalhados pela 1ª metade da partida
 const occupied = i => G.occ[i] > 0;
@@ -1010,7 +1089,7 @@ const sName = k => { const n = STRUCT[k].n; return typeof n === 'string' ? n : n
 // parte 4: efeitos somados das construções ativas
 const hasW = (f, k) => real(f) && owned(f).some(i => nb(i, k)); // maravilha do mundo em posse de f
 const sumB = (f, p) => owned(f).reduce((s, i) => s + G.bld[i].reduce((t, k) => t + (nb(i, k) && STRUCT[k][p] || 0), 0), 0);
-const tName = k => TK[k].n[NG[G.era.cards]];
+const tName = k => { const n = TK[k].n; return typeof n === 'string' ? n : n[NG[G.era.cards]]; };
 const capOwner = i => G.order.find(f => Fa(f).capI === i && Fa(f).entered);
 const capsHeld = f => G.order.filter(o => Fa(o).entered && G.own[Fa(o).capI] === f).length;
 const tname = i => G.m.terr[i].n;
@@ -1033,7 +1112,7 @@ function reinfOf(f) {
   return { r, parts };
 }
 const planesOf = f => (G.air ? (G.air.per ?? 1) * capsHeld(f) + countB(f, 'aer') : 0) + Fa(f).airX;
-const navOf = f => { const F = Fa(f); return F.nav + (F.ab === 'almirante' ? 1 : 0) + countB(f, 'por') + (has(f, 'nav') ? 1 : 0) + sumB(f, 'nav'); };
+const navOf = f => { const F = Fa(f); return F.nav + (F.ab === 'almirante' ? 1 : 0) + countB(f, 'por') + (has(f, 'nav') ? 1 : 0) + (real(f) && has(f, 'oce') ? 1 : 0) + sumB(f, 'nav'); };
 function objDone(f) {
   const F = Fa(f), o = F.obj;
   if (G.own[F.capI] !== f) return false;
@@ -1078,7 +1157,8 @@ function zoneOk(k, i) {
   return S.ter.includes(G.ter[i]) || (S.rio && G.riv[i]) || (S.dz && G.dep[i].some(d => DEP[d].z === S.z));
 }
 // jazidas exploradas: a zona da jazida está ativa no território e ele não está ocupado
-const worked = i => G.dep[i].filter(d => G.bld[i].some(k => STRUCT[k].z === DEP[d].z && nb(i, k)));
+const known = (i, d) => !REVEAL[d] || !real(G.own[i]) || has(G.own[i], REVEAL[d]); // K-02, K-04, K-15
+const worked = i => G.dep[i].filter(d => known(i, d) && G.bld[i].some(k => STRUCT[k].z === DEP[d].z && nb(i, k)));
 // ---------- parte 5: rede de bens (L-01 a L-03, L-05, C-120 a C-122, C-126) ----------
 // rede = capital + territórios seus ligados por estrada (os dois lados com estrada) ou entre portos;
 // a trilha (C-120) liga também os vizinhos por terra de quem está na rede.
@@ -1106,6 +1186,8 @@ function yieldOf(i) {
     const S = STRUCT[k]; if (!S.y || !nb(i, k)) continue;
     for (const [r, v] of Object.entries(S.y)) y[r] += v;
     if (k === 'mer' && real(f) && has(f, 'com')) y.gold++;
+    if (k === 'ofi' && real(f) && has(f, 'gui')) y.prod++; // K-39
+    if (k === 'uni' && real(f) && has(f, 'imp')) y.sci++; // K-50
     if (k === 'agr' && G.riv[i]) y.food++;
     if (S.z) { const r = Object.keys(S.y)[0]; y[r] += Math.min(3, G.A[i].filter(j => G.own[j] === f && nb(j, k)).length); } // polo
   }
@@ -1133,7 +1215,7 @@ function income(f) {
   const y = T.reduce((s, i) => { const v = yieldOf(i); for (const r in s) s[r] += v[r]; return s; }, { gold: 0, sci: 0, pre: 0, stab: 0 });
   return {
     gold: Math.max(1, y.gold + diff + routeGold(f)),
-    sci: Math.round((1 + y.sci + routeSci(f)) * (hasW(f, 'obi') ? 1.25 : 1)), stab: y.stab,
+    sci: Math.round((1 + y.sci + routeSci(f)) * (hasW(f, 'obi') ? 1.25 : 1) * (has(f, 'cie') ? 1.1 : 1)), stab: y.stab,
     pre: y.pre + capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
   };
 }
@@ -1243,6 +1325,12 @@ function act(f, a, x, y) {
   if (a === 'res') { // escolher a pesquisa não gasta ação; o saber de cada turno vai para ela (P-09)
     const t = TK[x]; if (!t || !techOk(f, t)) return 'Tecnologia indisponível.';
     F.res = x; return '';
+  }
+  if (a === 'merc') { // A-47: mercenários chegam na hora à capital, pelo dobro do preço, sem gastar ação (1 por turno)
+    if (F.merc === G.round) return 'Já contratou mercenários neste turno.';
+    if (G.own[F.capI] !== f) return 'Sem capital para receber mercenários.';
+    if (F.gold < 2 * troopCost(f)) return 'Ouro insuficiente.';
+    F.gold -= 2 * troopCost(f); G.tr[F.capI]++; F.merc = G.round; log(f, `${fname(f)} contrata mercenários em ${tname(F.capI)}.`); return '';
   }
   if (a === 'bld' || a === 'unq' || a === 'rush') { // dentro das obras abertas: sem custo de ação (P-03)
     if (!F.bldOn) return 'Abra as obras primeiro (1 ação por turno).';
@@ -1402,7 +1490,10 @@ function playCard(f, h, target, t2) {
 const terrDef = j => { const t = TERR[G.ter[j]].def; return t === 'h' || t === 'm' || (t === 'f' && G.tr[j] >= 3) ? 1 : 0; };
 // parte 4: construções com def (muralha, castelo, paliçada…) e a Grande Muralha (só contra ataque por terra)
 const bldDef = j => G.bld[j].reduce((s, k) => s + (nb(j, k) && STRUCT[k].def && G.tr[j] >= (STRUCT[k].defMin || 0) ? STRUCT[k].def : 0), 0);
-function defBonus(j, i) { const d = G.own[j]; return terrDef(j) + bldDef(j) + (hasW(d, 'gmu') && !(i != null && isSea(i, j)) ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
+// parte 7: tropas por era (A-01 a A-07). A melhor tropa disponível vale para todo o exército da facção.
+const armyOf = f => real(f) ? Object.keys(ARMY).filter(k => has(f, ARMY[k].tech) && (!ARMY[k].good.length || goodOk(f, ARMY[k].good))) : [];
+const armyDef = j => { const d = G.own[j], a = armyOf(d); return (a.includes('msq') || (a.includes('bes') && (nb(j, 'for') || nb(j, 'cas'))) ? 1 : 0) + (G.dug[j] ? 1 : 0); }; // A-06, A-07, A-45
+function defBonus(j, i) { const d = G.own[j]; return terrDef(j) + Math.max(0, bldDef(j) - (i != null && has(G.own[i], 'mat') ? 1 : 0)) + armyDef(j) + (hasW(d, 'gmu') && !(i != null && isSea(i, j)) ? 1 : 0) + (G.fort[j] > 0 || (capOwner(j) && capOwner(j) === d) || (Fa(d).ab === 'tenaz' && G.tr[j] >= 5) ? 1 : 0); }
 // D-07: distância, por território próprio, até a base de suprimento mais próxima (capital, quartel ou porto)
 function supplyDist(f) {
   const dist = Array(G.N).fill(99), q = owned(f).filter(i => i === Fa(f).capI || nb(i, 'qua') || nb(i, 'por'));
@@ -1434,10 +1525,13 @@ function diceFor(i, j) {
 function roll(i, j) {
   const a = G.own[i], A = Fa(a), [ad, dd] = diceFor(i, j);
   const R = Array.from({ length: ad }, d6).sort((x, y) => y - x), D = Array.from({ length: dd }, d6).sort((x, y) => y - x);
-  const up = (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0);
+  const aw = armyOf(a), dw = armyOf(G.own[j]), op = OPEN.includes(G.ter[j]), hc = op && (aw.includes('cav') || aw.includes('kni'));
+  if (has(a, 'art') && goodOk(a, ['sli']) && G.tr[j] > 1 && d6() >= 5) G.tr[j]--; // K-53: canhão antes do combate
+  G.dug[i] = 0; G.acted.add(i); // A-45: quem ataca perde o entrincheiramento
+  const up = (aw.includes('leg') || aw.includes('msq') ? 1 : 0) + (hc ? 1 : 0) + ((G.win[i] || 0) >= 3 ? 1 : 0) + (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0);
   if (up) R[0] = Math.min(6, R[0] + up);
   D[0] = Math.min(6, D[0] + defBonus(j, i));
-  const ties = TERR[G.ter[j]].def !== 'm' && !G.bld[j].some(k => STRUCT[k].tie && nb(j, k)) && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))); // M-06: em montanha o atacante sempre perde empates
+  const ties = !(hc && dw.includes('lan')) && ((op && aw.includes('kni')) || (TERR[G.ter[j]].def !== 'm' && !G.bld[j].some(k => STRUCT[k].tie && nb(j, k)) && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))))); // A-02, A-04 // M-06: em montanha o atacante sempre perde empates
   let al = 0, dl = 0; const res = [];
   for (let k = 0; k < Math.min(ad, dd); k++) { const w = R[k] > D[k] || (R[k] === D[k] && ties); w ? dl++ : al++; res.push(w); }
   G.tr[i] -= al; G.tr[j] -= dl;
@@ -1452,6 +1546,7 @@ function conquer(i, j, n) {
   const a = G.own[i], d = G.own[j];
   G.own[j] = a; G.tr[j] = n; G.tr[i] -= n; G.fort[j] = 0; delete G.rl[j];
   G.lv[j] = Math.max(1, G.lv[j] - 1); G.food[j] = 0; // saque e fuga: o território perde um nível
+  G.win[j] = (G.win[i] || 0) + 1; G.dug[j] = 0; // A-43: veteranos
   G.arr[j] = n; // tropas que entraram por conquista já se moveram neste turno
   // P-08: o conquistador fica com metade do progresso das obras; maravilha em andamento se perde
   G.q[j] = real(a) ? G.q[j].filter(x => !STRUCT[x.k].wonder).map(x => ({ ...x, p: Math.floor(x.p / 2) })).slice(0, qMax(a)) : [];
@@ -1490,7 +1585,7 @@ function beginTurn(f) {
   // Grande Biblioteca (C-202): tecnologias que duas outras facções já têm
   if (hasW(f, 'gbi')) TECH.forEach(t => { if (!has(f, t.k) && G.order.filter(o => o !== f && Fa(o).alive && has(o, t.k)).length >= 2) { F.tech.push(t.k); log(f, `A Grande Biblioteca dá ${tName(t.k)} a ${fname(f)}.`); } });
   owned(f).forEach(i => { if (G.fort[i] > 0) G.fort[i]--; if (G.occ[i] > 0) G.occ[i]--; });
-  F.conq = false; F.cq = 0; F.ofs = false; G.phase = 'ref'; G.sel = G.tgt = null; G.card = null; G.mode = null; G.seaUsed = new Set(); G.mv = []; G.arr = [];
+  F.conq = false; F.cq = 0; F.ofs = false; G.phase = 'ref'; G.sel = G.tgt = null; G.card = null; G.mode = null; G.seaUsed = new Set(); G.mv = []; G.arr = []; G.acted = new Set();
   for (const [i, n] of Object.entries(F.recQ)) if (G.own[i] === f) G.tr[i] += n;
   F.recQ = {};
   checkRoutes();
@@ -1517,6 +1612,7 @@ function beginTurn(f) {
   else if (legacy(f) >= legWin() && G.own[F.capI] === f) endGame(f, 'leg');
 }
 function finishTurn(f) {
+  for (const i of owned(f)) G.dug[i] = G.tr[i] >= 2 && !G.acted.has(i) && !G.arr[i] ? 1 : 0; // A-45: quem fica parado se entrincheira
   const F = Fa(f);
   F.ww = F.camp ? Math.min(30, F.ww + 1) : Math.max(0, F.ww - 2);
   if ((F.conq || F.ab === 'espiao') && F.cards.length < 5) F.cards.push(drawCard());
@@ -1621,15 +1717,15 @@ function endGame(w, why) {
 // Salvamento automático no início de cada turno seu; 3 espaços manuais e arquivo exportável guardam esse mesmo ponto (D-11).
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
-  const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ }; });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ, tech0: X.tech0 }; });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, win: G.win, dug: G.dug, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function restore(s) {
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, win: s.win || G.win, dug: s.dug || G.dug, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -1783,12 +1879,16 @@ function aiWorks(f) {
 }
 function aiResearch(f) {
   const F = Fa(f); if (F.res) return;
-  const T = owned(f), t = TECH.filter(t => techOk(f, t)).sort((a, b) => ((TECH_W[b.k] || 3) - (b.k === 'nav' && !T.some(coastal) ? 2 : 0)) / techCost(b) - ((TECH_W[a.k] || 3) - (a.k === 'nav' && !T.some(coastal) ? 2 : 0)) / techCost(a))[0];
+  // valor = peso das doutrinas antigas, ou 3 + 1,2 por obra liberada, + tropa liberada; menos se for naval sem costa
+  const T = owned(f), cst = T.some(coastal);
+  const val = t => ((TECH_W[t.k] || 3 + 1.2 * Object.values(STRUCT).filter(S => S.tech === t.k).length) + (Object.values(ARMY).some(a => a.tech === t.k) ? 2 : 0) - (!cst && ['nav', 'cos', 'oce'].includes(t.k) ? 2 : 0)) / techCost(t, f);
+  const t = TECH.filter(t => techOk(f, t)).sort((a, b) => val(b) - val(a))[0];
   if (t) act(f, 'res', t.k);
 }
 function aiGovern(f) {
   const F = Fa(f);
   aiResearch(f);
+  if (G.own[F.capI] === f && threat(f, F.capI) > G.tr[F.capI]) act(f, 'merc'); // A-47
   if (has(f, 'dou') && !F.passive && bestAttack(f, 1, true)) act(f, 'camp');
   for (let n = 0; n < 8 && F.pa > 0; n++) {
     const best = aiOptions(f).sort((a, b) => b[0] - a[0])[0];
@@ -2069,9 +2169,10 @@ function techModal() {
   const row = t => {
     const own = has(me, t.k), ok = techOk(me, t), on = F.res === t.k, can = ok && !on && G.turnF === me, c = techCost(t, me);
     const req = (t.req || []).map(tName).join(' e '), left = Math.max(0, c - F.sci), eta = left ? Math.ceil(left / si) : 0;
-    return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">nível ${t.t} · ${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
+    const lib = [...Object.keys(STRUCT).filter(k => STRUCT[k].tech === t.k).map(sName), ...Object.values(ARMY).filter(a => a.tech === t.k).map(a => a.n)];
+    return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${lib.length ? `<p class="hint">libera: ${esc(lib.join(', '))}</p>` : ''}${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
   };
-  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Cada tecnologia vale 2 de legado.</p><div class="techs">${TECH.map(row).join('')}</div>`, [['Fechar']]);
+  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Cada tecnologia nova vale 2 de legado. Tropas: ${esc(armyOf(me).map(k => ARMY[k].n).join(', ') || 'só milícia')}.</p>${[['Antiguidade', t => !t.doc && t.e === 0], ['Idade Média', t => !t.doc && t.e === 1], ['Idade Moderna', t => !t.doc && t.e === 2], ['Doutrinas', t => t.doc]].map(([n, fl]) => `<h3>${n}</h3><div class="techs">${TECH.filter(fl).map(row).join('')}</div>`).join('')}`, [['Fechar']]);
 }
 const pbar = (v, max) => `<span class="bar"><i style="width:${Math.min(100, 100 * v / max)}%;background:var(--brass)"></i></span>`;
 // fila de um território (UI-02 e UI-06)
@@ -2237,6 +2338,7 @@ function renderSide() {
       <div class="grp"><b>⚔ Militar</b><div class="row">
         ${Bt('act', 'camp', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'Libera ataques e aviação neste turno.' + (has(me, 'dou') ? ' Grátis pela sua doutrina.' : ''), F.camp || (noPA && !has(me, 'dou')), F.camp)}
         ${Bt('act', 'rec', F.recOn ? `Comprar tropas <small>${tc}💰</small>` : `Recrutar <small>${tc}💰/tropa</small>`, `Abre o recrutamento: compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, !F.recOn && (noPA || F.gold < tc), G.mode === 'rec')}
+<button class="ab2" data-a="merc" title="1 tropa já na capital, sem gastar ação (1 vez por turno)." ${F.merc === G.round || F.gold < 2 * tc || G.turnF !== me ? 'disabled' : ''}>Mercenários <small>${2 * tc}💰</small></button>
         ${F.camp && G.air && F.planes ? Bt('air', '', `✈ ${esc(G.air.n)} (${F.planes})`, 'Bombardeie um alvo ao alcance. Não gasta ação.', false, G.mode === 'air') : ''}</div></div>
       <div class="grp"><b>🏛 Obras</b> <span class="hint">fila de até ${qMax(me)} por território; a produção ⚒ de cada território avança a obra do topo. Uma de cada tipo por território. Zonas (🌾🐄🐟🪵⛏💰🔬⚔⭐⚓) ocupam vagas: aldeia 1, vila 2, cidade 3, metrópole 4. Mudam de dono na conquista.</span><div class="row">
         ${Bt('act', 'obras', F.bldOn ? 'Obras abertas' : 'Ordenar obras', '1 ação por turno: ponha, retire e apresse obras em todas as filas.', !F.bldOn && noPA, F.bldOn)}<button class="ab2" data-a="works">Obras do império</button></div>
@@ -2377,6 +2479,7 @@ document.addEventListener('click', e => {
   else if (!G) return;
   else if (a === 'catalog') catalogModal();
   else if (a === 'routes') routesModal();
+  else if (a === 'merc') { const e = act(G.player, 'merc'); toast(e || 'Mercenários na capital.'); render(); }
   else if (a === 'route') { const e = act(G.player, 'rota', +el.dataset.i, +el.dataset.j); toast(e || 'Rota aberta: começa a render no próximo turno.'); render(); routesModal(); }
   else if (a === 'demb') { const o = el.dataset.f, k = tk(G.player, o); if (G.emb.has(k)) G.emb.delete(k); else { G.emb.add(k); checkRoutes(); log(G.player, `Você declara embargo a ${fname(o)}.`); } render(); }
   else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }

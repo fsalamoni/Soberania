@@ -1,5 +1,22 @@
 # Histórico de versões
 
+## v10 — 25/11/2026 · Tecnologias e tropas por era (parte 7 do roteiro)
+
+**Parte 7** (K-01 a K-59, A-01 a A-07, A-43, A-45, A-47, UI-04)
+
+- K-01 a K-59: **árvore de 49 tecnologias** em três eras (Antiguidade, Idade Média, Idade Moderna), com pré-requisitos. Cada uma libera construções, zonas ou tropas do catálogo. Moeda, Engenharia e Bússola viraram marcos da árvore (K-13, K-20, K-38); as outras 7 tecnologias da v4 viraram **doutrinas**, com novos pré-requisitos.
+- No início, cada facção já conhece as tecnologias das eras anteriores à do cenário e as cinco básicas da Antiguidade. Só as tecnologias novas contam 2 de legado.
+- Jazidas reveladas por tecnologia: cavalos (Domesticação), cobre e estanho (Mineração), ferro (Fundição do ferro).
+- Efeitos novos: Guildas (+1 produção por oficina), Imprensa (+1 saber por universidade), Método científico (+10% de saber), Navegação oceânica (+1 travessia), Matemática (armas de cerco: construções de defesa valem 1 a menos contra você).
+- A-01 a A-07: **tropas por era**. A melhor tropa da facção vale para todo o exército e exige a tecnologia e o bem na rede: lanceiros (defesa vence empates contra cavalaria), legiões (+1 no ataque), cavalaria leve e cavaleiros (+1 no ataque em terreno aberto; cavaleiros vencem empates nele), besteiros (+1 na defesa com muralha ou castelo), mosqueteiros (+1 no ataque e na defesa).
+- K-53: **artilharia** (com salitre na rede): antes de cada ataque, 1 dado de canhão mata 1 defensor com 5 ou 6.
+- A-43: **veteranos**. Tropas que conquistam 3 vezes seguidas ganham +1 no ataque.
+- A-45: **entrincheirar**. Território com 2 ou mais tropas que não atacou nem recebeu tropas por conquista no turno ganha +1 na defesa até atacar.
+- A-47: **mercenários** (Militar): 1 tropa na capital na hora, pelo dobro do preço, sem gastar ação, 1 vez por turno. A IA usa quando a capital está ameaçada.
+- UI-04: a janela de tecnologias agrupa por era e mostra o que cada tecnologia libera e as tropas que você tem.
+- IA pesquisa pelo valor do que a tecnologia libera. Duração curta medida: média de 44 rodadas.
+- Fora desta parte: A-20 a A-24 e A-40 a A-42, A-44, A-46 (unidades de cerco separadas e generais ficam para a parte 11).
+
 ## v9 — 25/11/2026 · Comércio e rotas (parte 6 do roteiro)
 
 **Parte 6** (T-01 a T-03, T-10 a T-14, T-16 a T-18)

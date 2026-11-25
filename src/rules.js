@@ -168,4 +168,81 @@ const TECH = [
   { k: 'arq', t: 3, cost: 11, req: ['eng', 'ret'], fx: 'Permite construir a sua Maravilha (+5 de legado).', n: { ant: 'Arquitetura', med: 'Arte Gótica', pol: 'Iluminismo', mod: 'Ciência de Ponta', fan: 'Alta Magia' } },
   { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Declarar campanha não gasta ponto de ação, e você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
 ];
+// ---------- parte 7: árvore de tecnologias por era (K-01 a K-59) ----------
+// e = era da tecnologia (0 Antiguidade, 1 Idade Média, 2 Idade Moderna). No início, cada facção já conhece as
+// tecnologias das eras anteriores à do cenário (sem as doutrinas) e as cinco básicas da Antiguidade.
+// As 10 tecnologias da v4 continuam como doutrinas e marcos da árvore (Moeda = K-13, Engenharia = K-20, Bússola = K-38).
+const T7 = (k, e, cost, req, n, fx) => ({ k, e, t: e + 1, cost, req, n, fx });
+TECH.push(
+  T7('agri', 0, 3, [], 'Agricultura', 'K-01: zona agrícola e fazenda.'),
+  T7('dom', 0, 3, [], 'Domesticação', 'K-02: zona pecuária e estância; revela os cavalos.'),
+  T7('pesc', 0, 3, [], 'Pesca e barcos', 'K-03: zona pesqueira e pesqueiro.'),
+  T7('mnr', 0, 3, [], 'Mineração', 'K-04: zona de mineração e mina; revela cobre e estanho.'),
+  T7('mis', 0, 3, [], 'Misticismo', 'K-05: zona religiosa e templo.'),
+  T7('cer', 0, 4, ['agri'], 'Cerâmica e ofícios', 'K-06: oficina e celeiro.'),
+  T7('bro', 0, 4, ['mnr'], 'Ferramentas de bronze', 'K-07: fundição e serraria; lanceiros (com bronze ou ferro na rede).'),
+  T7('esc', 0, 4, ['cer'], 'Escrita', 'K-08: zona científica (biblioteca).'),
+  T7('alv', 0, 4, ['mnr'], 'Alvenaria', 'K-09: pedreira, muralha, monumento e Grandes Pirâmides.'),
+  T7('rod', 0, 4, ['dom'], 'Roda', 'K-10: estrada.'),
+  T7('irr', 0, 4, ['agri'], 'Irrigação', 'K-11: canal de irrigação, arrozal e Jardins Suspensos.'),
+  T7('cos', 0, 4, ['pesc'], 'Navegação costeira', 'K-12: porto e Farol Monumental.'),
+  T7('lei', 0, 5, ['esc'], 'Código de leis', 'K-14: tribunal.'),
+  T7('ferr', 0, 5, ['bro'], 'Fundição do ferro', 'K-15: ferraria; revela o ferro; legiões (com ferro na rede).'),
+  T7('equ', 0, 5, ['rod'], 'Equitação', 'K-16: haras; cavalaria leve (com cavalos na rede).'),
+  T7('fil', 0, 5, ['lei', 'mis'], 'Filosofia', 'K-17: academia.'),
+  T7('mat', 0, 5, ['com'], 'Matemática', 'K-18: armas de cerco: no ataque, construções de defesa valem 1 a menos.'),
+  T7('civ', 0, 6, ['alv', 'mat'], 'Construção civil', 'K-19: anfiteatro, aqueduto e Grande Arena.'),
+  T7('ast', 0, 6, ['mat', 'mis'], 'Astronomia', 'K-21: observatório.'),
+  T7('dis', 0, 6, ['ferr'], 'Disciplina militar', 'K-22: quartel.'),
+  T7('feu', 1, 7, ['lei', 'dis'], 'Feudalismo', 'K-30: base das ordens de cavalaria e das levas.'),
+  T7('teo', 1, 7, ['fil'], 'Teologia', 'K-31: mosteiro e grande templo.'),
+  T7('cst', 1, 8, ['eng', 'feu'], 'Castelos', 'K-32: castelo e Castelo do Senhor da Guerra.'),
+  T7('mec', 1, 8, ['eng', 'mat'], 'Mecânica', 'K-33: moinho e engenho; besteiros (+1 na defesa com muralha).'),
+  T7('cpe', 1, 8, ['equ', 'feu'], 'Estribo e cavalaria pesada', 'K-34: cavaleiros (com cavalos e ferro na rede).'),
+  T7('bnc', 1, 8, ['com', 'teo'], 'Bancos', 'K-35: banco.'),
+  T7('edu', 1, 8, ['teo', 'fil'], 'Educação', 'K-36: universidade.'),
+  T7('got', 1, 9, ['cst', 'teo'], 'Arquitetura gótica', 'K-37: Catedral Gótica.'),
+  T7('gui', 1, 9, ['bnc', 'mec'], 'Guildas', 'K-39: +1 produção em cada oficina.'),
+  T7('pvr', 1, 9, ['mec', 'teo'], 'Pólvora', 'K-40: polvorinho.'),
+  T7('imp', 2, 10, ['edu', 'gui'], 'Imprensa', 'K-50: +1 saber por universidade.'),
+  T7('oce', 2, 10, ['nav', 'ast'], 'Navegação oceânica', 'K-51: companhia de comércio; caravelas (+1 travessia).'),
+  T7('msq', 2, 10, ['pvr'], 'Mosquete', 'K-52: mosqueteiros (com salitre na rede): +1 no ataque e na defesa.'),
+  T7('art', 2, 11, ['pvr', 'mat'], 'Artilharia', 'K-53: antes de cada ataque, 1 dado de canhão mata 1 defensor com 5 ou 6 (com salitre na rede).'),
+  T7('fmo', 2, 11, ['art'], 'Fortificação moderna', 'K-54: fortaleza abaluartada.'),
+  T7('cie', 2, 12, ['imp', 'ast'], 'Método científico', 'K-55: +10% de saber.'),
+  T7('eco', 2, 11, ['bnc', 'imp'], 'Economia', 'K-56: bolsa de valores.'),
+  T7('dra', 2, 10, ['imp'], 'Drama e artes', 'K-57: teatro.'),
+  T7('estr', 2, 12, ['msq', 'edu'], 'Estratégia', 'K-59: academia militar.'),
+);
+// marcos antigos dentro da árvore nova, e as doutrinas com novos pré-requisitos
+Object.assign(TECH.find(t => t.k === 'com'), { e: 0, cost: 5, req: ['esc', 'bro'], fx: 'K-13: zona comercial (mercado) e caravançará. Cada mercado rende +1 ouro, e o câmbio troca 3 por 2.' });
+Object.assign(TECH.find(t => t.k === 'eng'), { e: 0, cost: 6, req: ['civ', 'rod'], fx: 'K-20: estrada pavimentada; obras custam 25% menos produção.' });
+Object.assign(TECH.find(t => t.k === 'nav'), { e: 1, cost: 8, req: ['cos', 'ast'], fx: 'K-38: armazém alfandegário; +1 travessia, e todo ataque pelo mar usa 3 dados.' });
+const DOCT = { adm: [0, ['lei']], tat: [0, ['dis']], ret: [0, ['fil']], log: [0, ['eng']], arq: [0, ['civ', 'fil']], con: [1, ['feu']], dou: [1, ['con', 'log']] };
+for (const [k, [e, req]] of Object.entries(DOCT)) Object.assign(TECH.find(t => t.k === k), { e, req, doc: 1 });
+TECH.forEach(t => { t.t = t.e + 1; });
+// o que cada tecnologia libera no catálogo (substitui os requisitos de tecnologia da parte 4)
+const UNLOCK = {
+  agri: ['agr', 'faz'], dom: ['pec', 'etc'], pesc: ['pes', 'psq'], mnr: ['min', 'mna', 'gar'], mis: ['tem'],
+  cer: ['ofi', 'cel', 'chq', 'slg'], bro: ['fun', 'ser'], esc: ['aca'], alv: ['pdr', 'for', 'mon', 'pir'], rod: ['est'], irr: ['irr', 'arz', 'jar'],
+  cos: ['por', 'frl'], com: ['mer', 'car', 'pla'], lei: ['tri'], ferr: ['frr'], equ: ['har'], fil: ['acd', 'gbi'],
+  civ: ['anf', 'aqu', 'col'], eng: ['pav', 'san'], ast: ['obs'], dis: ['qua', 'ars'], teo: ['mos', 'cat', 'hos'], cst: ['cas', 'csg'],
+  mec: ['moi', 'egh', 'rce'], bnc: ['ban'], edu: ['uni'], got: ['cgo'], nav: ['arm', 'stl'], pvr: ['pov'], oce: ['cia'],
+  fmo: ['fab'], eco: ['bol'], dra: ['tea'], estr: ['acm']
+};
+for (const [t, ks] of Object.entries(UNLOCK)) ks.forEach(k => { if (STRUCT[k]) STRUCT[k].tech = t; });
+STRUCT.obi.tech = 'cie';
+// jazidas que só aparecem com a tecnologia (K-02, K-04, K-15)
+const REVEAL = { cav: 'dom', cob: 'mnr', est: 'mnr', fer: 'ferr' };
+// tropas por era (A-01 a A-07): a melhor tropa disponível da facção dá o bônus; exige tecnologia e bem na rede
+const ARMY = {
+  lan: { n: 'Lanceiros', tech: 'bro', good: ['cob+est', 'fer'], fx: 'defesa vence empates contra cavalaria' },
+  leg: { n: 'Legiões', tech: 'ferr', good: ['fer'], fx: '+1 no maior dado de ataque' },
+  cav: { n: 'Cavalaria leve', tech: 'equ', good: ['cav'], fx: '+1 no maior dado de ataque em terreno aberto' },
+  kni: { n: 'Cavaleiros', tech: 'cpe', good: ['cav+fer'], fx: '+1 no maior dado de ataque em terreno aberto e vence empates nele' },
+  bes: { n: 'Besteiros', tech: 'mec', good: [], fx: '+1 no maior dado de defesa em território com muralha' },
+  msq: { n: 'Mosqueteiros', tech: 'msq', good: ['sli'], fx: '+1 no maior dado de ataque e de defesa' },
+};
+const OPEN = 'pcde'; // terreno aberto para a cavalaria
+TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
 const TK = Object.fromEntries(TECH.map(t => [t.k, t]));
