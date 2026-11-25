@@ -105,6 +105,9 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 #lens{position:absolute;left:10px;top:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:60%}
 #lens button{padding:4px 9px;font-size:12px;background:#17212dd9}
 #lens button.on{border-color:var(--brass);color:var(--brass)}
+#lgd{position:absolute;left:10px;bottom:10px;background:#17212de6;border:1px solid #2c3a4a;border-radius:6px;padding:6px 9px;font-size:11.5px;display:flex;flex-direction:column;gap:3px;max-width:min(260px,60%);pointer-events:none}
+#lgd b{color:var(--brass);font-weight:600}
+#lgd i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1px solid #0006}
 #map .sv .svp{fill:#141b23e6;stroke:#e8d9a8;stroke-width:.7}#map .sv .svp.w{stroke:#f2c94c;stroke-width:1.2}
 #map .sv .svn{font:700 5.5px sans-serif;fill:#fff;stroke:#000;stroke-width:1.4px;paint-order:stroke;text-anchor:middle}
 #map:not(.names) .sv{display:none}
@@ -234,6 +237,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
   <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
+    <div id="lgd" hidden></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
   <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>

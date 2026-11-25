@@ -2238,6 +2238,7 @@ function renderMap() {
   for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) { const d = roadD(i, j), k = Math.min(road(i), road(j)); rc.push(`<path d="${d}" class="rk rk${k}"/>`); rl.push(`<path d="${d}" class="rd rd${k}"/>`); }
   for (const r of G.routes) { const a = T[r.a], b = T[r.b], dx = b.x - a.x, dy = b.y - a.y; rl.push(`<path d="M${a.x} ${a.y}Q${(a.x + b.x) / 2 - dy * .18} ${(a.y + b.y) / 2 + dx * .18} ${b.x} ${b.y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}"/>`); } // parte 6: rota em arco
   $('#roads').innerHTML = rc.join('') + rl.join('');
+  legend(net);
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;
   const p = (j, c) => hl.push(`<path d="${G.m.terr[j].d}" class="${c}"/>`);
@@ -2250,6 +2251,18 @@ function renderMap() {
   }
   if (G.tgt != null) p(G.tgt, 'hx');
   $('#hl').innerHTML = hl.join('');
+}
+// legenda da lente atual (v34): só as cores que aparecem no mapa
+function legend(net) {
+  const L = G.lens || 'own', el = $('#lgd'); if (!el) return;
+  const vis = [...Array(G.N).keys()].filter(i => G.own[i] !== 'off' && (!G.seen || G.seen.has(i)));
+  const it = (c, t) => `<span><i style="background:${c}"></i>${t}</span>`;
+  let h = '';
+  if (L === 'ter') h = [...new Set(vis.map(i => G.ter[i]))].map(k => it(TERR[k].c, TERR[k].ic + ' ' + TERR[k].n)).join('');
+  else if (L === 'zon') { const zs = [...new Set(vis.flatMap(i => zonesAt(i).map(k => STRUCT[k].z)))]; h = zs.length ? zs.map(z => it(ZC[z], ZONE[z])).join('') : '<span>Nenhuma zona construída ainda: obras como fazendas, minas e mercados criam zonas.</span>'; }
+  else if (L === 'res') h = it('#6d4f86', 'Tem luxo') + it('#4f5d6e', 'Só jazidas comuns') + it('#2a323d', 'Sem jazidas') + '<span>Ícones: jazidas do território</span>';
+  else if (L === 'net') h = it('#c9a227', 'Núcleo da sua rede') + it('#7d6a2a', 'Ligado à rede') + it('#5b3a34', 'Seu, fora da rede') + it('#2a323d', 'Outros');
+  el.hidden = !h; el.innerHTML = h ? '<b>' + $('#lens button.on').textContent + '</b>' + h : '';
 }
 const ZC = { agr: '#8fae3c', pec: '#b69a52', pes: '#3f8fb0', flo: '#2f7a42', min: '#857868', com: '#c9a227', por: '#2f5f8f', rel: '#9a6ac0', mil: '#a33b33', sci: '#3fa7a0' };
 function light(c) { const n = parseInt(c.slice(1), 16); return ((n >> 16) * .3 + ((n >> 8) & 255) * .59 + (n & 255) * .11) > 165; }

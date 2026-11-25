@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v34 — 25/11/2026 · Legenda nas lentes do mapa
+
+- As lentes **Terreno, Zonas, Recursos e Rede** ganham uma legenda no canto inferior esquerdo do mapa:
+  - Terreno mostra só os tipos que aparecem no mapa, com ícone e cor.
+  - Zonas mostra as zonas já construídas. Sem nenhuma, explica que fazendas, minas e mercados criam zonas.
+  - Recursos separa luxo, jazidas comuns e territórios sem jazidas.
+  - Rede separa núcleo, ligado, seu fora da rede e outros.
+- A legenda some nas lentes Dono e Relevo.
+- Teste novo cobre a legenda. O teste da lente de relevo aceita o relevo real (o Brasil agora tem relevo).
 ## v33 — 25/11/2026 · Mundo, EUA e Brasil com divisas reais e relevo
 
 Com esta versão, os dez mapas históricos têm divisas reais e relevo. Agora entram o mapa-múndi (Segunda Guerra Mundial e outros cenários globais), os EUA de 1861 e o Brasil regencial.
