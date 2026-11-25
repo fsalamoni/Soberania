@@ -208,7 +208,7 @@ const goods = f => { const s = goodsAt(netOf(f).linked); if (real(f)) { routeGoo
 const goodsAll = f => goodsAt(owned(f));
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
 function yieldOf(i, L) {
-  const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i, LN = 'Porte: ' + LEVEL[lv].n.toLowerCase();
+  const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i, LN = 'Porte: ' + (PORTE[2 * lv - 1] || '').toLowerCase();
   const y = { pre: 0, stab: 0, food: 0, prod: 0, gold: 0, sci: 0 }, A = (r, v, w) => { if (!v) return; y[r] += v; if (L) L.push([r, v, w]); };
   A('food', T.food, T.n); A('prod', T.prod, T.n); A('gold', T.gold, T.n);
   if (G.riv[i]) { A('food', 1, 'Rio'); A('gold', 1, 'Rio'); }
@@ -216,6 +216,8 @@ function yieldOf(i, L) {
   if (hasW(f, 'jar')) A('food', 1, 'Maravilha: ' + sName('jar'));
   if (cap) { A('prod', 2, 'Capital'); A('gold', 1, 'Capital'); }
   A('gold', (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), LN); A('sci', (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0), LN);
+  if (subOf(i)) { const n = 'Porte: ' + pName(i).toLowerCase(); A('prod', 1, n); A('gold', 1, n); if (lv >= 4) A('sci', 1, n); }
+  if (real(f)) A('gold', -jobless(i), 'Desemprego');
   for (const k of G.bld[i]) {
     const S = STRUCT[k], n = sName(k); if (!nb(i, k)) continue; if (S.sciLv) A('sci', lv, n + ' (pelo porte)'); if (!S.y) continue;
     if ((k === 'ztc' || k === 'zae') && real(f) && has(f, 'sat')) A('sci', 1, n + ' · ' + tName('sat')); // K-113
@@ -237,7 +239,27 @@ function yieldOf(i, L) {
   if (occupied(i)) for (const r of Object.keys(y)) A(r, Math.floor(y[r] / 2) - y[r], 'Ocupação (metade)');
   return y;
 }
-const foodUse = i => 2 * G.lv[i] - 1;
+// ---------- v25: 8 portes, moradia e empregos ----------
+const PORTE = [null, 'Aldeia', 'Povoado', 'Vila', 'Vila grande', 'Cidade', 'Cidade grande', 'Metrópole', 'Megalópole'];
+const subOf = i => (G.sub && G.sub[i]) || 0;
+const setSub = (i, v) => { if (!G.sub) G.sub = Array(G.N).fill(0); G.sub[i] = v; };
+const porte = i => G.lv[i] ? 2 * G.lv[i] - 1 + subOf(i) : 0;
+const pName = i => PORTE[porte(i)] || 'Ermo';
+// moradia: quantos portes o território comporta (crescer exige moradia acima do porte atual)
+function housing(i, L) {
+  let h = 0; const A = (v, w) => { if (v) { h += v; if (L) L.push([v, w]); } };
+  A(3, 'Base'); A(G.riv[i] ? 1 : 0, 'Rio'); A(coastal(i) ? 1 : 0, 'Litoral'); A(real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 0, 'Capital');
+  for (const [k, v] of [['aqu', 2], ['san', 2], ['hos', 1], ['cel', 1]]) if (nb(i, k)) A(v, sName(k));
+  return h;
+}
+// empregos: serviços do nível, cada zona dá 2 e cada obra que rende dá 1
+function jobs(i, L) {
+  let j = 0; const A = (v, w) => { if (v) { j += v; if (L) L.push([v, w]); } };
+  A(G.lv[i] + 1, 'Serviços do porte'); A(2 * zonesAt(i).length, 'Zonas'); A(G.bld[i].filter(k => !STRUCT[k].z && STRUCT[k].y && nb(i, k)).length, 'Obras que rendem');
+  return j;
+}
+const jobless = i => Math.max(0, porte(i) - jobs(i));
+const foodUse = i => 2 * G.lv[i] - 1 + subOf(i);
 // livro-razão da região: cada ganho e perda com a causa; o líquido é o que chega ao império
 let ledOpen = false; document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ledger')) ledOpen = e.target.open; }, true);
 const RES_IC = { food: ['🍞', 'Comida'], prod: ['⚒', 'Produção'], gold: ['💰', 'Ouro'], sci: ['🔬', 'Saber'], pre: ['⭐', 'Prestígio'] };
@@ -251,7 +273,9 @@ function regionNet(i) {
 function ledgerHtml(i) {
   const { L, net } = regionNet(i), sg = v => (v > 0 ? '+' : '') + v;
   const rows = Object.keys(RES_IC).map(r => { const it = L.filter(x => x[0] === r); if (!it.length && !net[r]) return ''; return `<tr><td>${RES_IC[r][0]} ${RES_IC[r][1]}</td><td class="n"><b>${sg(net[r])}</b></td><td>${it.map(x => `<span class="${x[1] < 0 ? 'neg' : ''}">${sg(x[1])} ${esc(x[2])}</span>`).join(' · ') || '—'}</td></tr>`; }).join('');
-  const gr = G.lv[i] < 4 ? `Estoque de comida ${G.food[i]}/${growNeed(i)} para crescer${growOk(i) ? '' : ' · falta: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}${net.food < 0 ? ' · passando fome' : ''}.` : 'Porte máximo.';
+  const HL = [], JL = [], hv = housing(i, HL), jv = jobs(i, JL), pp = porte(i);
+  const gr = `<b>${pName(i)}</b> (porte ${pp} de 8). ` + (growMax(i) ? 'Porte máximo.' : `Comida ${G.food[i]}/${growNeed(i)} para virar ${PORTE[pp + 1].toLowerCase()}${growOk(i) ? '' : ' · falta ' + growWhy(i).join(' e ')}${net.food < 0 ? ' · passando fome' : ''}.`) +
+    `<br>🏠 Moradia ${hv}: ${HL.map(x => '+' + x[0] + ' ' + esc(x[1])).join(' · ')}<br>🛠 Empregos ${jv} para ${pp}: ${JL.map(x => '+' + x[0] + ' ' + esc(x[1])).join(' · ')}${jobless(i) ? ` · <span class="neg">${jobless(i)} sem trabalho (−${jobless(i)} ouro)</span>` : ''}`;
   return `<details class="ledger" ${ledOpen ? 'open' : ''}><summary>Rendimento da região: 🍞 ${sg(net.food)} · ⚒ ${net.prod} · 💰 ${net.gold} · 🔬 ${net.sci}${net.pre ? ' · ⭐ ' + net.pre : ''}</summary><table>${rows}</table><p class="hint">${gr} <button class="mini" data-a="empire">Resumo do império</button></p></details>`;
 }
 // resumo do império: soma das regiões e os ajustes que valem para o império todo
@@ -260,19 +284,21 @@ function empireModal() {
   const rows = T.map(i => { const { net } = regionNet(i); for (const r in sum) sum[r] += net[r] || 0; return [i, net]; }).sort((a, b) => b[1].gold + b[1].prod - a[1].gold - a[1].prod);
   const r1 = v => Math.round(v * 10) / 10, adj = (k, v) => `${r1(v - sum[k]) >= 0 ? '+' : ''}${r1(v - sum[k])}`;
   modal(`<h2>Resumo do império</h2><p class="hint">O império é a soma das regiões. Abaixo, o líquido de cada uma (já com consumo, corrupção e estabilidade) e, no fim, os ajustes que valem para o império todo: governo, felicidade, rotas, maravilhas e dificuldade.</p>
-    <div class="techs"><table class="emp"><tr><th>Região</th><th>Porte</th><th>🍞</th><th>⚒</th><th>💰</th><th>🔬</th><th>⭐</th></tr>${rows.map(([i, n]) => `<tr><td><a href="#" data-a="goto" data-i="${i}">${esc(tname(i))}</a></td><td>${LEVEL[G.lv[i]].n}</td><td class="${n.food < 0 ? 'neg' : ''}">${n.food}</td><td>${n.prod}</td><td>${r1(n.gold)}</td><td>${r1(n.sci)}</td><td>${n.pre || ''}</td></tr>`).join('')}
+    <div class="techs"><table class="emp"><tr><th>Região</th><th>Porte</th><th>🍞</th><th>⚒</th><th>💰</th><th>🔬</th><th>⭐</th></tr>${rows.map(([i, n]) => `<tr><td><a href="#" data-a="goto" data-i="${i}">${esc(tname(i))}</a></td><td>${pName(i)}</td><td class="${n.food < 0 ? 'neg' : ''}">${n.food}</td><td>${n.prod}</td><td>${r1(n.gold)}</td><td>${r1(n.sci)}</td><td>${n.pre || ''}</td></tr>`).join('')}
     <tr class="tot"><td>Soma das regiões</td><td>${T.length} reg.</td><td>${sum.food}</td><td>${sum.prod}</td><td>${r1(sum.gold)}</td><td>${r1(sum.sci)}</td><td>${sum.pre}</td></tr>
     <tr><td>Ajustes do império</td><td></td><td></td><td></td><td>${adj('gold', inc.gold)}</td><td>${adj('sci', inc.sci)}</td><td>${adj('pre', inc.pre)}</td></tr>
     <tr class="tot"><td>Por turno</td><td></td><td></td><td></td><td>${inc.gold}</td><td>${inc.sci}</td><td>${inc.pre}</td></tr></table></div>`, [['Fechar']]);
 }
-const growNeed = i => LEVEL[G.lv[i]].need * G.len.k;
-const growOk = i => !LEVEL[G.lv[i]].req || LEVEL[G.lv[i]].req.some(k => nb(i, k));
+const growNeed = i => Math.round((LEVEL[G.lv[i]].need || 160) * G.len.k / 2);
+const growWhy = i => [housing(i) <= porte(i) && 'moradia (' + housing(i) + ' para porte ' + porte(i) + ')', jobless(i) > 0 && 'empregos (' + jobless(i) + ' sem trabalho)'].filter(Boolean);
+const growOk = i => !growWhy(i).length;
+const growMax = i => porte(i) >= 8;
 function grow(f) {
   for (const i of settled(f)) {
     G.food[i] += yieldOf(i).food - foodUse(i);
-    if (G.food[i] < 0) { G.food[i] = 0; if (G.lv[i] > 1 && !nb(i, 'cel')) { G.lv[i]--; log(f, `Fome em ${tname(i)}: volta a ser ${LEVEL[G.lv[i]].n.toLowerCase()}.`); } }
-    else if (G.lv[i] < 4 && G.food[i] >= growNeed(i)) {
-      if (growOk(i)) { G.food[i] -= growNeed(i); G.lv[i]++; log(f, `${tname(i)} cresce e vira ${LEVEL[G.lv[i]].n.toLowerCase()}.`); }
+    if (G.food[i] < 0) { G.food[i] = 0; if (porte(i) > 1 && !nb(i, 'cel')) { if (subOf(i)) setSub(i, 0); else { G.lv[i]--; setSub(i, 1); } log(f, `Fome em ${tname(i)}: volta a ser ${pName(i).toLowerCase()}.`); } }
+    else if (!growMax(i) && G.food[i] >= growNeed(i)) {
+      if (growOk(i)) { G.food[i] -= growNeed(i); if (subOf(i)) { G.lv[i]++; setSub(i, 0); } else setSub(i, 1); log(f, `${tname(i)} cresce e vira ${pName(i).toLowerCase()}.`); }
       else G.food[i] = growNeed(i);
     }
   }
@@ -1699,7 +1725,7 @@ function aiBVal(f, k, i) {
       + (S.vic ? 8 : 0) + (S.mk && !goods(f).has(S.mk) ? 2.5 : 0) + .5 * (S.hp || 0) + .4 * (S.cu || 0) + .5 * (S.hl || 0) + (S.sciLv ? .8 * G.lv[i] : 0) + (S.pm ? 1.5 : 0) + (S.sd ? .3 : 0) - .3 * Math.max(0, S.plu || 0); // parte 12
     if (S.def) v += th >= G.tr[i] * .7 ? 2 * S.def : .2;
     if (S.atk) v += th ? 1.6 : .3;
-    const near = G.lv[i] < 4 && G.food[i] >= growNeed(i) * .5;
+    const near = !growMax(i) && G.food[i] >= growNeed(i) * .5;
     if (k === 'aqu') v += G.lv[i] === 2 && near ? 3.5 : 0;
     if (k === 'san') v += G.lv[i] === 3 && near ? 3 : .3;
     if (k === 'tri') v += F.stab < 40 ? 2.5 : 0;
@@ -2128,8 +2154,8 @@ function renderMap() {
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
-    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.querySelectorAll('.lvp circle').forEach((c, n) => c.classList.toggle('on', n < lv)); g.querySelector('.lvp').toggleAttribute('hidden', !lv);
-    P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? LEVEL[lv].n : 'ermo'} · ${G.tr[i]} tropas`;
+    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.querySelectorAll('.lvp circle').forEach((c, n) => { c.classList.toggle('on', n < lv); c.classList.toggle('half', !!lv && n === lv && !!subOf(i)); }); g.querySelector('.lvp').toggleAttribute('hidden', !lv);
+    P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? pName(i) : 'ermo'} · ${G.tr[i]} tropas`;
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : G.bld[i].map(k => STRUCT[k].ic);
     if (L === 'ter') ics.unshift(TERR[G.ter[i]].ic + (G.riv[i] ? '〰' : ''), LEVEL[G.lv[i]].ic);
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
@@ -2458,7 +2484,7 @@ function renderSide() {
     if (csOf(i)) { const c = G.cs[i], s = suz(i); inf += `<p class="hint">Cidade-estado ${CS[c.t][0]} (${CS[c.t][1]} ao suserano) · suserano ${s ? esc(fname(s)) : 'nenhum'} · sua influência ${c.inf[me] || 0} · missão: ${MIS[c.mis]}</p>${my ? `<button class="mini" data-a="env" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 2 ? '' : 'disabled'}>Enviado (2💰)</button>` : ''}`; }
     if (o !== 'off') {
       const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
-      inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
+      inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${pName(i)}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
         <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
       if (real(o)) { const cd = capDist(o)[i], ts = tStab(i, cd), hs = health(i); inf += `<p class="hint">Saúde ${hs}${hs < 0 ? ' (risco de epidemia)' : ''} · estabilidade local ${ts}${ts < 10 ? ' (pode se separar)' : ts < 30 ? ' (rende metade)' : ''} · corrupção ${Math.round(100 * corrupt(i, cd))}% · cultura ${G.cul[i] === o ? 'própria' : esc(fname(G.cul[i]) || 'local') + ` (assimila ${G.asm[i]}/8)`}</p>`; }
       if (real(o)) inf += ledgerHtml(i);
@@ -2497,7 +2523,7 @@ function rules() {
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
   <p><b>No mapa.</b> O número é a tropa do território; os quatro pontos acima dele mostram o porte (1 aldeia, 2 vila, 3 cidade, 4 metrópole). Linhas tracejadas e pontos azuis na costa são travessias por mar. Terra hachurada fica fora do jogo.</p>
-  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também aqueduto) e metrópole (exige saneamento). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
+  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer um porte por vez, em 8 portes: aldeia, povoado, vila, vila grande, cidade, cidade grande, metrópole e megalópole. Para crescer, além da comida, é preciso <b>moradia</b> acima do porte atual (base 3, +1 com rio, litoral ou capital, +2 com aqueduto, +2 com saneamento, +1 com hospital ou celeiro) e ninguém sem <b>emprego</b> (o porte dá alguns empregos, cada zona dá 2 e cada obra que rende dá 1). Cada desempregado custa 1 ouro por turno. Cada porte consome mais comida; com fome, o território perde um porte. Conquistado, perde um nível. Os portes "grandes" dão +1 produção e +1 ouro. O nível (aldeia, vila, cidade, metrópole) dá ouro, saber e vagas de zona: 1, 2, 3 e 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>

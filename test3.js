@@ -102,6 +102,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.F[G.player].capI; G.sel = i; render(); const L = [], y = yieldOf(i, L); return !!document.querySelector('.ledger summary') && ['food', 'prod', 'gold', 'sci'].every(r => L.filter(x => x[0] === r).reduce((s, x) => s + x[1], 0) === y[r]); }), 'painel da região mostra cada ganho com a causa');
   await p.evaluate(() => document.querySelector('[data-a=empire]').click());
   ok(await p.evaluate(() => /Soma das regiões/.test(document.querySelector('#modal').textContent)), 'resumo do império soma as regiões');
+  ok(await p.evaluate(() => { const G = window.__sob.G, i = G.F[G.player].capI, p0 = porte(i), f0 = G.food[i]; G.food[i] = 999; const h = housing(i), ok0 = growOk(i); G.sub = G.sub || Array(G.N).fill(0); const s0 = G.sub[i], l0 = G.lv[i]; grow(G.player); const p1 = porte(i); G.lv[i] = l0; G.sub[i] = s0; G.food[i] = f0; return PORTE.length === 9 && h >= 3 && (ok0 ? p1 === p0 + 1 : p1 === p0); }), 'porte cresce um passo só com moradia e empregos');
   await p.click('#modal [data-m="0"]');
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');

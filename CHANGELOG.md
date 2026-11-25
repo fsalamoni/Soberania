@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## v25 — 25/11/2026 · Oito portes, moradia e empregos
+
+Terceira parte do plano de aprimoramento: mais níveis de cidade, cada um com ganhos e custos, e crescimento que depende de comida, moradia e empregos.
+
+- 8 portes: aldeia, povoado, vila, vila grande, cidade, cidade grande, metrópole e megalópole. O território cresce um porte por vez, com metade do estoque de comida de antes por passo; o ritmo total até a metrópole é o mesmo. Os portes "grandes" dão +1 produção e +1 ouro (megalópole também +1 saber) e consomem 1 comida a mais.
+- Moradia: quantos portes o território comporta. Base 3, +1 com rio, litoral ou capital, +2 com aqueduto, +2 com saneamento, +1 com hospital ou celeiro. Substitui a antiga exigência de aqueduto e saneamento para subir de nível; na prática, as mesmas obras continuam abrindo caminho para cidade e metrópole.
+- Empregos: o nível dá alguns, cada zona dá 2 e cada obra que rende dá 1. Desempregados custam 1 ouro cada por turno e impedem o crescimento.
+- Com fome, o território perde só um porte, não um nível inteiro.
+- Painel da região: porte atual (de 8), o que falta para crescer e a conta de moradia e de empregos com as causas. O marcador do mapa mostra o meio passo com um ponto meio aceso.
+- Regras atualizadas (o "+1 ação a cada 3 cidades" saiu, porque não há mais pontos de ação).
+- Equilíbrio (partidas simuladas, curtas): Sengoku termina em média na rodada 24,1, e o modo Civilização na 52,4.
 ## v24 — 25/11/2026 · Turno sem limite de ações
 
 Segunda parte do plano de aprimoramento. Atende ao pedido do Flavio de tirar o limite de ações por turno, no estilo dos jogos de império por turnos, com ataques ilimitados enquanto houver tropas (escolha dele no cartão de decisão).
