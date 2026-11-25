@@ -98,7 +98,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 6 | Comércio e rotas (feita na v9) |
 | 7 | Tecnologias e tropas por era (feita na v10) |
 | 8 | População e sociedade (feita na v11) |
-| 9 | Diplomacia |
+| 9 | Diplomacia (feita na v12) |
 | 10 | Governo, cultura e fé |
 | 11 | Personagens e eventos |
 | 12 | Eras industrial a informação |

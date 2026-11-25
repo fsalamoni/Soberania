@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## v12 — 25/11/2026 · Diplomacia (parte 9 do roteiro)
+
+**Parte 9** (DP-01 a DP-08, DP-20 a DP-25, DP-30 a DP-32, IA-06, IA-07, UI-08)
+
+- DP-01 a DP-03: guerra (padrão), trégua e paz seguem como na v4; a trégua agora é a base para os acordos.
+- DP-04 a DP-08: **acordos** com quem está em trégua. **Passagem livre** (tropas atravessam as estradas do parceiro no remanejamento e ficam supridas ao lado dele), **acordo comercial** (+1 ouro por rota entre os dois), **pacto de pesquisa** (3 ouro de cada, +2 saber por turno por 10 turnos, exige biblioteca), **defesa mútua** (relação 40) e **aliança** (relação 60 e 10 turnos de trégua: ataques proibidos e dominação compartilhada).
+- DP-20 e IA-07: **relação** de −100 a +100 com motivos visíveis que perdem força em 30 rodadas: território tomado, trégua rompida, presentes, acordos, comércio, fronteira, tributo.
+- DP-21: romper trégua dá **agravo** com todos e desfaz os acordos com aquela facção. DP-22: exigência recusada dá **motivo de guerra**, que evita o agravo. DP-07: quem ataca um parceiro de defesa ou aliado entra em guerra com o outro.
+- DP-23: a IA forte exige 5 ouro de tributo de quem está em trégua com ela; quem não paga no turno dá motivo de guerra.
+- DP-24: **mesa de negociação** no painel Diplomacia: trégua, cada acordo e presente de 5 ouro. IA-06: cada botão mostra antes se a facção aceita e por quê ("não confiamos em vocês: rompeu a trégua conosco").
+- DP-25: trégua com reparação de 5 ouro, mais fácil de aceitar.
+- DP-30 a DP-32: um terço dos neutros vira **cidade-estado** (mercantil, científica, militar, religiosa, cultural ou portuária). A ação **Enviado** (1 ação, 2 ouro) dá influência; cumprir a missão dela vale o triplo. Quem tem mais influência (mín. 3) é o suserano, recebe o bônus e é o único que pode anexá-la por influência.
+- UI-08: painel **Diplomacia** (botão no quadro de facções) com uma linha por facção: estado, relação e motivos, acordos e propostas; ofertas e exigências da IA aparecem nele.
+- A IA propõe acordos e tréguas entre si e ao jogador, cobra tributo e manda enviados.
+
 ## v11 — 25/11/2026 · População e sociedade (parte 8 do roteiro)
 
 **Parte 8** (S-10 a S-14, S-20 a S-22, S-24, S-26)
