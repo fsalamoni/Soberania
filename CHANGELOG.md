@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## v29 — 25/11/2026 · Construções desenhadas no mapa
+
+Terceira etapa da reforma visual. O Flavio pediu que as construções deixassem de ser emojis listados lado a lado e quase sobrepostos, e que tivessem imagens condizentes.
+
+- Cada território mostra as suas construções como pequenos desenhos em medalhões, distribuídos em volta do emblema e acima do nome.
+  - São 16 desenhos: fazenda, pasto, pesca, floresta, mina, indústria, mercado, porto, templo, obras públicas, saber, exército, defesa, espetáculos, aviação e maravilha. A maravilha leva um medalhão dourado.
+  - Todas as construções do jogo, de todas as eras, caem em uma dessas classes.
+  - Construções da mesma classe viram um medalhão só, com o número ao lado.
+  - Passar o mouse mostra a classe e a quantidade.
+- A povoação também tem desenho, conforme o nível: aldeia (uma casa), vila (duas casas), cidade (casas e torre) e metrópole (prédios).
+- Os medalhões crescem com o zoom (até 2,4 vezes) e somem na visão geral, quando os nomes somem, para não poluir o mapa.
+- As visões Terreno, Zonas e Recursos continuam com os ícones próprios de cada uma.
+- Novo teste: a capital tem o desenho da povoação, e toda construção tem desenho.
 ## v28 — 25/11/2026 · Estradas com traçado de verdade
 
 Segunda etapa da reforma visual do mapa, a pedido do Flavio: estradas que não sejam retas e que contornem montanhas.

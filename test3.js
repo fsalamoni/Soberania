@@ -106,6 +106,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { document.querySelector('[data-a=lens][data-l=rel]').click(); const ok1 = /url\(#tr-/.test(document.querySelector('path.t[data-i="' + window.__sob.G.F[window.__sob.G.player].capI + '"]').getAttribute('fill')) && document.querySelectorAll('#rib path.rb').length === window.__sob.G.N; document.querySelector('[data-a=lens][data-l=own]').click(); return ok1; }), 'visão de relevo desenha o terreno e a faixa dos impérios');
   await p.click('#modal [data-m="0"]');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.A.findIndex((a, k) => a.some(j => !G.seaK.has(k * 1e4 + j))), j = G.A[i].find(j => !G.seaK.has(i * 1e4 + j)); return /^M[^C]+C/.test(roadD(i, j)) && Object.keys(RELIEF.japao.r).length > 40; }), 'estradas com traçado curvo (e contornando serras no Japão)');
+  ok(await p.evaluate(() => { const G = window.__sob.G, c = G.F[G.player].capI, u = [...document.querySelectorAll(`g.b[data-i="${c}"] .sv use`)].map(e => e.getAttribute('href')); return u.some(h => /^#sv-cid/.test(h)) && Object.keys(STRUCT).every(k => STRUCT[k].road || SV[svOf(k)]); }), 'construções desenhadas em volta da capital, todas com desenho');
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');
