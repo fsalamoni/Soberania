@@ -40,7 +40,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
     console.log(k.padEnd(8), 'rodadas', Math.min(...rounds) + '-' + Math.max(...rounds), 'méd', avg(2), JSON.stringify(why), 'venc', JSON.stringify(win), '| por jogo: obras', avg(5), 'tec', avg(6), 'influ', avg(7), 'campanhas', avg(8), 'cartas', avg(9), 'ar', avg(10), 'maxTec', avg(11));
   }
   // interface: Regências, jogador = Farrapos
-  const clickT = async n => p.evaluate(n => { const G = window.__sob.G, i = G.ix[n]; const el = document.querySelector(`g.b[data-i="${i}"]`); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, n).then(([x, y]) => p.mouse.click(x, y));
+  const clickT = async n => p.evaluate(n => { const G = window.__sob.G, i = G.ix[n]; const el = document.querySelector(`g.b[data-i="${i}"] .bc`); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, n).then(([x, y]) => p.mouse.click(x, y));
   await p.evaluate(() => window.__sob.startScenario('reg', 'fa', 1));
   await p.screenshot({ path: shot('intro') });
   await p.click('#modal [data-m="0"]');
@@ -89,12 +89,16 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('[data-a=techs]');
   await p.click('[data-a=tech][data-k=adm]');
   await p.screenshot({ path: shot('tecnologias') });
+  ok(await p.evaluate(() => { const a = civScenario({ seed: 5, size: 'p', type: 'pan' }), b = civScenario({ seed: 5, size: 'p', type: 'pan' }); return a.f.length === 4 && a._m.terr.length === 40 && JSON.stringify(a._m) === JSON.stringify(b._m); }), 'modo Civilização: mesma semente, mesmo mundo');
   ok(await p.evaluate(() => /Era da Informação/.test(document.querySelector('#modal').textContent) && !!window.__sob.STRUCT.cpa), 'árvore chega à Era da Informação');
   ok(await p.evaluate(() => /Idade Média/.test(document.querySelector('#modal').textContent) && /libera:/.test(document.querySelector('#modal').textContent) && window.__sob.G.F.fa.tech.includes('agri')), 'árvore por era mostra o que cada tecnologia libera');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 2; }), 'pesquisa escolhida sem gastar ação');
   await p.click('#modal [data-m="0"]');
   await p.click('[data-a=figm]');
   ok(await p.evaluate(() => /Grandes figuras/.test(document.querySelector('#modal').textContent) && /Governadores/.test(document.querySelector('#modal').textContent)), 'painel de personagens');
+  await p.click('#modal [data-m="0"]');
+  await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
+  ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');
   await p.click('[data-a=govm]');
   await p.screenshot({ path: shot('governo') });

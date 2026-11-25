@@ -834,6 +834,13 @@ Object.assign(GOV, {
   tcn: { n: 'Tecnocracia corporativa', c: 'c_glo', s: { eco: 4, civ: 1 }, fx: '+1 ouro por rota e por filial; sem bens de consumo na rede, −3 de felicidade.' },
 });
 POL.tar = { n: 'Tarifas', t: 'eco', c: 'c_nac', fx: '+1 ouro por rota com outra facção; −5 de relação com os parceiros.' };
+
+// ---------- parte 13: projetos da vitória científica (V-03), em sequência no território do Programa Espacial ----------
+Object.assign(STRUCT, {
+  sp1: { pc: 40, need: 'pep', tech: 'sat', y: { sci: 1 }, lg: 5, vic: 1, ic: '🛰', fx: 'Satélite (V-03): 1ª etapa da vitória científica.', n: 'Lançamento de Satélite' },
+  sp2: { pc: 50, need: 'sp1', tech: 'net', y: { sci: 1 }, lg: 5, vic: 1, ic: '👨‍🚀', fx: 'Pouso tripulado (V-03): 2ª etapa da vitória científica.', n: 'Pouso Tripulado' },
+  sp3: { pc: 60, need: 'sp2', tech: 'ren', y: { sci: 1 }, lg: 5, vic: 1, ic: '🪐', fx: 'Colônia espacial (V-03): última etapa; vence pela ciência.', n: 'Colônia Espacial' },
+});
 // Cenários, habilidades e cartas. Nomes de territórios precisam bater com maps.json.
 const SCEN = [
   {
@@ -1227,7 +1234,7 @@ function newGame(sc, player, diff, len) {
   const m = MAPS[sc.map], ix = idxOf(m), N = m.terr.length;
   const need = n => { if (!(n in ix)) throw Error(sc.id + ': território desconhecido ' + n); return ix[n]; };
   const L = LEN[len] || LEN.c;
-  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu || 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], win: Array(N).fill(0), dug: Array(N).fill(0), acted: new Set(), F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), sel: null, tgt: null, over: false, fast: false, auto: false };
+  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu ?? 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], win: Array(N).fill(0), dug: Array(N).fill(0), acted: new Set(), F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), sel: null, tgt: null, over: false, fast: false, auto: false };
   g.A = Array.from({ length: N }, () => []);
   for (const [a, b] of m.adj) { g.A[a].push(b); g.A[b].push(a); }
   g.seaK = new Set(m.sea.map(([a, b]) => a * 1e4 + b).concat(m.sea.map(([a, b]) => b * 1e4 + a)));
@@ -1235,6 +1242,7 @@ function newGame(sc, player, diff, len) {
   for (const [n, v] of Object.entries(sc.neuT || {})) g.tr[need(n)] = v;
   expand(m, sc.off || []).forEach(n => { const i = need(n); g.own[i] = 'off'; g.tr[i] = 0; });
   g.relics = (sc.relics || []).map(need);
+  g.ruin = new Set((sc.ruins || []).map(need)); g.nat = new Set((sc.nat || []).map(need)); // MC-07, MC-15
   // parte 3: terreno, rio e jazidas (src/geo.js); jazidas de eras futuras ficam escondidas
   const geo = GEO[sc.map] || {}, elv = ERA_LV[sc.tech] ?? 1;
   g.ter = []; g.riv = []; g.dep = [];
@@ -1259,14 +1267,14 @@ function newGame(sc, player, diff, len) {
     g.F[d.id] = F; g.order.push(d.id);
   }
   for (const [n, v, l] of sc.rebels || []) { const i = need(n); g.own[i] = 'reb'; g.tr[i] = v; g.rl[i] = l; }
-  g.own.forEach((o, i) => { if (o === 'neu' && i % 3 === 0) g.cs[i] = { t: Object.keys(CS)[i % 6], inf: {}, mis: Object.keys(MIS)[i % 3] }; }); // DP-30
+  g.own.forEach((o, i) => { if (!sc.civ && o === 'neu' && i % 3 === 0) g.cs[i] = { t: Object.keys(CS)[i % 6], inf: {}, mis: Object.keys(MIS)[i % 3] }; }); // DP-30
   g.cul = [...g.own]; g.asm = Array(N).fill(0); // S-14, S-22: cultura de cada território
   for (const [a, b] of sc.truces || []) g.truce.add(tk(a, b));
   for (const e of sc.ev) for (const [op, a] of e.fx) {
     if (op === 'rebels' || op === 'place' || op === 'troops') need(a); else if (op === 'give') a.forEach(need); else if (op === 'attrit') expand(m, [].concat(a)).forEach(need);
     else if (a !== '*' && !g.F[a]) throw Error(sc.id + ': facção desconhecida ' + a);
   }
-  const G0 = G; G = g; for (const f of g.order) if (g.F[f].ab === 'espiao') g.F[f].cards.push(drawCard(), drawCard()); g.order.forEach(f => g.F[f].t0 = g.own.filter(o => o === f).length); G = G0;
+  const G0 = G; G = g; for (const f of g.order) if (g.F[f].ab === 'espiao') g.F[f].cards.push(drawCard(), drawCard()); g.order.forEach(f => g.F[f].t0 = g.own.filter(o => o === f).length); if (sc.civ) civInit(); G = G0;
   return g;
 }
 const tk = (a, b) => a < b ? a + '|' + b : b + '|' + a;
@@ -1412,6 +1420,7 @@ function yieldOf(i) {
   for (const d of worked(i)) for (const [r, v] of Object.entries(DEP[d].y)) y[r] += v;
   const pn = real(f) && Fa(f).pan; if (pn === 'col' && G.riv[i]) y.food++; if (pn === 'frj' && G.bld[i].includes('min')) y.prod++; if (pn === 'mar' && coastal(i)) y.gold++; // G-50
   y.prod += G.routes.filter(r => r.k === 'int' && r.b === i && rLive(r)).length; // T-01
+  if (G.nat && G.nat.has(i)) { y.gold += 2; y.pre++; } // MC-07
   if (occupied(i)) for (const r in y) y[r] = Math.floor(y[r] / 2);
   return y;
 }
@@ -1536,7 +1545,7 @@ function govAct(f, a, x, y) {
 }
 function govTurn(f) {
   const F = Fa(f);
-  F.cu += cultureInc(f);
+  F.cu += cultureInc(f); F.cuT = (F.cuT || 0) + cultureInc(f); // V-04
   if (gov(f) === 'mon') F.stab = Math.min(100, F.stab + 2);
   if (gov(f) === 'tri') F.gold = Math.max(0, F.gold - 1);
   if (F.pan === 'lar') F.stab = Math.min(100, F.stab + Math.floor(owned(f).length / 4));
@@ -1619,6 +1628,7 @@ const GF = {
   art: { n: 'Grande artista', b: ['tea', 'anf', 'mon'], fx: '+15 cultura' },
   gen: { n: 'Grande general', b: ['acm', 'qua'], fx: 'fica no território: +1 no ataque saindo dali e dos vizinhos' },
   adm: { n: 'Grande almirante', b: ['stl', 'arm'], fx: '+1 travessia permanente' },
+  exp: { n: 'Grande explorador', b: [], fx: 'revela o mapa e dá +2 ouro por maravilha natural do mundo (modo Civilização)' },
   pro: { n: 'Grande profeta', b: ['tem', 'mos', 'cat'], fx: 'funda uma fé sem precisar de templo, mosteiro nem cultura, ou espalha a sua' },
 };
 const gfCost = t => Math.round((G.gfc[t] || 20) * G.len.k);
@@ -1638,6 +1648,7 @@ function useFig(f, n) {
   else if (t === 'art') F.cu += 15;
   else if (t === 'gen') { const i = owned(f).filter(i => G.A[i].some(j => hostile(f, j))).sort((a, b) => G.tr[b] - G.tr[a])[0] ?? F.capI; G.genA[i] = f; log(f, `O grande general de ${fname(f)} assume em ${tname(i)}.`); }
   else if (t === 'adm') F.nav++;
+  else if (t === 'exp') { if (f === G.player && G.seen) for (let i = 0; i < G.N; i++) G.seen.add(i); F.gold += 2 * (G.nat ? G.nat.size : 0); }
   else if (t === 'pro') {
     if (!G.faiths[f]) { const used = Object.values(G.faiths).map(v => v.n), nm = FAITH_N.find(n => !used.includes(n)); if (!nm) return 'Não há mais fés a fundar.'; if (!F.pan) F.pan = 'lar'; G.faiths[f] = { n: nm, a: 'diz', b: 'dev', h: F.capI }; G.fai[F.capI] = f; log(f, `O grande profeta de ${fname(f)} funda a fé ${nm}.`); era(f, 2, 'fundou uma fé'); }
     else owned(f).forEach(i => { G.fai[i] = f; G.A[i].forEach(j => { if (rnd() < .5 && G.own[j] !== 'off') G.fai[j] = f; }); });
@@ -1770,7 +1781,7 @@ const monoOf = f => turnMemo('mono', f, () => monoOf0(f));
 function monoOf0(f) {
   const n = {}, mine = {};
   G.own.forEach((o, i) => { if (!real(o) || occupied(i)) return; for (const d of worked(i)) if (DEP[d].lux) { n[d] = (n[d] || 0) + 1; if (o === f) mine[d] = (mine[d] || 0) + 1; } });
-  return Object.keys(mine).filter(d => n[d] >= 2 && mine[d] / n[d] >= .6);
+  return Object.keys(mine).filter(d => n[d] >= 3 && mine[d] / n[d] >= .6);
 }
 // T-22: filiais de corporações (bolsa de valores) em mercados de outras facções em paz
 const corpMax = f => 2 * countB(f, 'bol');
@@ -1813,12 +1824,13 @@ function congress() {
   if (!C.on) { if (alive.filter(f => has(f, 'dipm')).length * 2 >= alive.length && alive.length > 1) { C.on = true; C.next = G.round + 1; log(null, 'Metade do mundo conhece a diplomacia moderna: nasce o Congresso Mundial.'); } return; }
   if (C.res.length && G.round >= C.due) { // apuração
     for (const r of C.res) {
-      let yes = 0, no = 0; for (const f of alive) { const v = f === G.player && !G.auto ? C.pv[r.k] : aiVote(f, r); if (v === true) yes += votes(f); else if (v === false) no += votes(f); }
+      let yes = 0, no = 0; const vs = {}; for (const f of alive) { const v = f === G.player && !G.auto ? C.pv[r.k] : aiVote(f, r); vs[f] = v; if (v === true) yes += votes(f); else if (v === false) no += votes(f); }
       const ok = yes > no; log(null, `Congresso Mundial: ${CRES[r.k][0]} ${ok ? 'aprovado' : 'rejeitado'} (${yes} a ${no}).`);
+      alive.forEach(f => { if (vs[f] === ok) Fa(f).fav = (Fa(f).fav || 0) + 1; }); // V-05: favor de quem votou com a maioria
       if (!ok) continue;
       if (r.k === 'emb') { alive.forEach(f => { if (f !== r.x) G.emb.add(tk(f, r.x)); }); C.embX = r.x; C.embU = G.round + 10; checkRoutes(); }
       if (r.k === 'ban') G.banMis = G.round + 15;
-      if (r.k === 'jog') { Fa(r.x).pre += 5; Fa(r.x).gamesT = G.round + 5; }
+      if (r.k === 'jog') { Fa(r.x).fav = (Fa(r.x).fav || 0) + 2; Fa(r.x).pre += 5; Fa(r.x).gamesT = G.round + 5; }
       if (r.k === 'aju') Fa(r.x).gold += 10;
       if (r.k === 'plu') G.polLim = G.round + 15;
     }
@@ -1828,7 +1840,7 @@ function congress() {
   if (G.round >= C.next) { // nova sessão: 2 resoluções, votadas na rodada seguinte
     const rk = alive.slice().sort((a, b) => score(b) - score(a)), host = alive.slice().sort((a, b) => cultureInc(b) - cultureInc(a))[0];
     const all = [{ k: 'emb', x: rk[0] }, { k: 'ban' }, { k: 'jog', x: host }, { k: 'aju', x: rk[rk.length - 1] }, { k: 'plu' }].sort(() => rnd() - .5);
-    C.res = all.slice(0, 2); C.due = G.round + 1; C.next = G.round + 15; C.pv = {};
+    C.res = all.slice(0, 2); Object.keys(G.cs).forEach(i => { const s = suz(+i); if (s) Fa(s).fav = (Fa(s).fav || 0) + 1; }); // V-05 C.due = G.round + 1; C.next = G.round + 15; C.pv = {};
     log(null, `Congresso Mundial em sessão: ${C.res.map(r => CRES[r.k][1](r.x)).join('; ')}. Votação na próxima rodada.`);
   }
 }
@@ -1860,6 +1872,243 @@ function aiEra12(f) {
   if (corpsOf(f).length < corpMax(f) && F.gold >= 10 && F.pa > 0) { const i = G.own.map((o, i) => i).find(i => real(G.own[i]) && G.own[i] !== f && peace(f, G.own[i]) && nb(i, 'mer') && !G.corp.some(c => c.f === f && c.i === i)); if (i != null) openCorp(f, i); }
   if (countB(f, 'sil') && F.gold >= 8) { const j = owned(f).flatMap(i => G.A[i]).filter(j => hostile(f, j) && real(G.own[j]) && G.tr[j] >= 3).sort((a, b) => G.tr[b] - G.tr[a])[0]; if (j != null) missile(f, j); }
 }
+// ---------- parte 13: vitórias completas (V-01 a V-08, V-10, aviso de ameaça) ----------
+// cada vitória dá o progresso de 0 a 1; o cenário pode limitar as vitórias com sc.vic
+const vicMin = () => Math.ceil(G.rounds / 2); // vitórias novas só da metade da partida em diante
+const vicOn = k => !G.sc.vic || G.sc.vic.includes(k);
+const rivals = f => G.order.filter(o => o !== f && Fa(o).alive && Fa(o).entered && !allied(f, o));
+// V-04: turismo acumulado contra a cultura acumulada de cada rival
+const tourInc = f => anar(f) ? 0 : Math.round(cultureInc(f) / 4 + 2 * wwCount(f) + countB(f, 'mus') + countB(f, 'ztu') + countB(f, 'pqn') + (Fa(f).gamesT >= G.round ? 3 : 0));
+// V-06: parte do ouro do mundo (reservas e filiais valendo 5 cada)
+const wealth = f => Fa(f).gold + 5 * corpsOf(f).length;
+const VIC = {
+  sci: { n: 'Ciência', fx: 'Programa Espacial, depois satélite, pouso tripulado e colônia espacial no mesmo território', p: f => ['pep', 'sp1', 'sp2', 'sp3'].filter(k => countB(f, k)).length / 4 },
+  cul: { n: 'Cultura', fx: 'seu turismo acumulado passa do dobro da cultura acumulada de cada rival (mín. 250)', p: f => { const t = Fa(f).tour || 0, r = rivals(f); return r.length ? Math.min(1, t / (250 * G.len.k), ...r.map(o => t / Math.max(1, 2 * (Fa(o).cuT || 0)))) : 0; } },
+  dip: { n: 'Diplomacia', fx: '20 pontos de favor no Congresso Mundial (votar com a maioria, sediar jogos, proteger cidades-estado)', p: f => Math.min(1, (Fa(f).fav || 0) / 20) },
+  eco: { n: 'Economia', fx: 'metade do ouro do mundo (reservas e filiais, mín. 120) por 10 turnos, ou 4 monopólios', p: f => Math.max(monoOf(f).length / 4, Math.min(1, (Fa(f).ecoT || 0) / 10)) },
+  rel: { n: 'Fé', fx: 'sua fé é a maioria em todas as facções vivas e segue 70% dos territórios do mundo', p: f => { if (!G.faiths[f]) return 0; const fs = G.order.filter(o => Fa(o).alive && Fa(o).entered && owned(o).length); return fs.filter(o => { const T = owned(o); return G.fai.filter((x, i) => x === f && G.own[i] === o).length * 2 > T.length; }).length / Math.max(1, fs.length) * Math.min(1, G.fai.filter((x, i) => x === f && real(G.own[i])).length / Math.max(1, .7 * G.own.filter(real).length)); } },
+  eco2: { n: 'Ecológica', fx: 'mundo com pouca poluição por 20 turnos e você liderando as energias limpas (mín. 2)', p: f => (G.green || 0) >= 1 && greenLead() === f ? Math.min(1, G.green / 20) : 0 },
+};
+const clean = f => countB(f, 'sol') + countB(f, 'hid') + countB(f, 'rsv');
+const greenLead = () => { const a = G.order.filter(f => Fa(f).alive && real(f)).sort((x, y) => clean(y) - clean(x)); return a[0] && clean(a[0]) >= 2 && (!a[1] || clean(a[0]) > clean(a[1])) ? a[0] : null; };
+// fim de cada turno da facção: acumula turismo, cultura total, economia; confere vitórias e ameaças
+function vicTurn(f) {
+  const F = Fa(f); if (!real(f)) return;
+  F.tour = (F.tour || 0) + tourInc(f);
+  const tot = G.order.reduce((s, o) => s + (Fa(o).alive ? wealth(o) : 0), 0);
+  F.ecoT = wealth(f) >= 120 * G.len.k && wealth(f) * 2 >= tot ? (F.ecoT || 0) + 1 : 0;
+  F.thr = F.thr || {};
+  for (const [k, V] of Object.entries(VIC)) {
+    if (!vicOn(k)) continue;
+    const p = V.p(f);
+    if (p >= .75 && !F.thr[k]) { F.thr[k] = 1; log(f, `Alerta: ${fname(f)} está perto da vitória de ${V.n.toLowerCase()}.`); if (f !== G.player && !G.auto) toast(`${fname(f)} está perto da vitória de ${V.n.toLowerCase()}!`); }
+    if (p >= 1 && G.round >= vicMin()) return endGame(f, k);
+  }
+}
+// rodada: favor do Congresso e o relógio ecológico
+function vicRound() {
+  const w = worldPol(); G.green = w <= 6 && greenLead() ? (G.green || 0) + 1 : 0;
+}
+const threatOf = f => Object.keys(Fa(f).thr || {}).length > 0;
+function vicModal() {
+  const me = G.player, fs = G.order.filter(f => Fa(f).alive && Fa(f).entered);
+  const rows = Object.entries(VIC).filter(([k]) => vicOn(k)).map(([k, V]) => {
+    const lead = fs.slice().sort((a, b) => V.p(b) - V.p(a))[0], pm = V.p(me), pl = lead ? V.p(lead) : 0;
+    return `<div class="tech"><div><b>${esc(V.n)}</b> <span class="hint">${esc(V.fx)}</span><p>Você ${pbar(pm, 1)} ${Math.round(100 * pm)}%${lead && lead !== me ? ` · líder ${esc(fname(lead))} ${Math.round(100 * pl)}%` : ''}</p></div></div>`;
+  }).join('');
+  modal(`<h2>Vitórias</h2><p class="hint">Além de dominação, objetivo e legado, há estas vitórias. Nenhuma delas vale antes da rodada ${vicMin()}. Quem passa de 75% de alguma vira alvo: todos recebem um alerta e as outras facções gostam menos dela.</p><div class="techs">${rows}</div>`, [['Fechar']]);
+}
+// ---------- parte 14: modo Civilização, gerador de mundo (MC-01 a MC-08, MC-14 a MC-16) ----------
+// tudo sai de uma semente: o mesmo código gera o mesmo mundo
+const CIV_SIZE = { p: { n: 'Pequeno', t: 40, f: 4 }, m: { n: 'Médio', t: 70, f: 6 }, g: { n: 'Grande', t: 110, f: 8 }, e: { n: 'Enorme', t: 160, f: 10 } };
+const CIV_TYPE = { cont: 'Continentes', pan: 'Pangeia', arq: 'Arquipélago', mar: 'Mar interior' };
+const CIV_START = { ant: 'Antiguidade', med: 'Idade Média', pol: 'Idade Moderna' };
+const CIV_CUL = { agr: ['Agrícola', 'recrutador'], mar: ['Marítima', 'almirante'], nom: ['Nômade', 'tatico'], mon: ['Montanhesa', 'tenaz'] };
+function seeded(s) { let a = s >>> 0; return () => { a = a + 0x6D2B79F5 >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const SYL = ['ar', 'ba', 'ca', 'do', 'el', 'fa', 'gor', 'ha', 'ir', 'ja', 'ka', 'lu', 'ma', 'no', 'or', 'pa', 'que', 'ra', 'sa', 'ta', 'ur', 'va', 'xi', 'za', 'ben', 'cor', 'dal', 'mir', 'nar', 'tor', 'vel', 'sol', 'mon', 'rin', 'tal', 'ves'];
+function civName(R, used) {
+  for (;;) { const n = 2 + Math.floor(R() * 2); let s = ''; for (let k = 0; k < n; k++) s += SYL[Math.floor(R() * SYL.length)]; s = s[0].toUpperCase() + s.slice(1); if (!used.has(s) && s.length <= 10) { used.add(s); return s; } }
+}
+// MC-03: células de Voronoi por recorte de semiplanos; cada aresta lembra o vizinho que a criou
+function voronoi(pts, w, h, r2) {
+  return pts.map((p, i) => {
+    let poly = [[0, 0, -1], [w, 0, -1], [w, h, -1], [0, h, -1]]; // [x, y, vizinho da aresta que começa aqui]
+    for (let j = 0; j < pts.length; j++) {
+      if (j === i) continue; const q = pts[j], dx = q[0] - p[0], dy = q[1] - p[1]; if (dx * dx + dy * dy > r2) continue;
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, side = v => (v[0] - mx) * dx + (v[1] - my) * dy; // > 0: lado de j
+      const out = [];
+      for (let k = 0; k < poly.length; k++) {
+        const a = poly[k], b = poly[(k + 1) % poly.length], sa = side(a), sb = side(b);
+        if (sa <= 0) out.push(a);
+        if ((sa <= 0) !== (sb <= 0)) { const t = sa / (sa - sb); out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), sa <= 0 ? j : a[2]]); }
+      }
+      poly = out; if (!poly.length) break;
+    }
+    return poly;
+  });
+}
+function civMap(o) {
+  const R = seeded(o.seed), S = CIV_SIZE[o.size], w = 1000, h = 620, frac = { cont: .45, pan: .55, arq: .3, mar: .55 }[o.type];
+  const tot = Math.round(S.t / frac), sp = Math.sqrt(w * h / tot), cols = Math.round(w / sp), rows = Math.round(h / sp), pts = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pts.push([(c + .5 + (R() - .5) * .8) * w / cols, (r + .5 + (R() - .5) * .8) * h / rows]);
+  const cells = voronoi(pts, w, h, (3 * sp) ** 2);
+  const nbr = cells.map((poly, i) => [...new Set(poly.map(v => v[2]).filter(j => j >= 0))]);
+  // MC-02: forma das terras por manchas em volta de centros sorteados
+  const nc = { cont: 3, pan: 1, arq: 8, mar: 1 }[o.type], C = o.type === 'mar' ? [[w / 2, h / 2, .75 * w]] : Array.from({ length: nc }, () => [w * (.15 + .7 * R()), h * (.2 + .6 * R()), (o.type === 'arq' ? .12 : o.type === 'cont' ? .3 : .55) * w]);
+  const noise = pts.map(() => R());
+  const sc = pts.map((p, i) => { let v = Math.max(...C.map(([x, y, rr]) => 1 - Math.hypot(p[0] - x, (p[1] - y) * 1.4) / rr)); if (o.type === 'mar') v -= Math.max(0, .6 - Math.hypot(p[0] - w / 2, (p[1] - h / 2) * 1.4) / (.18 * w)); const e = p[0] < sp || p[0] > w - sp || p[1] < sp || p[1] > h - sp ? -1 : 0; return v + .35 * noise[i] + e; });
+  const land = new Set(sc.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).slice(0, S.t).map(x => x[1]));
+  const L = [...land].sort((a, b) => pts[a][1] - pts[b][1] || pts[a][0] - pts[b][0]), ix = new Map(L.map((c, k) => [c, k]));
+  const adj = [], sea = [], seen = new Set();
+  L.forEach((c, a) => nbr[c].forEach(d => { if (ix.has(d) && a < ix.get(d)) adj.push([a, ix.get(d)]); }));
+  // travessias: duas terras que tocam a mesma célula de mar e estão perto
+  L.forEach((c, a) => nbr[c].filter(d => !land.has(d)).forEach(s => nbr[s].forEach(d => {
+    const b = ix.get(d); if (b == null || b === a || nbr[c].includes(d)) return; const k = Math.min(a, b) + ':' + Math.max(a, b);
+    if (!seen.has(k)) { seen.add(k); sea.push([Math.min(a, b), Math.max(a, b), 0]); }
+  })));
+  // ilhas soltas: liga ao território mais próximo pelo mar
+  const comp = Array(L.length).fill(-1); let nComp = 0;
+  const nb2 = L.map(() => []); adj.concat(sea).forEach(([a, b]) => { nb2[a].push(b); nb2[b].push(a); });
+  for (let s = 0; s < L.length; s++) if (comp[s] < 0) { const q = [s]; comp[s] = nComp; for (let k = 0; k < q.length; k++) for (const j of nb2[q[k]]) if (comp[j] < 0) { comp[j] = nComp; q.push(j); } nComp++; }
+  for (let c = 1; c < nComp; c++) { let best = null; L.forEach((x, a) => { if (comp[a] !== c) return; L.forEach((y, b) => { if (comp[b] === c) return; const d = Math.hypot(pts[x][0] - pts[y][0], pts[x][1] - pts[y][1]); if (!best || d < best[2]) best = [a, b, d]; }); }); if (best) { sea.push([Math.min(best[0], best[1]), Math.max(best[0], best[1]), 0]); const old = comp[best[0]]; comp.forEach((v, k) => { if (v === old) comp[k] = comp[best[1]]; }); } }
+  // MC-03: regiões de 4 a 8 territórios vizinhos por terra
+  const nbL = L.map(() => []); adj.forEach(([a, b]) => { nbL[a].push(b); nbL[b].push(a); });
+  // travessia só onde por terra o caminho é longo (evita atalhos sobre baías pequenas)
+  const near3 = (a, b) => { let fr = [a]; const sn = new Set([a]); for (let s = 0; s < 3; s++) { fr = fr.flatMap(x => nbL[x].filter(y => !sn.has(y) && sn.add(y))); if (sn.has(b)) return true; } return false; };
+  for (let k = sea.length - 1; k >= 0; k--) if (near3(sea[k][0], sea[k][1])) sea.splice(k, 1);
+  const reg = Array(L.length).fill(-1); let nr = 0;
+  for (let s = 0; s < L.length; s++) if (reg[s] < 0) { const want = 4 + Math.floor(R() * 5), q = [s]; reg[s] = nr; for (let k = 0; k < q.length && q.length < want; k++) for (const j of nbL[q[k]]) if (reg[j] < 0 && q.length < want) { reg[j] = nr; q.push(j); } nr++; }
+  const size = Array(nr).fill(0); reg.forEach(r => size[r]++);
+  reg.forEach((r, a) => { if (size[r] < 3) { const j = nbL[a].find(j => size[reg[j]] >= 3); if (j != null) { size[r]--; reg[a] = reg[j]; size[reg[j]]++; } } });
+  const used = [...new Set(reg)], rmap = new Map(used.map((r, k) => [r, k])), names = new Set();
+  const regions = used.map(() => civName(R, names));
+  const terr = L.map((c, a) => {
+    const poly = cells[c], d = 'M' + poly.map(v => v[0].toFixed(1) + ' ' + v[1].toFixed(1)).join('L') + 'Z';
+    return { n: civName(R, names), r: rmap.get(reg[a]), d, x: +pts[c][0].toFixed(1), y: +pts[c][1].toFixed(1) };
+  });
+  // MC-04 e MC-05: clima pela latitude, relevo por ruído suavizado, rios perto das serras
+  const el = L.map((c, a) => (noise[c] + nbL[a].reduce((s, b) => s + noise[L[b]], 0)) / (1 + nbL[a].length));
+  const elS = el.slice().sort((a, b) => b - a), mT = elS[Math.floor(L.length * .1)], hT = elS[Math.floor(L.length * .24)];
+  const coast = L.map((c, a) => nbr[c].some(d => !land.has(d)));
+  const geo = {}, POOL = { p: ['tri', 'arr', 'mil', 'alg', 'acu', 'vin'], c: ['tri', 'gad', 'cav', 'tab', 'caf'], f: ['mad', 'pel'], s: ['esp', 'caf', 'acu', 'mad'], h: ['ped', 'cob', 'fer', 'est', 'car', 'pra', 'sal'], m: ['ped', 'fer', 'our', 'gem', 'car', 'sli', 'cob'], d: ['inc', 'sal', 'pet', 'gem'], e: ['cav', 'gad', 'pet'], t: ['pel', 'pet', 'fer'], w: ['arr', 'pei'] };
+  const ter = L.map((c, a) => {
+    const lat = Math.abs(pts[c][1] / h - .5) * 2, r = R();
+    if (el[a] >= mT) return 'm'; if (el[a] >= hT) return 'h';
+    if (lat > .82) return 't'; if (lat < .25) return r < .5 ? 's' : r < .75 ? 'f' : 'p';
+    if (lat > .35 && lat < .6 && !coast[a] && r < .45) return 'd';
+    return r < .3 ? 'p' : r < .55 ? 'c' : r < .75 ? 'f' : r < .9 ? 'e' : 'w';
+  });
+  L.forEach((c, a) => {
+    const t = ter[a], riv = 'mhd'.includes(t) ? false : nbL[a].some(b => 'mh'.includes(ter[b])) && R() < .55, dep = [];
+    const pool = POOL[t].concat(coast[a] ? ['pei', 'per'] : []);
+    if (R() < .7) dep.push(pool[Math.floor(R() * pool.length)]); if (R() < .25) { const d = pool[Math.floor(R() * pool.length)]; if (!dep.includes(d)) dep.push(d); }
+    geo[terr[a].n] = t + (riv ? 'r' : '') + (dep.length ? ' ' + dep.join(',') : '');
+  });
+  return { m: { w, h, regions, terr, adj, sea, credit: `Mundo gerado · semente ${o.seed}` }, geo, ter, nbL, coast, R };
+}
+// MC-10, MC-14 a MC-16: facções geradas, tribos, ruínas e maravilhas naturais
+const CIV_C = ['#c8443a', '#3f6fd1', '#d6b33a', '#3f9a6b', '#8a6bbf', '#c86f3a', '#5fae9a', '#b8892f', '#d16aa0', '#7f95a3'];
+const CIV_FORM = ['Reino de', 'Império de', 'Confederação de', 'Povo de', 'República de', 'Sultanato de', 'Clãs de'];
+function civScenario(o) {
+  const W = civMap(o), { m, R } = W, N = m.terr.length, S = CIV_SIZE[o.size], d2 = (a, b) => Math.hypot(m.terr[a].x - m.terr[b].x, m.terr[a].y - m.terr[b].y);
+  // capitais longe umas das outras, em terra boa (MC-06)
+  const good = m.terr.map((t, i) => i).filter(i => 'pcfeh'.includes(W.ter[i]) && W.nbL[i].length >= 2), caps = [good[Math.floor(R() * good.length)]];
+  while (caps.length < S.f) caps.push(good.filter(i => !caps.includes(i)).sort((a, b) => Math.min(...caps.map(c => d2(b, c))) - Math.min(...caps.map(c => d2(a, c))))[0]);
+  // cada capital tem por perto um luxo, um estratégico antigo e terra boa
+  caps.forEach(c => { const g = m.terr[c].n, s = W.geo[g].split(' '); const ds = new Set((s[1] || '').split(',').filter(Boolean)); ['tri', 'cav'].forEach(d => ds.add(d)); W.geo[g] = 'p' + (s[0].includes('r') ? 'r' : '') + ' ' + [...ds].join(','); const n = W.nbL[c][0]; const gn = m.terr[n].n, sn = W.geo[gn].split(' '); W.geo[gn] = sn[0] + ' ' + [...new Set((sn[1] || '').split(',').filter(Boolean).concat(['fer', R() < .5 ? 'vin' : 'esp']))].join(','); W.ter[c] = 'p'; });
+  const used = new Set(m.terr.map(t => t.n).concat(m.regions)), cul = Object.keys(CIV_CUL);
+  const f = caps.map((c, k) => {
+    const nm = civName(R, used), cu = o.cul && k === 0 ? o.cul : cul[Math.floor(R() * cul.length)];
+    return { id: 'c' + k, n: `${CIV_FORM[Math.floor(R() * CIV_FORM.length)]} ${nm}`, c: CIV_C[k], L: civName(R, used) + ' ' + ['I', 'o Velho', 'o Sábio', 'a Grande', 'II'][Math.floor(R() * 5)], ab: CIV_CUL[cu][1], cul: cu, cap: m.terr[c].n, tr: 3, st: 60, nav: cu === 'mar' ? 2 : 1, t: [m.terr[c].n], obj: { n: Math.ceil(N * .4) } };
+  });
+  const far = i => Math.min(...caps.map(c => d2(i, c)));
+  const free = m.terr.map((t, i) => i).filter(i => !caps.includes(i) && !caps.some(c => W.nbL[c].includes(i)));
+  const pick = n => { const out = []; for (let k = 0; k < n && free.length; k++) out.push(free.splice(Math.floor(R() * free.length), 1)[0]); return out; };
+  const tribes = pick(Math.round(N * .1)), ruins = pick(Math.max(3, Math.round(N / 12))), nat = pick(Math.max(2, Math.round(N / 20)));
+  return {
+    id: 'civ', map: 'civ', era: 'Civilização', tech: o.era || 'ant', yr: -3000, y: 'mundo gerado', n: 'Modo Civilização', turns: 30, civ: o,
+    d: `Mapa aleatório (${S.n.toLowerCase()}, ${CIV_TYPE[o.type].toLowerCase()}), semente ${o.seed}. Cada povo começa com uma aldeia; o resto é ermo a explorar e povoar. Funde aldeias, encontre ruínas, enfrente tribos e chegue até a Era da Informação.`,
+    neu: 0, f, ev: [], rebels: tribes.map(i => [m.terr[i].n, 2 + Math.floor(R() * 2), 'Tribo ' + civName(R, used)]),
+    ruins: ruins.map(i => m.terr[i].n), nat: nat.map(i => m.terr[i].n), _m: m, _geo: W.geo,
+  };
+}
+// ---------- parte 14: modo Civilização em jogo (MC-07, MC-10 a MC-16, MC-21, MC-22, S-26, F-17, E-01 a E-07, IA-09) ----------
+let civOpt = { seed: 2026, size: 'm', type: 'cont', era: 'ant' };
+function civSetup(o) {
+  civOpt = { ...civOpt, ...o }; const sc = civScenario(civOpt);
+  MAPS.civ = sc._m; GEO.civ = sc._geo; delete sc._m; delete sc._geo;
+  const k = SCEN.findIndex(s => s.id === 'civ'); if (k >= 0) SCEN[k] = sc; else SCEN.push(sc);
+  return sc;
+}
+// IA-09: agenda do líder, visível no motivo da relação
+const AGENDA = {
+  mar: ['admira maravilhas', (a, b) => wwCount(b) ? 10 : 0], exr: ['teme exércitos grandes', (a, b) => power(b) > 1.3 * power(a) ? -10 : 0],
+  paz: ['aprecia quem vive em paz', (a, b) => Fa(b).ww ? -5 : 8], cie: ['respeita a ciência', (a, b) => Fa(b).tech.length > Fa(a).tech.length ? 8 : 0],
+};
+const agendaRel = (a, b) => { const A = Fa(a).agenda && AGENDA[Fa(a).agenda]; if (!A) return null; const v = A[1](a, b); return v ? [`agenda: ${A[0]}`, v] : null; };
+function civInit() {
+  for (const f of G.order) { const F = Fa(f); G.lv[F.capI] = Math.max(2, G.lv[F.capI] - 1); F.agenda = Object.keys(AGENDA)[Math.floor(rnd() * 4)]; F.nFund = 0; }
+  G.seen = new Set(); civSee();
+}
+// MC-11: névoa de guerra do jogador; satélites (K-113) revelam tudo
+function civSee() {
+  if (!G.seen) return; const me = G.player;
+  if (real(me) && has(me, 'sat')) { for (let i = 0; i < G.N; i++) G.seen.add(i); return; }
+  owned(me).forEach(i => { G.seen.add(i); G.A[i].forEach(j => G.seen.add(j)); });
+}
+// MC-12, MC-13, S-26: fundar aldeia (gasta 1 nível de uma cidade vizinha) ou posto avançado (só ouro)
+const fundCost = (f, post) => (post ? 6 : 3) + 2 * (Fa(f).nFund || 0);
+function civFound(f, j, post) {
+  const F = Fa(f); if (!G.sc.civ) return 'Só no modo Civilização.';
+  if (G.own[j] !== 'neu' || csOf(j) || G.tr[j] > 0) return 'Escolha um ermo vazio.';
+  const src = G.A[j].filter(i => G.own[i] === f && (post || G.lv[i] >= 2)).sort((a, b) => G.lv[b] - G.lv[a])[0];
+  if (src == null) return post ? 'O ermo precisa ser vizinho de um território seu.' : 'Precisa de uma vila ou cidade sua ao lado para mandar colonos.';
+  if (F.gold < fundCost(f, post)) return 'Ouro insuficiente.';
+  if (!spend(f)) return 'Sem pontos de ação.';
+  F.gold -= fundCost(f, post); F.nFund = (F.nFund || 0) + 1; if (!post) G.lv[src]--;
+  G.own[j] = f; G.tr[j] = 1; G.lv[j] = 1; G.food[j] = 0; G.cul[j] = f; G.occ[j] = 0;
+  log(f, `${fname(f)} ${post ? 'ergue um posto avançado' : 'funda uma aldeia'} em ${tname(j)}.`); civTake(f, j, 'neu'); return '';
+}
+// MC-14 e MC-15: tribo destruída dá ouro; ruína dá um prêmio a quem chega primeiro
+function civTake(f, j, d) {
+  const F = Fa(f);
+  if (d === 'reb' && /^Tribo/.test(G.rl[j] || '')) { F.gold += 6; log(f, `${fname(f)} dispersa a tribo de ${tname(j)} (+6 ouro).`); }
+  if (!G.ruin.has(j)) return; G.ruin.delete(j);
+  const r = Math.floor(rnd() * 4), t = TECH.filter(t => !t.doc && techOk(f, t) && !has(f, t.k)).sort((a, b) => a.cost - b.cost)[0];
+  if (r === 1 && t) { F.tech.push(t.k); log(f, `Nas ruínas de ${tname(j)}, ${fname(f)} aprende ${tName(t.k)}.`); }
+  else if (r === 2) { G.tr[j] += 2; log(f, `Sobreviventes das ruínas de ${tname(j)} se juntam a ${fname(f)} (+2 tropas).`); }
+  else if (r === 3 && f === G.player && G.seen) { G.m.terr.forEach((t, i) => { if (t.r === G.m.terr[j].r) G.A[i].concat(i).forEach(k => G.seen.add(k)); }); F.gold += 4; log(f, `Mapas antigos nas ruínas de ${tname(j)} revelam a região.`); }
+  else { F.gold += 12; log(f, `${fname(f)} acha um tesouro nas ruínas de ${tname(j)} (+12 ouro).`); }
+  F.gp = F.gp || {}; F.gp.exp = (F.gp.exp || 0) + 5; // F-17
+}
+// E-01 a E-07: o mundo muda de era com a tecnologia mais avançada; tribos viram cidades-estado
+const CIV_ERA = ['ant', 'med', 'pol', 'w1', 'w2', 'gf', 'gf'];
+function civRound() {
+  const e = Math.max(0, ...G.order.filter(f => Fa(f).alive).flatMap(f => Fa(f).tech.map(k => TK[k] ? TK[k].e : 0)));
+  const k = CIV_ERA[Math.max(ERA_LV[G.sc.tech] ?? 0, e)];
+  if (ERA[k] && G.era !== ERA[k]) { G.era = ERA[k]; G.air = airOf({ tech: k }); log(null, `O mundo entra em: ${ERA[k].n}.`); }
+  for (let i = 0; i < G.N; i++) if (G.own[i] === 'reb' && /^Tribo/.test(G.rl[i] || '') && rnd() < .015) {
+    G.own[i] = 'neu'; G.tr[i] = Math.max(4, G.tr[i]); G.cs[i] = { t: Object.keys(CS)[i % 6], inf: {}, mis: Object.keys(MIS)[i % 3] }; log(null, `A tribo de ${tname(i)} se assenta e vira cidade-estado.`);
+  }
+  civSee();
+}
+// MC-21: calendário que corre rápido na Antiguidade e devagar no fim
+const civYear = () => { const p = Math.min(1, (G.round - 1) / Math.max(1, G.rounds - 1)), y0 = { ant: -3000, med: 600, pol: 1500 }[G.sc.tech] ?? -3000, y = Math.round(y0 + (2025 - y0) * Math.pow(p, .6)); return y < 0 ? `${-y} a.C.` : `${y} d.C.`; };
+function aiCiv(f) {
+  const F = Fa(f); if (!G.sc.civ) return;
+  for (let n = 0; n < 2 && F.pa > 1; n++) {
+    const c = G.own.map((o, j) => j).filter(j => G.own[j] === 'neu' && !csOf(j) && !G.tr[j] && G.A[j].some(i => G.own[i] === f));
+    const best = c.sort((a, b) => (G.ruin.has(b) * 3 + G.dep[b].length + G.nat.has(b) * 2) - (G.ruin.has(a) * 3 + G.dep[a].length + G.nat.has(a) * 2))[0];
+    if (best == null || (civFound(f, best, false) && civFound(f, best, true))) break;
+  }
+}
+function civOptsHtml() {
+  const b = (k, v, t) => `<button class="mini ${civOpt[k] === v ? 'pri' : ''}" data-a="civo" data-k="${k}" data-v="${v}">${t}</button>`;
+  return `<p><b>Mundo:</b> ${Object.entries(CIV_SIZE).map(([k, s]) => b('size', k, `${s.n} (${s.t}, ${s.f} povos)`)).join(' ')}</p><p>${Object.entries(CIV_TYPE).map(([k, n]) => b('type', k, n)).join(' ')}</p>
+    <p><b>Começo:</b> ${Object.entries(CIV_START).map(([k, n]) => b('era', k, n)).join(' ')}</p>
+    <p><b>Semente:</b> <input id="civSeed" value="${civOpt.seed}" inputmode="numeric" size="8"> <button class="mini" data-a="civs">Usar</button> <button class="mini" data-a="civr">Sortear</button> <span class="hint">o mesmo código gera o mesmo mundo</span></p>`;
+}
+civSetup({});
 const coloPair = f =>{ for (const i of owned(f).filter(i => G.lv[i] >= 3).sort((a, b) => G.lv[b] - G.lv[a])) { const j = G.A[i].find(j => G.own[j] === f && G.lv[j] === 1 && !occupied(j)); if (j != null) return [i, j]; } return null; };
 const paOf = f => ECON.pa + agePA(f) + (has(f, 'adm') ? 1 : 0) + ({ rep: 1, abs: 1, dem: 2 }[gov(f)] || 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => Math.max(1, Math.round(((has(f, 'con') ? 1 : ECON.troop) - (gov(f) === 'feu' ? 1 : 0)) * (pol(f, 'csc') ? .75 : 1))); // G-05, G-20
@@ -2217,6 +2466,7 @@ function conquer(i, j, n) {
   // T-16: pilhagem. Quem toma a ponta de uma rota alheia leva o ouro de 2 turnos dela
   if (real(a)) for (const r of G.routes) if ((r.a === j || r.b === j) && r.f !== a && r.o !== a && RT[r.k].g) { Fa(a).gold += 2 * RT[r.k].g; log(a, `${fname(a)} pilha a ${RT[r.k].n.toLowerCase()} em ${tname(j)} (+${2 * RT[r.k].g} ouro).`); }
   checkRoutes();
+  if (real(a) && G.sc.civ) civTake(a, j, d);
   if (real(d) && real(a)) { remember(d, a, 'tomou nossa terra', -30); callDefense(a, d); }
   if (real(d)) {
     const D = Fa(d); D.stab = Math.max(0, D.stab - 2); D.ww = Math.min(30, D.ww + 2);
@@ -2272,6 +2522,7 @@ function beginTurn(f) {
   }
   F.reinf = reinfOf(f).r;
   F.hold = objDone(f) ? F.hold + 1 : 0; // D-03
+  vicTurn(f); if (G.over) return; // parte 13
   if (G.round < minWin()) return;
   if (F.hold >= G.len.hold) endGame(f, 'obj');
   else if (legacy(f) >= legWin() && G.own[F.capI] === f) endGame(f, 'leg');
@@ -2288,7 +2539,7 @@ async function advance() {
   G.cur++;
   if (G.cur >= G.order.length) {
     G.cur = 0; await rebelsAct(); if (G.over) return;
-    G.round++; ageCheck(); plague(); congress(); climate();
+    G.round++; ageCheck(); plague(); congress(); climate(); vicRound(); if (G.sc.civ) civRound();
     if (G.round > G.rounds) return endGame(null, 'turns');
     for (const e of G.sc.ev.filter(e => evRound(e) === G.round)) { applyEvent(e); render(); if (G.over) return; const g = G; if (!G.auto) await modal(`<p class="kick">${esc(G.sc.n)} · rodada ${G.round}</p><h2>${esc(e.n)}</h2><p>${esc(e.d)}</p>`, [['Continuar']]); live(g); }
     checkWin();
@@ -2370,12 +2621,12 @@ function endGame(w, why) {
   if (!w && why === 'turns') w = rank[0];
   G.winner = w; G.why = why;
   const pw = w && allied(w, G.player);
-  log(w, why === 'elim' ? 'Você foi eliminado.' : `${fname(w)} vence (${why === 'obj' ? 'objetivo cumprido' : why === 'leg' ? 'legado' : why === 'dom' ? 'dominação' : 'maior pontuação ao fim das rodadas'}).`);
+  log(w, why === 'elim' ? 'Você foi eliminado.' : `${fname(w)} vence (${why === 'obj' ? 'objetivo cumprido' : why === 'leg' ? 'legado' : why === 'dom' ? 'dominação' : VIC[why] ? 'vitória de ' + VIC[why].n.toLowerCase() : 'maior pontuação ao fim das rodadas'}).`);
   render();
   if (G.auto) return;
   const rows = rank.map(f => `<tr><td><i class="dot" style="background:${Fa(f).c}"></i>${esc(fname(f))}${f === G.player ? ' (você)' : ''}</td><td>${owned(f).length}</td><td>${capsHeld(f)}</td><td>${score(f)}</td></tr>`).join('');
   const t = why === 'elim' ? 'Derrota' : pw ? (w === G.player ? 'Vitória!' : 'Vitória da aliança!') : 'Derrota';
-  const sub = why === 'elim' ? 'Seus últimos territórios caíram.' : why === 'obj' ? `${fname(w)} cumpriu o objetivo: ${objText(Fa(w))}` : why === 'leg' ? `${fname(w)} chegou a ${legWin()} pontos de legado: ciência, obras e cultura.` : why === 'dom' ? `${fname(w)} e aliados dominaram o mapa.` : `Fim das ${G.rounds} rodadas. Vence quem mais cresceu: territórios ganhos desde o início, +2 por capital e +2 por alvo do objetivo controlado.`;
+  const sub = why === 'elim' ? 'Seus últimos territórios caíram.' : why === 'obj' ? `${fname(w)} cumpriu o objetivo: ${objText(Fa(w))}` : why === 'leg' ? `${fname(w)} chegou a ${legWin()} pontos de legado: ciência, obras e cultura.` : why === 'dom' ? `${fname(w)} e aliados dominaram o mapa.` : VIC[why] ? `${fname(w)} vence por ${VIC[why].n.toLowerCase()}: ${VIC[why].fx}.` : `Fim das ${G.rounds} rodadas. Vence quem mais cresceu: territórios ganhos desde o início, +2 por capital e +2 por alvo do objetivo controlado.`;
   modal(`<p class="kick">${esc(G.sc.n)}</p><h2>${t}</h2><p>${esc(sub)}</p><table class="rank"><tr><th>Facção</th><th>Terr.</th><th>Cap.</th><th>Pontos</th></tr>${rows}</table>`, [['Jogar de novo', () => startScenario(G.sc.id, G.player, G.diff, false, G.lenK)], ['Escolher cenário', showSetup]]);
 }
 
@@ -2383,15 +2634,16 @@ function endGame(w, why) {
 // Salvamento automático no início de cada turno seu; 3 espaços manuais e arquivo exportável guardam esse mesmo ponto (D-11).
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
-  const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ, tech0: X.tech0 }; });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = Object.fromEntries(Object.entries(X).filter(([k]) => !['tS', 'tN', 'tSet'].includes(k))); });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function restore(s) {
+  if (s && s.civ) civSetup(s.civ); // MC-08: o mundo volta pela semente
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -2505,7 +2757,7 @@ function aiBVal(f, k, i) {
   if (!S.z) { // parte 4: catálogo, avaliado pelos rendimentos e efeitos
     const W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8, pre: .5, stab: F.stab < 60 ? .7 : .2 };
     let v = Object.entries(S.y || {}).reduce((s, [r, a]) => s + a * W[r], 0) + (S.lg ? .6 : 0) + (S.ww ? 4.5 : 0) + (S.nav ? .8 : 0) + (S.rf ? 2.2 : 0)
-      + (S.mk && !goods(f).has(S.mk) ? 2.5 : 0) + .5 * (S.hp || 0) + .4 * (S.cu || 0) + .5 * (S.hl || 0) + (S.sciLv ? .8 * G.lv[i] : 0) + (S.pm ? 1.5 : 0) + (S.sd ? .3 : 0) - .3 * Math.max(0, S.plu || 0); // parte 12
+      + (S.vic ? 8 : 0) + (S.mk && !goods(f).has(S.mk) ? 2.5 : 0) + .5 * (S.hp || 0) + .4 * (S.cu || 0) + .5 * (S.hl || 0) + (S.sciLv ? .8 * G.lv[i] : 0) + (S.pm ? 1.5 : 0) + (S.sd ? .3 : 0) - .3 * Math.max(0, S.plu || 0); // parte 12
     if (S.def) v += th >= G.tr[i] * .7 ? 2 * S.def : .2;
     if (S.atk) v += th ? 1.6 : .3;
     const near = G.lv[i] < 4 && G.food[i] >= growNeed(i) * .5;
@@ -2554,7 +2806,7 @@ function aiResearch(f) {
 }
 function aiGovern(f) {
   const F = Fa(f);
-  aiResearch(f); aiGov(f); aiChars(f); aiEra12(f);
+  aiResearch(f); aiGov(f); aiChars(f); aiEra12(f); aiCiv(f);
   if (G.own[F.capI] === f && threat(f, F.capI) > G.tr[F.capI]) act(f, 'merc'); // A-47
   if (has(f, 'dou') && !F.passive && bestAttack(f, 1, true)) act(f, 'camp');
   for (let n = 0; n < 8 && F.pa > 0; n++) {
@@ -2667,6 +2919,8 @@ function relOf(a, b) {
   const nr = G.routes.filter(r => rLive(r) && tk(r.f, r.o) === tk(a, b)).length; if (nr) why.push(['comércio entre nós', 5 * nr]);
   if (facFaith(a) && facFaith(a) === facFaith(b)) why.push(['mesma fé', 10]);
   if (pol(b, 'pro')) why.push(['protecionismo deles', -5]);
+  if (threatOf(b)) why.push(['perto de vencer', -20]); // aviso de ameaça
+  const agd = G.sc.civ && agendaRel(a, b); if (agd) why.push(agd); // IA-09
   if (G.truce.has(tk(a, b))) why.push(['trégua em vigor', 10]);
   if (allied(a, b)) why.push(['aliados', 20]);
   if (owned(a).some(i => G.A[i].some(j => G.own[j] === b))) why.push(['fronteira disputada', -5]);
@@ -2842,20 +3096,22 @@ function initPan() {
   });
   const up = e => {
     ptr.delete(e.pointerId);
-    if (dr && !dr.moved && !dr.pinch && !ptr.size) { const el = dr.el.closest && dr.el.closest('[data-i]'); if (el) onTerr(+el.dataset.i); }
+    if (dr && !dr.moved && !dr.pinch && !ptr.size && svg.contains(e.target)) { const el = dr.el.closest && dr.el.closest('[data-i]'); if (el) onTerr(+el.dataset.i); }
     if (!ptr.size) dr = null;
   };
-  svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); // soltar fora do mapa também encerra o toque
   new ResizeObserver(() => G && setVB()).observe(svg);
 }
 function renderMap() {
+  civSee(); if (G.seen) svg.querySelectorAll('.sealinks line').forEach((l, k) => { const s = G.m.sea[k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
     const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
     P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
+    const fog = !!G.seen && !G.seen.has(i); if (fog) P[i].setAttribute('fill', '#161b22'); // MC-11
     P[i].classList.toggle('off', o === 'off');
-    const g = B[i]; g.toggleAttribute('hidden', o === 'off');
+    const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : G.bld[i].map(k => STRUCT[k].ic);
@@ -3117,13 +3373,13 @@ function bar(v) { const c = v < 15 ? 'var(--bad)' : v < 35 ? 'var(--warn)' : 'va
 function render() { if (!G) return; renderMap(); renderSide(); }
 function renderSide() {
   const me = G.player, F = Fa(me), cur = G.turnF, CF = cur && Fa(cur), my = cur === me && !G.over;
-  $('#round').textContent = `Rodada ${Math.min(G.round, G.rounds)}/${G.rounds} · ${G.len.n}`;
+  $('#round').textContent = `Rodada ${Math.min(G.round, G.rounds)}/${G.rounds} · ${G.len.n}${G.sc.civ ? ' · ' + civYear() : ''}`;
   $('#turn').innerHTML = CF ? `<i class="dot" style="background:${CF.c}"></i>${my ? 'Seu turno' : esc(CF.n)} · ${PHASE[G.phase]}` : '';
   $('#me').innerHTML = `<div class="fh" style="--fc:${F.c}"><div><h3>${esc(F.n)}</h3><p>${esc(F.L)} · <span title="${esc(ABIL[F.ab][1])}">${ABIL[F.ab][0]}</span></p></div></div>
     <p class="ab">${esc(ABIL[F.ab][1])}</p>
     <div class="stab">Estabilidade ${bar(F.stab)}</div>
     <p class="hint">${F.stab < 15 ? 'Crise: reforços pela metade e risco alto de revolta.' : F.stab < 35 ? 'Instável: províncias podem se rebelar no início do turno.' : 'Povo sob controle.'}${F.ww >= 3 ? ` Cansaço de guerra ${F.ww}: −${Math.floor(F.ww / 5)} de estabilidade por turno.` : ''}</p>
-    <p class="hint">Governo <b>${esc(GOV[gov(me)].n)}</b>${anar(me) ? ' (anarquia)' : ''} · cultura ${F.cu} 🎭 (+${cultureInc(me)})${facFaith(me) ? ' · fé ' + esc(G.faiths[facFaith(me)].n) : ''} <button class="mini" data-a="govm">Governo e fé</button> <button class="mini" data-a="figm">Personagens${(F.gf || []).length ? ' •' : ''}</button></p>
+    <p class="hint">Governo <b>${esc(GOV[gov(me)].n)}</b>${anar(me) ? ' (anarquia)' : ''} · cultura ${F.cu} 🎭 (+${cultureInc(me)})${facFaith(me) ? ' · fé ' + esc(G.faiths[facFaith(me)].n) : ''} <button class="mini" data-a="govm">Governo e fé</button> <button class="mini" data-a="figm">Personagens${(F.gf || []).length ? ' •' : ''}</button> <button class="mini" data-a="vicm">Vitórias</button></p>
     <p class="hint" title="Luxos, templos, arenas, teatros e festas sobem; cidades grandes, cansaço de guerra e impostos descem. Abaixo de 0: −10% de ouro e saber; abaixo de −10: perde estabilidade.">Felicidade <b>${hap(me)}</b>${hap(me) < 0 ? ' · povo infeliz: −10% de ouro e saber' : hap(me) >= 6 ? ' · atrai migrantes de vizinhos infelizes' : ''}</p>
     <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
@@ -3181,6 +3437,8 @@ function renderSide() {
     if (my && real(o) && o !== me && has(me, 'esc')) inf += `<p class="hint">Espião (1 ação, 3💰): ${Object.entries(SPY).map(([k, s]) => `<button class="mini" data-a="spy" data-i="${i}" data-k="${k}" title="${esc(s.fx)} · risco ${s.r}+${spyDef(i)} no dado" ${Fa(me).pa > 0 && Fa(me).gold >= 3 ? '' : 'disabled'}>${s.n}</button>`).join(' ')}</p>`;
     if (my && real(o) && o !== me && corpMax(me)) inf += `<p class="hint">Filiais ${corpsOf(me).length}/${corpMax(me)} <button class="mini" data-a="corp" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 5 ? '' : 'disabled'}>Abrir filial (1 ação, 5💰)</button></p>`;
     if (my && countB(me, 'sil') && hostile(me, i) && real(o)) inf += `<p class="hint"><button class="mini" data-a="msl" data-i="${i}" ${Fa(me).gold >= 5 ? '' : 'disabled'}>Lançar mísseis (5💰)</button> mata até 2 tropas, alvo a até 3 territórios de um silo</p>`;
+    if (G.sc.civ && (G.ruin.has(i) || G.nat.has(i))) inf += `<p class="hint">${G.ruin.has(i) ? '🏚 Ruínas: quem chegar primeiro ganha um prêmio. ' : ''}${G.nat.has(i) ? '🌋 Maravilha natural: +2 ouro e +1 prestígio a quem a tiver.' : ''}</p>`;
+    if (my && G.sc.civ && o === 'neu' && !csOf(i) && !G.tr[i] && G.A[i].some(j => G.own[j] === me)) inf += `<p class="hint">Ermo vazio. <button class="mini pri" data-a="fund" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= fundCost(me) ? '' : 'disabled'}>Fundar aldeia (${fundCost(me)}💰, 1 nível de uma vila vizinha)</button> <button class="mini" data-a="post" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= fundCost(me, 1) ? '' : 'disabled'}>Posto avançado (${fundCost(me, 1)}💰)</button></p>`;
     if (csOf(i)) { const c = G.cs[i], s = suz(i); inf += `<p class="hint">Cidade-estado ${CS[c.t][0]} (${CS[c.t][1]} ao suserano) · suserano ${s ? esc(fname(s)) : 'nenhum'} · sua influência ${c.inf[me] || 0} · missão: ${MIS[c.mis]}</p>${my ? `<button class="mini" data-a="env" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 2 ? '' : 'disabled'}>Enviado (1 ação, 2💰)</button>` : ''}`; }
     if (o !== 'off') {
       const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
@@ -3252,20 +3510,20 @@ function thumb(sc) {
   expand(m, sc.off || []).forEach(n => own[n] = OFF.c);
   return `<svg viewBox="0 0 ${m.w} ${m.h}" class="th"><rect x="-500" y="-500" width="${m.w + 1000}" height="${m.h + 1000}" fill="var(--sea)"/>${m.bg ? `<path d="${m.bg}" fill="#2a313b"/>` : ''}${m.terr.map(t => `<path d="${t.d}" fill="${own[t.n] || NEU.c}"/>`).join('')}</svg>`;
 }
-const GROUPS = ['Todos', 'Antiguidade', 'Idade Média', 'Moderna', 'Fantasia'];
+const GROUPS = ['Todos', 'Civilização', 'Antiguidade', 'Idade Média', 'Moderna', 'Fantasia'];
 function showSetup() {
   if (G) G.over = true; G = null; $('#game').hidden = true; $('#setup').hidden = false; $('#modal').hidden = true;
   const tab = $('#setup').dataset.tab || 'Todos', s = loadSave(), ssc = s && SCEN.find(x => x.id === s.sc);
   const slots = [1, 2, 3].map(n => [n, loadSave(SLOT(n))]).filter(([, x]) => x && x.v === 5 && SCEN.find(c => c.id === x.sc));
   $('#resume').innerHTML = `<div class="row">${ssc && s.v === 5 ? `<button class="pri" data-a="resume">Continuar partida: ${esc(ssc.n)} · rodada ${s.round}</button>` : ''}${slots.map(([n, x]) => `<button data-a="resume" data-n="${n}">Espaço ${n}: ${esc(SCEN.find(c => c.id === x.sc).n)} · rodada ${x.round}</button>`).join('')}<label class="ab2 file">Importar partida<input type="file" id="imp" accept=".json,application/json" hidden></label></div>`;
   $('#tabs').innerHTML = GROUPS.map(t => `<button class="${t === tab ? 'on' : ''}" data-a="tab" data-t="${t}">${t}</button>`).join('');
-  $('#scs').innerHTML = SCEN.slice().sort((a, b) => a.yr - b.yr).filter(s => tab === 'Todos' || ERA[s.tech].g === tab).map(s => `<button class="sc ${pickSc === s.id ? 'on' : ''}" data-a="sc" data-s="${s.id}">${thumb(s)}<div><span class="era ${s.tech === 'fan' ? 'fan' : ''}">${ERA[s.tech].n} · ${esc(s.y)}</span><h3>${esc(s.n)}</h3><p>${esc(s.d)}</p><small>${s.f.length} facções · ${MAPS[s.map].terr.length} territórios${airOf(s) ? ' · ' + airOf(s).n : ''}</small></div></button>`).join('');
+  $('#scs').innerHTML = SCEN.slice().sort((a, b) => a.yr - b.yr).filter(s => tab === 'Todos' || (tab === 'Civilização' ? s.civ : !s.civ && ERA[s.tech].g === tab)).map(s => `<button class="sc ${pickSc === s.id ? 'on' : ''}" data-a="sc" data-s="${s.id}">${thumb(s)}<div><span class="era ${s.tech === 'fan' ? 'fan' : ''}">${ERA[s.tech].n} · ${esc(s.y)}</span><h3>${esc(s.n)}</h3><p>${esc(s.d)}</p><small>${s.f.length} facções · ${MAPS[s.map].terr.length} territórios${airOf(s) ? ' · ' + airOf(s).n : ''}</small></div></button>`).join('');
   const sc = SCEN.find(s => s.id === pickSc);
   $('#pick').hidden = !sc;
   if (sc) {
     if (!sc.f.some(f => f.id === pickF && !f.late)) pickF = sc.f[0].id;
     $('#pickT').textContent = sc.n;
-    $('#pickTech').innerHTML = `<b>${esc(ERA[sc.tech].n)}:</b> ${ERA[sc.tech].tech.map(esc).join(' ')}`;
+    $('#pickTech').innerHTML = `<b>${esc(ERA[sc.tech].n)}:</b> ${ERA[sc.tech].tech.map(esc).join(' ')}` + (sc.civ ? civOptsHtml() : '');
     $('#facsPick').innerHTML = sc.f.filter(f => !f.late).map(f => { const F = { ...f, obj: objOf(f, MAPS[sc.map], (sc.relics || []).map(n => idxOf(MAPS[sc.map])[n])) }; return `<button class="fp ${pickF === f.id ? 'on' : ''}" data-a="fp" data-f="${f.id}" style="--fc:${f.c}"><b>${esc(f.n)}</b><span>${esc(f.L)} · ${ABIL[f.ab][0]}</span><em>${esc(ABIL[f.ab][1])}</em><small>${esc(objText(F))}</small><small>${expand(MAPS[sc.map], f.t).length} territórios · estabilidade ${f.st} · frota ${f.nav || 1}${f.team ? ' · aliança' : ''}</small></button>`; }).join('');
     $('#diff').innerHTML = ['Fácil', 'Normal', 'Difícil'].map((t, k) => `<button class="${pickD === k ? 'on' : ''}" data-a="diff" data-d="${k}">${t}</button>`).join('');
     $('#len').innerHTML = Object.entries(LEN).map(([k, L]) => `<button class="${pickL === k ? 'on' : ''}" data-a="len" data-l="${k}" title="Obras e tecnologias custam ×${L.k}; objetivo mantido por ${L.hold} turnos; ${L.leg} de legado vence.">${L.n} · ${L.r} rodadas</button>`).join('');
@@ -3292,6 +3550,8 @@ document.addEventListener('click', e => {
   else if (a === 'fp') { pickF = el.dataset.f; showSetup(); }
   else if (a === 'diff') { pickD = +el.dataset.d; showSetup(); }
   else if (a === 'len') { pickL = el.dataset.l; showSetup(); }
+  else if (a === 'civo') { civSetup({ [el.dataset.k]: el.dataset.v }); showSetup(); }
+  else if (a === 'civs' || a === 'civr') { const v = a === 'civr' ? Math.floor(Math.random() * 1e6) : Math.abs(parseInt($('#civSeed').value, 10)) || 1; civSetup({ seed: v }); showSetup(); }
   else if (a === 'start') startScenario(pickSc, pickF, pickD, false, pickL);
   else if (a === 'resume') resume(el.dataset.n ? SLOT(el.dataset.n) : SAVE);
   else if (a === 'rules') rules();
@@ -3328,9 +3588,11 @@ document.addEventListener('click', e => {
   else if (a === 'gv') { if (G.turnF !== G.player) return; const e = govAct(G.player, el.dataset.o, el.dataset.k, el.dataset.y); if (e) toast(e); render(); govModal(); }
   else if (a === 'occupy') occupy(); else if (a === 'move') doMove();
   else if (a === 'dipl') diploModal();
+  else if (a === 'vicm') vicModal();
   else if (a === 'dprop') { const e = propose(G.player, el.dataset.f, el.dataset.k, +el.dataset.r); toast(e || 'Proposta aceita.'); render(); diploModal(); }
   else if (a === 'doff') { const x = G.offers.splice(+el.dataset.n, 1)[0]; if (x) { if (x.k === 'truce') { G.truce.add(tk(G.player, x.f)); log(G.player, `Você aceita a trégua de ${fname(x.f)}.`); } else sign(G.player, x.f, x.k); } render(); diploModal(); }
   else if (a === 'ddem') { const d = G.dem; if (d && Fa(G.player).gold >= d.g) { Fa(G.player).gold -= d.g; Fa(d.f).gold += d.g; remember(d.f, G.player, 'pagou nosso tributo', 10); remember(G.player, d.f, 'nos cobrou tributo', -15); log(G.player, `Você paga ${d.g} ouro de tributo a ${fname(d.f)}.`); G.dem = null; } render(); diploModal(); }
+  else if (a === 'fund' || a === 'post') { if (G.turnF !== G.player) return; toast(civFound(G.player, +el.dataset.i, a === 'post') || (a === 'post' ? 'Posto avançado erguido.' : 'Aldeia fundada.')); render(); }
   else if (a === 'corp') { if (G.turnF !== G.player) return; toast(openCorp(G.player, +el.dataset.i) || 'Filial aberta.'); render(); }
   else if (a === 'msl') { if (G.turnF !== G.player) return; toast(missile(G.player, +el.dataset.i) || 'Mísseis lançados.'); render(); }
   else if (a === 'vote') { G.cong.pv[el.dataset.k] = el.dataset.v === '1'; diploModal(); }

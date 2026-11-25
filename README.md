@@ -102,7 +102,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 10 | Governo, cultura e fé (feita na v13) |
 | 11 | Personagens e eventos (feita na v14) |
 | 12 | Eras industrial a informação (feita na v15) |
-| 13 | Vitórias completas |
+| 13 | Vitórias completas (feita na v16) |
 | 14 | Modo Civilização (mapa aleatório, do zero até hoje) |
 | 15 | Acabamento (tutorial, histórico, modos opcionais) |
 

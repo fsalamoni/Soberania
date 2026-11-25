@@ -1,5 +1,45 @@
 # Histórico de versões
 
+## v17 — 25/11/2026 · Modo Civilização (parte 14 do roteiro)
+
+**Parte 14** (MC-01 a MC-08, MC-10 a MC-16, MC-20 a MC-24, S-26, F-17, E-01 a E-07, IA-09, IA-10)
+
+- Nova aba **Civilização** na tela inicial. O mundo é gerado na hora:
+  - MC-01: tamanho pequeno (40 territórios, 4 povos), médio (70, 6), grande (110, 8) ou enorme (160, 10).
+  - MC-02: continentes, pangeia, arquipélago ou mar interior.
+  - MC-03: territórios em polígonos de Voronoi, agrupados em regiões de 4 a 8.
+  - MC-04 e MC-05: clima pela latitude (tundra nos polos, selva no equador, desertos nas faixas secas), serras por relevo e rios que descem delas.
+  - MC-06: jazidas por terreno, e cada capital tem por perto terra boa, um estratégico e um luxo.
+  - MC-07: maravilhas naturais (+2 ouro e +1 prestígio a quem as tiver).
+  - MC-08: semente. O mesmo código gera o mesmo mundo, e o jogo salvo refaz o mundo pela semente.
+- MC-10 a MC-13 e S-26: cada povo começa com uma vila e tropas; o resto é ermo. Funde aldeias (gasta 1 nível de uma vila vizinha) ou erga postos avançados (só ouro), com custo que sobe a cada fundação.
+- MC-11: névoa de guerra. Você só vê o que é seu e o que faz fronteira com você; satélites revelam tudo.
+- MC-14 e MC-15: tribos atacam os vizinhos e dão ouro quando dispersadas, e com o tempo algumas viram cidades-estado. Ruínas dão tesouro, tecnologia, tropas ou mapas a quem chega primeiro.
+- MC-16: povos gerados com nome, cor, líder e uma cultura inicial (agrícola, marítima, nômade ou montanhesa) que dá uma habilidade.
+- MC-21 e MC-22: calendário de 3000 a.C. até hoje, mais rápido no começo; dá para começar na Idade Média ou na Idade Moderna.
+- E-01 a E-07: o mundo muda de era (nomes das cartas, aviação) quando alguém chega à tecnologia da era seguinte.
+- F-17: grande explorador, que nasce das ruínas e revela o mapa.
+- IA-09: cada líder tem uma agenda (admira maravilhas, teme exércitos grandes, aprecia a paz, respeita a ciência), que aparece no motivo da relação.
+- A IA funda aldeias e corre atrás de ruínas, jazidas e maravilhas naturais. O modo entra no teste automático de partidas IA contra IA (IA-10).
+- Fora desta versão: IA-01 a IA-05, IA-08 e IA-11 (a IA atual já cobre o básico); MC-25 (o jogo já roda todo no navegador); a era 8 fica para a parte 15.
+- Consertos: soltar o dedo ou o mouse fora do mapa deixava o toque seguinte travado; o teste de interface clica no centro do território.
+
+## v16 — 25/11/2026 · Vitórias completas (parte 13 do roteiro)
+
+**Parte 13** (V-01 a V-08, V-10, aviso de ameaça)
+
+- V-01, V-02 e V-08 continuam: dominação, objetivo do cenário e legado.
+- V-03 **Ciência**: depois do Programa Espacial, três projetos em sequência no mesmo território: lançamento de satélite, pouso tripulado e colônia espacial. Quem toma o território leva o projeto.
+- V-04 **Cultura**: o turismo (um quarto da cultura, maravilhas, museus, polos turísticos, parques e jogos mundiais) se acumula e precisa passar do dobro da cultura acumulada de cada rival, com mínimo de 250.
+- V-05 **Diplomacia**: 20 pontos de favor no Congresso Mundial. Vale 1 por voto do lado vencedor, 2 por sediar os jogos e 1 por cidade-estado protegida a cada sessão.
+- V-06 **Economia**: metade do ouro do mundo (reservas, e cada filial vale 5), com mínimo de 120, por 10 turnos; ou 4 monopólios de luxo.
+- V-07 **Fé**: sua fé é a maioria dos territórios de todas as facções vivas e segue 70% dos territórios do mundo.
+- V-10 **Ecológica**: o mundo fica 20 turnos com pouca poluição enquanto você lidera as energias limpas (parques solares, hidrelétricas e reservas, no mínimo 2).
+- As vitórias novas só valem da metade da partida em diante.
+- **Aviso de ameaça**: quem passa de 75% de uma vitória gera um alerta para todos, e as outras facções gostam menos dela (−20 de relação).
+- Painel **Vitórias** com o seu progresso e o do líder em cada uma. O cenário pode escolher quais vitórias ficam ligadas.
+- Conserto: o jogo salvo agora guarda todos os dados da facção (governo, cívicas, cultura, fé, personagens, vitórias). Antes, parte deles se perdia ao carregar.
+
 ## v15 — 25/11/2026 · Eras industrial a informação (parte 12 do roteiro)
 
 **Parte 12** (K-60 a K-117, C-13, C-14, C-27 a C-30, C-45 a C-53, C-66, C-74 a C-76, C-86 a C-89, C-95, C-96, C-107 a C-114, C-123 a C-125, C-128, C-129, C-210 a C-215, A-08 a A-12, A-25 a A-29, L-06, L-09, L-10, T-04 a T-07, T-19 a T-22, S-15, G-09 a G-11, DP-40 a DP-42)

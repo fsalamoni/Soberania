@@ -303,3 +303,10 @@ Object.assign(GOV, {
   tcn: { n: 'Tecnocracia corporativa', c: 'c_glo', s: { eco: 4, civ: 1 }, fx: '+1 ouro por rota e por filial; sem bens de consumo na rede, −3 de felicidade.' },
 });
 POL.tar = { n: 'Tarifas', t: 'eco', c: 'c_nac', fx: '+1 ouro por rota com outra facção; −5 de relação com os parceiros.' };
+
+// ---------- parte 13: projetos da vitória científica (V-03), em sequência no território do Programa Espacial ----------
+Object.assign(STRUCT, {
+  sp1: { pc: 40, need: 'pep', tech: 'sat', y: { sci: 1 }, lg: 5, vic: 1, ic: '🛰', fx: 'Satélite (V-03): 1ª etapa da vitória científica.', n: 'Lançamento de Satélite' },
+  sp2: { pc: 50, need: 'sp1', tech: 'net', y: { sci: 1 }, lg: 5, vic: 1, ic: '👨‍🚀', fx: 'Pouso tripulado (V-03): 2ª etapa da vitória científica.', n: 'Pouso Tripulado' },
+  sp3: { pc: 60, need: 'sp2', tech: 'ren', y: { sci: 1 }, lg: 5, vic: 1, ic: '🪐', fx: 'Colônia espacial (V-03): última etapa; vence pela ciência.', n: 'Colônia Espacial' },
+});
