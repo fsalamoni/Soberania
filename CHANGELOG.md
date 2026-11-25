@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## v35 — 25/11/2026 · Rotas de abastecimento entre regiões
+
+Parte v27 do plano de aprimoramento: rotas entre regiões.
+
+- **Abastecimento:** uma região sua manda a sobra de 🍞 comida ou ⚒ produção para outra região sua.
+  - Leva até 2 por turno, ou 3 com estrada nas duas pontas.
+  - Só sai a sobra: comida acima do consumo da população, ou produção da região de origem. Quem recebe não repassa o que recebeu, então não há cadeias nem ciclos.
+  - A comida entra no crescimento da região de destino. A produção entra na fila de obras dela.
+- **Caminho:** por terra, até 6 passos por regiões suas não ocupadas, ou por mar, com porto nas duas pontas.
+- **Corte:** se um inimigo ocupa a origem, o destino ou o caminho, a rota fica cortada até a ocupação acabar. No mapa, o arco fica vermelho.
+- **Custo e limite:** abrir custa o mesmo ouro de uma rota comercial. O limite é 1 rota, mais 1 a cada 4 regiões, e não conta no limite de comércio.
+- **Painel da região:** a nova seção "Abastecimento" abre e fecha as rotas. Mostra o que entra e o que sai, e o livro-razão lista cada rota com a sua causa.
+- **No mapa:** arcos amarelos para comida e laranja para produção.
+- **IA:** socorre com comida uma região sua que passa fome.
 ## v34 — 25/11/2026 · Legenda nas lentes do mapa
 
 - As lentes **Terreno, Zonas, Recursos e Rede** ganham uma legenda no canto inferior esquerdo do mapa:

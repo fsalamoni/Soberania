@@ -261,12 +261,13 @@ function jobs(i, L) {
 const jobless = i => Math.max(0, porte(i) - jobs(i));
 const foodUse = i => 2 * G.lv[i] - 1 + subOf(i);
 // livro-razão da região: cada ganho e perda com a causa; o líquido é o que chega ao império
-let ledOpen = false; document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ledger')) ledOpen = e.target.open; }, true);
+let ledOpen = false; document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ledger')) ledOpen = e.target.open; if (e.target.classList && e.target.classList.contains('supd')) supOpen = e.target.open; }, true);
 const RES_IC = { food: ['🍞', 'Comida'], prod: ['⚒', 'Produção'], gold: ['💰', 'Ouro'], sci: ['🔬', 'Saber'], pre: ['⭐', 'Prestígio'] };
 function regionNet(i) {
   const L = [], y = yieldOf(i, L), f = G.own[i], cd = capDist(f)[i], c = corrupt(i, cd), lo = tStab(i, cd) < 30, net = { ...y };
   L.push(['food', -foodUse(i), 'Consumo da população']); net.food = y.food - foodUse(i);
   const p = prodOf(i); if (p !== y.prod) L.push(['prod', p - y.prod, 'Governador, obras e governo']); net.prod = p;
+  for (const r of G.routes) if (r.k === 'sup' && (r.a === i || r.b === i)) { const v = supAmt(r); if (v) { const s = r.b === i ? v : -v; L.push([r.c, s, r.b === i ? 'Abastecimento de ' + tname(r.a) : 'Abastecimento para ' + tname(r.b)]); net[r.c] += s; } } // v35
   for (const r of ['gold', 'sci']) { const v = y[r] * (1 - c) * (lo ? .5 : 1); if (c && y[r]) L.push([r, -Math.round(y[r] * c * 10) / 10, `Corrupção (${Math.round(c * 100)}%, distância da capital)`]); if (lo && y[r]) L.push([r, -Math.round(y[r] * (1 - c) * 5) / 10, 'Estabilidade baixa (metade)']); net[r] = Math.round(v * 10) / 10; }
   return { L, net };
 }
@@ -295,7 +296,7 @@ const growOk = i => !growWhy(i).length;
 const growMax = i => porte(i) >= 8;
 function grow(f) {
   for (const i of settled(f)) {
-    G.food[i] += yieldOf(i).food - foodUse(i);
+    G.food[i] += yieldOf(i).food - foodUse(i) + supNet(i, 'food');
     if (G.food[i] < 0) { G.food[i] = 0; if (porte(i) > 1 && !nb(i, 'cel')) { if (subOf(i)) setSub(i, 0); else { G.lv[i]--; setSub(i, 1); } log(f, `Fome em ${tname(i)}: volta a ser ${pName(i).toLowerCase()}.`); } }
     else if (!growMax(i) && G.food[i] >= growNeed(i)) {
       if (growOk(i)) { G.food[i] -= growNeed(i); if (subOf(i)) { G.lv[i]++; setSub(i, 0); } else setSub(i, 1); log(f, `${tname(i)} cresce e vira ${pName(i).toLowerCase()}.`); }
@@ -1123,7 +1124,7 @@ function canQueue(f, k, i) {
 }
 // turnos que faltam para cada item da fila, somando a produção atual em sequência
 function qEta(i) {
-  const p = prodOf(i), f = G.own[i]; let acc = 0;
+  const p = prodOf(i) + supNet(i, 'prod'), f = G.own[i]; let acc = 0;
   return G.q[i].map(x => { acc += pCost(f, x.k, i) - x.p; return p ? Math.ceil(acc / p) : Infinity; });
 }
 const rushCost = (f, i, n) => { const x = G.q[i][n]; return x ? (pCost(f, x.k, i) - x.p) * (STRUCT[x.k].wonder ? ECON.rushW : ECON.rush) * (gov(f) === 'rme' ? .75 : 1) : 0; };
@@ -1137,7 +1138,7 @@ function finishWork(i, n) {
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
   for (const i of owned(f)) {
-    let p = prodOf(i);
+    let p = prodOf(i) + supNet(i, 'prod');
     while (p > 0 && G.q[i].length) {
       const x = G.q[i][0], use = Math.min(p, pCost(f, x.k, i) - x.p);
       x.p += use; p -= use;
@@ -1225,6 +1226,8 @@ function act(f, a, x, y) {
     log(f, `${fname(f)} cobra impostos extraordinários (+${g} ouro).`);
   } else if (a === 'rota') {
     return openRoute(f, x, y);
+  } else if (a === 'sup') {
+    return openSup(f, x, y, 'food');
   } else if (a === 'trade') {
     if (F.tradeOn) return 'O comércio já está aberto neste turno.'; spend(f); F.tradeOn = true;
   } else if (a === 'infl') {
@@ -1255,9 +1258,38 @@ function research(f) {
 // ---------- parte 6: comércio e rotas (T-01 a T-03, T-10 a T-14, T-16 a T-18) ----------
 // rota = { f: quem abriu, o: parceiro, a: ponta de f, b: ponta do parceiro, k: tipo, gd: bens que f recebe, s: rodada em que começa a render }
 const RT = { int: { n: 'Rota interna', ic: '🛒', g: 0 }, car: { n: 'Caravana', ic: '🐪', g: 2 }, mar: { n: 'Rota marítima', ic: '⛵', g: 3 }, oce: { n: 'Rota oceânica', ic: '🚢', g: 5 }, ole: { n: 'Oleoduto', ic: '🛢', g: 2 }, aer: { n: 'Rota aérea de carga', ic: '✈', g: 2 }, dig: { n: 'Rede digital', ic: '🌐', g: 0 } };
-const rOk = r => ({ int: () => nb(r.a, 'mer') && nb(r.b, 'mer'), car: () => nb(r.a, 'car'), mar: () => nb(r.a, 'por') && nb(r.a, 'arm') && nb(r.b, 'por'), oce: () => nb(r.a, 'cia') && nb(r.b, 'por'), ole: () => nb(r.a, 'rfn') && road(r.b) >= 2, aer: () => nb(r.a, 'apt') && nb(r.b, 'apt'), dig: () => has(r.f, 'net') && has(r.o, 'net') }[r.k])();
+const rOk = r => ({ sup: () => true, int: () => nb(r.a, 'mer') && nb(r.b, 'mer'), car: () => nb(r.a, 'car'), mar: () => nb(r.a, 'por') && nb(r.a, 'arm') && nb(r.b, 'por'), oce: () => nb(r.a, 'cia') && nb(r.b, 'por'), ole: () => nb(r.a, 'rfn') && road(r.b) >= 2, aer: () => nb(r.a, 'apt') && nb(r.b, 'apt'), dig: () => has(r.f, 'net') && has(r.o, 'net') }[r.k])();
 const routeMax = f => countB(f, 'mer') + countB(f, 'por') + countB(f, 'ban') + csBonus(f, 'por') + (gov(f) === 'rme' ? 1 : 0) + (Fa(f).rtB || 0); // T-11
-const myRoutes = f => G.routes.filter(r => r.f === f);
+const myRoutes = f => G.routes.filter(r => r.f === f && r.k !== 'sup'); // abastecimento não conta no limite de comércio
+// v35 (plano v27): abastecimento leva a sobra de comida ou produção de uma região sua para outra,
+// por terra (até 6 passos por regiões suas não ocupadas) ou por mar (porto nas duas pontas); ocupar o caminho corta a rota.
+// A quantidade vem do rendimento próprio da origem (sem o que ela recebe), então não há cadeias nem ciclos.
+RT.sup = { n: 'Abastecimento', ic: '🐂', g: 0 };
+const CARGO = { food: '🍞 comida', prod: '⚒ produção' };
+const supMax = f => 1 + Math.floor(settled(f).length / 4);
+const supOf = f => G.routes.filter(r => r.k === 'sup' && r.f === f);
+const supWay = (f, a, b) => landSteps(a, b, 6, j => G.own[j] === f && !occupied(j)) < 99 ? 'terra' : nb(a, 'por') && nb(b, 'por') ? 'mar' : '';
+const supCut = r => occupied(r.a) || occupied(r.b) || !supWay(r.f, r.a, r.b);
+const supCap = r => 2 + (road(r.a) && road(r.b) ? 1 : 0);
+const supAmt = r => !rLive(r) || supCut(r) ? 0 : Math.min(supCap(r), Math.max(0, r.c === 'food' ? yieldOf(r.a).food - foodUse(r.a) : prodOf(r.a)));
+const supNet = (i, c) => G.routes.reduce((s, r) => s + (r.k === 'sup' && r.c === c && (r.a === i || r.b === i) ? (r.b === i ? 1 : -1) * supAmt(r) : 0), 0);
+function openSup(f, a, b, c) {
+  if (G.own[a] !== f || G.own[b] !== f || a === b || !G.lv[a] || !G.lv[b] || !CARGO[c]) return 'Escolha duas regiões suas povoadas.';
+  if (supOf(f).length >= supMax(f)) return `Limite de ${supMax(f)} rotas de abastecimento (1, mais 1 a cada 4 regiões).`;
+  if (G.routes.some(r => r.k === 'sup' && r.a === a && r.b === b && r.c === c)) return 'Essa rota já existe.';
+  if (!supWay(f, a, b)) return 'Sem caminho: até 6 passos por regiões suas não ocupadas, ou porto nas duas pontas.';
+  if (Fa(f).gold < ECON.route) return 'Ouro insuficiente.';
+  Fa(f).gold -= ECON.route; G.routes.push({ f, o: f, a, b, k: 'sup', c, gd: [], s: G.round + 1 });
+  log(f, `${fname(f)} abre abastecimento de ${CARGO[c]} de ${tname(a)} para ${tname(b)}.`); return '';
+}
+let supOpen = false;
+function supHtml(i) {
+  const f = G.player, my = G.turnF === f, rs = G.routes.filter(r => r.k === 'sup' && (r.a === i || r.b === i));
+  const line = r => `${CARGO[r.c]} ${r.a === i ? '→ ' + esc(tname(r.b)) : '← ' + esc(tname(r.a))}: ${r.s > G.round ? 'começa no próximo turno' : supCut(r) ? '<span class="neg">cortada (caminho ocupado)</span>' : (supAmt(r) ? (r.a === i ? '−' : '+') + supAmt(r) + ' por turno' : 'nada agora (a origem não tem sobra)')} <button class="mini" data-a="supx" data-k="${G.routes.indexOf(r)}" ${my ? '' : 'disabled'}>Fechar</button>`;
+  const ds = G.lv[i] ? settled(f).filter(j => j !== i && G.lv[j] && supWay(f, i, j)) : [];
+  const can = my && ds.length && supOf(f).length < supMax(f) && Fa(f).gold >= ECON.route;
+  return `<details class="supd" ${supOpen ? 'open' : ''}><summary>🐂 Abastecimento ${supOf(f).length}/${supMax(f)}${rs.length ? ' · ' + rs.length + ' nesta região' : ''}</summary><p class="hint">Manda a sobra desta região para outra sua: até 2 por turno, 3 com estrada nas duas pontas. Vai por terra, até 6 passos por regiões suas não ocupadas, ou por mar, com porto nas duas pontas. Um inimigo que ocupe o caminho corta a rota. Abrir custa ${ECON.route} ouro.</p>${rs.length ? '<p class="hint">' + rs.map(line).join('<br>') + '</p>' : ''}${can ? `<p class="hint">Para <select id="supTo">${ds.map(j => `<option value="${j}">${esc(tname(j))}</option>`).join('')}</select> <button class="mini" data-a="sup" data-i="${i}" data-c="food">Mandar comida</button> <button class="mini" data-a="sup" data-i="${i}" data-c="prod">Mandar produção</button></p>` : ''}</details>`;
+}
 const rLive = r => G.round >= r.s && r.cut !== G.round && !(r.cutU >= G.round);
 function landSteps(a, b, max, ok) { // passos por terra de a até b, sem passar de max; ok(i) filtra o caminho
   let fr = [a]; const seen = new Set([a]);
@@ -1303,7 +1335,7 @@ const routeGoods = f => G.routes.filter(r => r.f === f && rLive(r)).flatMap(r =>
 // T-14: rota com quem já tem a tecnologia barateia 20%
 const techCost = (t, f) => Math.round(t.cost * 2 * G.len.k * (t.e === 3 && hasW(f, 'exu') ? .8 : 1) * (f && G.routes.some(r => rLive(r) && r.f !== r.o && (r.f === f || r.o === f) && has(r.f === f ? r.o : r.f, t.k)) ? .8 : 1));
 function routesModal() {
-  const me = G.player, F = Fa(me), my = G.turnF === me, act = G.routes.filter(r => r.f === me || r.o === me), c = routeCands(me).slice(0, 10);
+  const me = G.player, F = Fa(me), my = G.turnF === me, act = G.routes.filter(r => (r.f === me || r.o === me) && r.k !== 'sup'), c = routeCands(me).slice(0, 10);
   const row = (r, btn) => `<div class="tech"><div><b>${RT[r.k].ic} ${RT[r.k].n}</b> <span class="hint">${esc(tname(r.a))} → ${esc(tname(r.b))}${r.o !== r.f ? ' · ' + esc(fname(r.f === me ? r.o : r.f)) : ''}${r.k === 'dig' ? ' · +2🔬 cada lado' : RT[r.k].g ? ` · +${RT[r.k].g}💰 cada lado` : ' · +1⚒ no destino e os bens dele na rede'}${r.gd.length ? ' · traz ' + r.gd.map(d => DEP[d].ic + ' ' + DEP[d].n).join(', ') : ''}${r.s > G.round ? ' · começa no próximo turno' : ''}</span></div>${btn || ''}</div>`;
   modal(`<h2>Comércio</h2><p class="hint">Rotas abertas por você: ${myRoutes(me).length}/${routeMax(me)} (1 por mercado, porto e banco). Abrir custa ${ECON.route} ouro. Caravana pede caravançará e um mercado alheio a até 4 territórios; rota marítima, porto com armazém alfandegário e um porto alheio; rota interna, mercado nas duas pontas. Depois vêm a rota oceânica (companhia de comércio), o oleoduto (refinaria e ferrovia ou rodovia), a rota aérea (aeroportos) e a rede digital (Internet, entre capitais). Bens recebidos contam como ligados para as obras, e rota com quem sabe mais barateia a pesquisa em 20%.</p>
     <h4>Ativas</h4><div class="techs">${act.length ? act.map(r => row(r)).join('') : '<p class="hint">Nenhuma.</p>'}</div>
@@ -1698,6 +1730,7 @@ function aiOptions(f) {
   if (F.pre >= ECON.agit + 2) { const j = border.flatMap(i => G.A[i]).find(j => real(G.own[j]) && hostile(f, j) && Fa(G.own[j]).stab < 45); if (j != null) o.push([1.8, 'agit', j]); }
   if (F.stab > 65) o.push([1.3, 'tax']);
   const next = F.res && TK[F.res];
+  if (F.gold >= ECON.route + 2 && supOf(f).length < supMax(f)) { const st = settled(f).filter(i => G.lv[i]), sur = i => yieldOf(i).food - foodUse(i), hun = st.find(i => sur(i) + supNet(i, 'food') < 0), src = hun == null ? null : st.filter(i => i !== hun && sur(i) >= 2 && supWay(f, i, hun)).sort((a, b) => sur(b) - sur(a))[0]; if (src != null) o.push([3.2, 'sup', src, hun]); } // v35: socorre região com fome
   if (F.gold >= ECON.route + 2) { const r = routeCands(f)[0]; if (r) o.push([2.6 + r.v * .45, 'rota', r.a, r.b]); } // parte 6
   if (!F.tradeOn && next && F.gold >= 8 && (techCost(next, f) - F.sci) * 2 <= F.gold - 3) o.push([2.6, 'trade']);
   return o;
@@ -2236,7 +2269,7 @@ function renderMap() {
   // parte 5: estradas entre vizinhos que têm estrada (do mesmo dono), com traçado de verdade (roadD); v28
   const T = G.m.terr, rc = [], rl = [];
   for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) { const d = roadD(i, j), k = Math.min(road(i), road(j)); rc.push(`<path d="${d}" class="rk rk${k}"/>`); rl.push(`<path d="${d}" class="rd rd${k}"/>`); }
-  for (const r of G.routes) { const a = T[r.a], b = T[r.b], dx = b.x - a.x, dy = b.y - a.y; rl.push(`<path d="M${a.x} ${a.y}Q${(a.x + b.x) / 2 - dy * .18} ${(a.y + b.y) / 2 + dx * .18} ${b.x} ${b.y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}"/>`); } // parte 6: rota em arco
+  for (const r of G.routes) { const a = T[r.a], b = T[r.b], dx = b.x - a.x, dy = b.y - a.y; rl.push(`<path d="M${a.x} ${a.y}Q${(a.x + b.x) / 2 - dy * .18} ${(a.y + b.y) / 2 + dx * .18} ${b.x} ${b.y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}${r.k === 'sup' ? ' sup ' + r.c + (supCut(r) ? ' cut' : '') : ''}"/>`); } // parte 6: rota em arco; v35 abastecimento
   $('#roads').innerHTML = rc.join('') + rl.join('');
   legend(net);
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
@@ -2573,6 +2606,7 @@ function renderSide() {
         <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
       if (real(o)) { const cd = capDist(o)[i], ts = tStab(i, cd), hs = health(i); inf += `<p class="hint">Saúde ${hs}${hs < 0 ? ' (risco de epidemia)' : ''} · estabilidade local ${ts}${ts < 10 ? ' (pode se separar)' : ts < 30 ? ' (rende metade)' : ''} · corrupção ${Math.round(100 * corrupt(i, cd))}% · cultura ${G.cul[i] === o ? 'própria' : esc(fname(G.cul[i]) || 'local') + ` (assimila ${G.asm[i]}/8)`}</p>`; }
       if (real(o)) inf += ledgerHtml(i);
+      if (o === me) inf += supHtml(i);
     }
     if (o === me) inf += qHtml(i);
   }
@@ -2690,6 +2724,8 @@ document.addEventListener('click', e => {
   else if (a === 'catalog') catalogModal();
   else if (a === 'routes') routesModal();
   else if (a === 'merc') { const e = act(G.player, 'merc'); toast(e || 'Mercenários na capital.'); render(); }
+  else if (a === 'sup') { const e = openSup(G.player, +el.dataset.i, +$('#supTo').value, el.dataset.c); toast(e || 'Abastecimento aberto: começa no próximo turno.'); render(); }
+  else if (a === 'supx') { const k = +el.dataset.k, r = G.routes[k]; if (r && r.k === 'sup' && r.f === G.player) { G.routes.splice(k, 1); log(G.player, `Abastecimento de ${tname(r.a)} para ${tname(r.b)} fechado.`); } render(); }
   else if (a === 'route') { const e = act(G.player, 'rota', +el.dataset.i, +el.dataset.j); toast(e || 'Rota aberta: começa a render no próximo turno.'); render(); routesModal(); }
   else if (a === 'demb') { const o = el.dataset.f, k = tk(G.player, o); if (G.emb.has(k)) G.emb.delete(k); else { G.emb.add(k); checkRoutes(); log(G.player, `Você declara embargo a ${fname(o)}.`); } render(); }
   else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }
