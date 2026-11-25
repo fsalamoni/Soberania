@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## v27 — 25/11/2026 · Japão com divisas reais e relevo de verdade
+
+Atende ao retorno do Flavio sobre as divisas ruins e o relevo "infantil". É a primeira etapa da reforma visual do mapa.
+
+- Divisas reais no mapa do Japão. Antes as províncias eram recortes retos de caixas de latitude e longitude, o que gerava losangos como Bizen e Mimasaka. Agora cada território é a soma de províncias atuais do Japão (Natural Earth, 1:10 milhões, domínio público), agrupadas nas províncias do período Sengoku. Onde a divisa antiga corta uma província atual (Owari e Mikawa em Aichi; Tōtōmi e Suruga em Shizuoka), o corte segue a linha histórica aproximada, com traçado sinuoso. A costa ganhou o detalhe de 1:10 milhões. As vizinhanças foram recalculadas pelas divisas reais. Novo script: `maps/japao-real.mjs`.
+- Relevo real: elevação de verdade (AWS Terrain Tiles, dados abertos), cerca de 1,2 km por pixel.
+  - Em todas as visões, um sombreado de montanhas e vales fica sobre as cores dos donos.
+  - Na visão Relevo, o terreno aparece colorido por altitude: planícies verdes, serras marrons e picos claros. Os impérios aparecem só pela faixa da fronteira.
+  - Novo script: `maps/relevo.js`. As imagens ficam em `maps/relevo/` e o `build.js` as embute no arquivo do jogo.
+- Terra neutra ficou mais clara quando há relevo, para o sombreado aparecer.
+- Por enquanto só o Japão tem divisas reais e relevo real; os outros mapas vêm nas próximas versões. A v26 (visão Relevo simples) não chegou a ser publicada.
 ## v26 — 25/11/2026 · Visão de relevo e relevo que pesa
 
 Quarta parte do plano de aprimoramento. A visão de relevo fica num botão, como o Flavio escolheu; o mapa político continua sendo o padrão.
