@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## v28 — 25/11/2026 · Estradas com traçado de verdade
+
+Segunda etapa da reforma visual do mapa, a pedido do Flavio: estradas que não sejam retas e que contornem montanhas.
+
+- No Japão, cada estrada entre dois vizinhos segue o caminho mais barato sobre a elevação real, por dentro dos dois territórios. Ela foge das encostas íngremes e dos picos e prefere vales, passos de montanha e a costa. O traçado é calculado uma vez pelo `maps/relevo.js` (novo arquivo `maps/relevo/japao-r.json`) e embutido pelo `build.js`.
+- Nos mapas que ainda não têm relevo real, a estrada vira uma curva suave que cruza a divisa no ponto mais próximo da reta entre os centros.
+- Cada tipo de estrada tem seu desenho, com contorno escuro por baixo:
+  - trilha (estrada de terra) tracejada;
+  - estrada pavimentada clara;
+  - ferrovia com dormentes;
+  - autoestrada larga e laranja.
+- A largura das linhas não muda com o zoom.
+- As rotas de comércio são desenhadas em arco, em vez de linha reta.
+- Novo teste: as estradas saem com traçado curvo, e o Japão tem os traçados calculados.
 ## v27 — 25/11/2026 · Japão com divisas reais e relevo de verdade
 
 Atende ao retorno do Flavio sobre as divisas ruins e o relevo "infantil". É a primeira etapa da reforma visual do mapa.

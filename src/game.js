@@ -2077,6 +2077,16 @@ function outlines(m) {
   }
   return m._ol = out;
 }
+// v28: traçado da estrada entre vizinhos. Com relevo real, vem pronto do maps/relevo.js (contorna serras);
+// sem ele, curva suave que cruza a divisa no ponto mais perto da reta entre os centros.
+function roadD(i, j) {
+  const m = G.m, c = m._rd || (m._rd = {}), k = i + '-' + j; if (c[k]) return c[k];
+  const R = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map] && RELIEF[G.sc.map].r; if (R && (R[k] || R[j + '-' + i])) return c[k] = R[k] || R[j + '-' + i];
+  const A = m.terr[i], B = m.terr[j], mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2; let p = [mx, my], bd = Infinity;
+  for (const s of outlines(m)) if ((s[4] === i && s[5] === j) || (s[4] === j && s[5] === i)) { const x = (s[0] + s[2]) / 2, y = (s[1] + s[3]) / 2, d = (x - mx) ** 2 + (y - my) ** 2; if (d < bd) { bd = d; p = [x, y]; } }
+  const f = v => +v.toFixed(1), t = .5; // Catmull-Rom por A, p, B
+  return c[k] = `M${A.x} ${A.y}C${f(A.x + (p[0] - A.x) * t / 1.5)} ${f(A.y + (p[1] - A.y) * t / 1.5)} ${f(p[0] - (B.x - A.x) / 6)} ${f(p[1] - (B.y - A.y) / 6)} ${f(p[0])} ${f(p[1])}C${f(p[0] + (B.x - A.x) / 6)} ${f(p[1] + (B.y - A.y) / 6)} ${f(B.x - (B.x - p[0]) * t / 1.5)} ${f(B.y - (B.y - p[1]) * t / 1.5)} ${B.x} ${B.y}`;
+}
 // costa, divisa entre territórios do mesmo dono e divisa entre impérios (destacada); refaz só quando os donos mudam
 function drawBorders() {
   const key = G.own.join() + (G.seen ? G.seen.size : ''); if (key === brdKey) return; brdKey = key;
@@ -2185,11 +2195,11 @@ function renderMap() {
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
     g.classList.toggle('lightbg', light(F.c));
   }
-  // parte 5: estradas como linhas entre vizinhos que têm estrada (do mesmo dono)
-  const T = G.m.terr, rl = [];
-  for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) rl.push(`<line x1="${T[i].x}" y1="${T[i].y}" x2="${T[j].x}" y2="${T[j].y}" class="rd${Math.min(road(i), road(j))}"/>`);
-  for (const r of G.routes) rl.push(`<line x1="${T[r.a].x}" y1="${T[r.a].y}" x2="${T[r.b].x}" y2="${T[r.b].y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}"/>`); // parte 6
-  $('#roads').innerHTML = rl.join('');
+  // parte 5: estradas entre vizinhos que têm estrada (do mesmo dono), com traçado de verdade (roadD); v28
+  const T = G.m.terr, rc = [], rl = [];
+  for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) { const d = roadD(i, j), k = Math.min(road(i), road(j)); rc.push(`<path d="${d}" class="rk rk${k}"/>`); rl.push(`<path d="${d}" class="rd rd${k}"/>`); }
+  for (const r of G.routes) { const a = T[r.a], b = T[r.b], dx = b.x - a.x, dy = b.y - a.y; rl.push(`<path d="M${a.x} ${a.y}Q${(a.x + b.x) / 2 - dy * .18} ${(a.y + b.y) / 2 + dx * .18} ${b.x} ${b.y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}"/>`); } // parte 6: rota em arco
+  $('#roads').innerHTML = rc.join('') + rl.join('');
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;
   const p = (j, c) => hl.push(`<path d="${G.m.terr[j].d}" class="${c}"/>`);

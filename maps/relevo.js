@@ -57,11 +57,41 @@ const PROJ = {
       const c = tint(H[k]), f = Math.max(.42, Math.min(1.18, .25 + .75 * v));
       co.data.set([Math.min(255, c[0] * f), Math.min(255, c[1] * f), Math.min(255, c[2] * f), 255], k * 4);
     }
+    // estradas: caminho mais barato entre os centros de dois vizinhos, só por dentro dos dois territórios.
+    // Custo cresce com a inclinação e a altitude, então o traçado contorna serras e prefere vales e costa.
+    const ic = new OffscreenCanvas(PW, PH), ix = ic.getContext('2d'); ix.scale(S, S);
+    m.terr.forEach((t, i) => { ix.fillStyle = `rgb(${(i + 1) & 255},${(i + 1) >> 8},0)`; ix.fill(new Path2D(t.d)); });
+    const idd = ix.getImageData(0, 0, PW, PH).data, ID = new Int16Array(PW * PH).fill(-1);
+    for (let k = 0; k < ID.length; k++) { const a = idd[k * 4 + 3]; if (a === 255) ID[k] = idd[k * 4] + idd[k * 4 + 1] * 256 - 1; else if (a) ID[k] = -2; } // -2 = beira (vale para qualquer um)
+    const slope = k => Math.hypot(H[k + 1] - H[k - 1], H[k + PW] - H[k - PW]) / (2 * pm);
+    const sea = new Set(m.sea.map(([a, b]) => a + '-' + b));
+    const D8 = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.414], [1, -1, 1.414], [-1, 1, 1.414], [-1, -1, 1.414]];
+    const snap = i => { const t = m.terr[i]; let x0 = Math.round(t.x * S), y0 = Math.round(t.y * S), best = null, bd = Infinity; for (let r = 0; r < 60 && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = x0 + dx, y = y0 + dy; if (x < 1 || y < 1 || x >= PW - 1 || y >= PH - 1 || ID[y * PW + x] !== i) continue; const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = y * PW + x; } } return best; };
+    const rdp = (P, e) => { if (P.length < 3) return P; let md = 0, mi = 0; const [ax, ay] = P[0], [bx, by] = P[P.length - 1], L = Math.hypot(bx - ax, by - ay) || 1; for (let i = 1; i < P.length - 1; i++) { const d = Math.abs((bx - ax) * (ay - P[i][1]) - (ax - P[i][0]) * (by - ay)) / L; if (d > md) { md = d; mi = i; } } return md > e ? [...rdp(P.slice(0, mi + 1), e).slice(0, -1), ...rdp(P.slice(mi), e)] : [P[0], P[P.length - 1]]; };
+    const curve = P => { const f = v => +v.toFixed(1); let d = `M${f(P[0][0])} ${f(P[0][1])}`; for (let i = 0; i < P.length - 1; i++) { const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2; d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`; } return d; };
+    const roads = {};
+    for (const [a, b] of m.adj) {
+      if (sea.has(a + '-' + b) || sea.has(b + '-' + a)) continue;
+      const s = snap(a), g = snap(b); if (s == null || g == null) continue;
+      const dist = new Map([[s, 0]]), prev = new Map(), hp = [[0, s]], gx = g % PW, gy = (g / PW) | 0;
+      const push = e => { hp.push(e); let i = hp.length - 1; while (i) { const p = (i - 1) >> 1; if (hp[p][0] <= hp[i][0]) break; [hp[p], hp[i]] = [hp[i], hp[p]]; i = p; } };
+      const pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m2 = i; if (l < hp.length && hp[l][0] < hp[m2][0]) m2 = l; if (r < hp.length && hp[r][0] < hp[m2][0]) m2 = r; if (m2 === i) break; [hp[m2], hp[i]] = [hp[i], hp[m2]]; i = m2; } } return top; };
+      while (hp.length) {
+        const [, k] = pop(); if (k === g) break; const dk = dist.get(k), x = k % PW, y = (k / PW) | 0;
+        for (const [dx, dy, w] of D8) { const nx = x + dx, ny = y + dy; if (nx < 1 || ny < 1 || nx >= PW - 1 || ny >= PH - 1) continue; const n = ny * PW + nx, id = ID[n]; if (id !== a && id !== b && id !== -2) continue;
+          const c = dk + w * (1 + 30 * slope(n) + H[n] / 400 + (id === -2 ? 2 : 0)); if (c < (dist.get(n) ?? Infinity)) { dist.set(n, c); prev.set(n, k); push([c + Math.hypot(nx - gx, ny - gy), n]); } }
+      }
+      if (!prev.has(g)) continue;
+      const P = []; for (let k = g; k != null; k = prev.get(k)) P.push([(k % PW + .5) / S, (((k / PW) | 0) + .5) / S]);
+      P.reverse(); P[0] = [m.terr[a].x, m.terr[a].y]; P[P.length - 1] = [m.terr[b].x, m.terr[b].y];
+      roads[a + '-' + b] = curve(rdp(P, 1.3));
+    }
     const enc = async id => { const c = new OffscreenCanvas(PW, PH); c.getContext('2d').putImageData(id, 0, 0); const bl = await c.convertToBlob({ type: 'image/webp', quality: .82 }); return [...new Uint8Array(await bl.arrayBuffer())]; };
-    return { s: await enc(sh), c: await enc(co), pm };
+    return { s: await enc(sh), c: await enc(co), pm, roads };
   }, { m, tiles, z: +Z, ex: +EX, projSrc: PROJ[ID] });
   const D = path.join(__dirname, 'relevo'); fs.mkdirSync(D, { recursive: true });
   fs.writeFileSync(path.join(D, ID + '-s.webp'), Buffer.from(out.s)); fs.writeFileSync(path.join(D, ID + '-c.webp'), Buffer.from(out.c));
-  console.log(ID, 'pixel', out.pm.toFixed(0) + ' m', 'sombra', (out.s.length / 1024).toFixed(0) + 'KB', 'cor', (out.c.length / 1024).toFixed(0) + 'KB');
+  fs.writeFileSync(path.join(D, ID + '-r.json'), JSON.stringify(out.roads));
+  console.log(ID, 'pixel', out.pm.toFixed(0) + ' m', 'sombra', (out.s.length / 1024).toFixed(0) + 'KB', 'cor', (out.c.length / 1024).toFixed(0) + 'KB', 'estradas', Object.keys(out.roads).length);
   await b.close();
 })();
