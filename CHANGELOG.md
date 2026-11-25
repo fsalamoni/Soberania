@@ -1,5 +1,21 @@
 # Histórico de versões
 
+## v11 — 25/11/2026 · População e sociedade (parte 8 do roteiro)
+
+**Parte 8** (S-10 a S-14, S-20 a S-22, S-24, S-26)
+
+- S-10: a comida por território da v6 continua: cada nível come, a fome derruba o nível.
+- S-11: **felicidade** do império. +2 por luxo ligado, +1 por templo, anfiteatro e teatro, +2 pela Grande Arena, +4 por 2 turnos depois de festividades, +1 com Misticismo; −1 por cidade ou metrópole, −1 a cada 4 de cansaço de guerra, −3 por 2 turnos depois de impostos. Abaixo de 0: −10% de ouro e saber. Abaixo de −10: −3 de estabilidade por turno.
+- S-12: **saúde** do território: 2, +1 com rio, +1 no litoral, +2 por aqueduto, saneamento e hospital, −1 por nível de povoamento, −1 com mineração. Abaixo de 0, 1 chance em 10 por turno de epidemia (perde 1 nível e 1 tropa).
+- S-13: **estabilidade local** = a do império, −15 com cultura estrangeira, −3 por passo além de 3 da capital, +15 com tribunal, +5 com 3 tropas ou mais. Abaixo de 30, o território rende metade do ouro e do saber; abaixo de 10, pode se separar como rebelde.
+- S-14 e S-22: **cultura** de cada território. Território conquistado mantém a cultura antiga e a assimila em 8 turnos; templo, monumento e biblioteca aceleram.
+- S-20: **corrupção**: cada território perde 5% de ouro e saber por passo até a capital (máximo 40%); tribunal ou estrada cortam pela metade.
+- S-21: **migração**: império com felicidade 6 ou mais atrai 1 nível de população de um vizinho de facção infeliz (1 chance em 10 por turno).
+- S-24: festividades dão também +4 de felicidade por 2 turnos e gastam 5 de comida da capital.
+- S-26: ação **Colonos** (Sociedade, 3 ouro): uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1.
+- O painel do território mostra saúde, estabilidade local, corrupção e cultura; o painel da facção mostra a felicidade. A IA faz festividades quando o povo está infeliz.
+- Correção: carta de sabotagem sem alvo não trava mais a partida da IA.
+
 ## v10 — 25/11/2026 · Tecnologias e tropas por era (parte 7 do roteiro)
 
 **Parte 7** (K-01 a K-59, A-01 a A-07, A-43, A-45, A-47, UI-04)

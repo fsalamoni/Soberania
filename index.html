@@ -1051,6 +1051,7 @@ function newGame(sc, player, diff, len) {
     g.F[d.id] = F; g.order.push(d.id);
   }
   for (const [n, v, l] of sc.rebels || []) { const i = need(n); g.own[i] = 'reb'; g.tr[i] = v; g.rl[i] = l; }
+  g.cul = [...g.own]; g.asm = Array(N).fill(0); // S-14, S-22: cultura de cada território
   for (const [a, b] of sc.truces || []) g.truce.add(tk(a, b));
   for (const e of sc.ev) for (const [op, a] of e.fx) {
     if (op === 'rebels' || op === 'place' || op === 'troops') need(a); else if (op === 'give') a.forEach(need); else if (op === 'attrit') expand(m, [].concat(a)).forEach(need);
@@ -1094,7 +1095,7 @@ const capOwner = i => G.order.find(f => Fa(f).capI === i && Fa(f).entered);
 const capsHeld = f => G.order.filter(o => Fa(o).entered && G.own[Fa(o).capI] === f).length;
 const tname = i => G.m.terr[i].n;
 const fname = f => Fa(f).n;
-const real = f => Fa(f).real;
+const real = f => !!(Fa(f) && Fa(f).real);
 
 function reinfOf(f) {
   const F = Fa(f), T = settled(f), oc = owned(f).length - T.length, parts = [];
@@ -1212,13 +1213,57 @@ function grow(f) {
 function income(f) {
   const F = Fa(f), T = settled(f);
   const diff = f !== G.player && !G.auto ? (G.diff === 2 ? 2 : G.diff === 0 ? -1 : 0) : 0;
-  const y = T.reduce((s, i) => { const v = yieldOf(i); for (const r in s) s[r] += v[r]; return s; }, { gold: 0, sci: 0, pre: 0, stab: 0 });
+  const cd = capDist(f), hm = hap(f) < 0 ? .9 : 1; // S-11: infelicidade tira 10%
+  const y = T.reduce((s, i) => {
+    const v = yieldOf(i), c = 1 - corrupt(i, cd[i]), lo = tStab(i, cd[i]) < 30 ? .5 : 1; // S-20, S-13
+    s.gold += v.gold * c * lo; s.sci += v.sci * c * lo; s.pre += v.pre; s.stab += v.stab; return s;
+  }, { gold: 0, sci: 0, pre: 0, stab: 0 });
+  y.gold = Math.round(y.gold * hm); y.sci = Math.round(y.sci * hm);
   return {
     gold: Math.max(1, y.gold + diff + routeGold(f)),
     sci: Math.round((1 + y.sci + routeSci(f)) * (hasW(f, 'obi') ? 1.25 : 1) * (has(f, 'cie') ? 1.1 : 1)), stab: y.stab,
     pre: y.pre + capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
   };
 }
+// ---------- parte 8: população e sociedade (S-10 a S-14, S-20 a S-22, S-24, S-26) ----------
+// S-20: distância por terra até a capital (passos pelo mapa), usada na corrupção e na estabilidade local
+function capDist(f) {
+  const d = Array(G.N).fill(9), c = Fa(f).capI; if (c == null || G.own[c] !== f) return d;
+  d[c] = 0; const q = [c];
+  for (let h = 0; h < q.length; h++) for (const j of G.A[q[h]]) if (d[j] > d[q[h]] + 1) { d[j] = d[q[h]] + 1; q.push(j); }
+  return d;
+}
+const corrupt = (i, d) => Math.min(.4, .05 * d) * (nb(i, 'tri') || road(i) ? .5 : 1); // S-20
+// S-11: felicidade do império. Luxos, templos, arenas e festas sobem; cidades, cansaço de guerra e impostos descem
+function hap(f) {
+  const F = Fa(f); if (!F.real) return 0;
+  return 2 * luxOf(f) + countB(f, 'tem') + countB(f, 'anf') + countB(f, 'tea') + 2 * countB(f, 'col') + (F.festT >= G.round ? 4 : 0) + (has(f, 'mis') ? 1 : 0)
+    - owned(f).filter(i => G.lv[i] >= 3).length - Math.floor(F.ww / 4) - (F.taxT >= G.round ? 3 : 0);
+}
+// S-12: saúde do território. Abaixo de 0, chance de epidemia
+const health = i => 2 + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0) + 2 * ['aqu', 'san', 'hos'].filter(k => nb(i, k)).length - G.lv[i] - (G.bld[i].includes('min') ? 1 : 0);
+// S-13: estabilidade local = do império, menos cultura estrangeira e distância; mais tribunal e guarnição
+const tStab = (i, d) => { const f = G.own[i], F = Fa(f); return F.real ? F.stab - (G.cul[i] !== f ? 15 : 0) - 3 * Math.max(0, d - 3) + (nb(i, 'tri') ? 15 : 0) + (G.tr[i] >= 3 ? 5 : 0) : 50; };
+function society(f) {
+  const F = Fa(f), d = capDist(f), h = hap(f);
+  if (h < -10) F.stab = Math.max(0, F.stab - 3); // S-11
+  for (const i of owned(f)) {
+    // S-22: assimilação em 8 turnos; templo, monumento e escola aceleram
+    if (G.cul[i] !== f) { G.asm[i] = (G.asm[i] || 0) + 1 + ['tem', 'mon', 'aca'].filter(k => nb(i, k)).length; if (G.asm[i] >= 8) { G.cul[i] = f; G.asm[i] = 0; log(f, `${tname(i)} adota a cultura de ${fname(f)}.`); } }
+    // S-12: epidemia
+    if (health(i) < 0 && rnd() < .1) { if (G.lv[i] > 1) G.lv[i]--; G.tr[i] = Math.max(1, G.tr[i] - 1); log(f, `Epidemia em ${tname(i)}: perde população e tropas.`); }
+  }
+  // S-13: território com estabilidade local abaixo de 10 pode trocar de lado
+  const bad = owned(f).filter(i => i !== F.capI && !nb(i, 'tri') && tStab(i, d[i]) < 10);
+  if (bad.length && rnd() < .15) { const i = bad[Math.floor(rnd() * bad.length)]; G.own[i] = 'reb'; G.tr[i] = Math.max(2, G.tr[i]); G.rl[i] = 'Separatistas'; log(f, `${tname(i)} se separa de ${fname(f)}: estabilidade local baixa demais.`); }
+  // S-21: migração. Império feliz atrai gente de vizinho infeliz
+  if (h >= 6) for (const i of owned(f)) {
+    if (G.lv[i] >= 4) continue;
+    const j = G.A[i].find(j => real(G.own[j]) && G.own[j] !== f && G.lv[j] >= 2 && hap(G.own[j]) < 0);
+    if (j != null && rnd() < .1) { G.lv[j]--; G.lv[i]++; log(f, `Migrantes de ${tname(j)} se mudam para ${tname(i)}.`); break; }
+  }
+}
+const coloPair = f => { for (const i of owned(f).filter(i => G.lv[i] >= 3).sort((a, b) => G.lv[b] - G.lv[a])) { const j = G.A[i].find(j => G.own[j] === f && G.lv[j] === 1 && !occupied(j)); if (j != null) return [i, j]; } return null; };
 const paOf = f => ECON.pa + (has(f, 'adm') ? 1 : 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => has(f, 'con') ? 1 : ECON.troop;
 // ---------- obras em turnos (parte 2: P-01 a P-04, P-08, P-11) ----------
@@ -1360,9 +1405,13 @@ function act(f, a, x, y) {
     if (F.bldOn) return 'As obras já estão abertas neste turno.'; spend(f); F.bldOn = true;
   } else if (a === 'fest') {
     if (F.gold < ECON.fest) return 'Ouro insuficiente.';
-    spend(f); F.gold -= ECON.fest; F.stab = Math.min(100, F.stab + 15); F.ww = Math.max(0, F.ww - 3);
+    spend(f); F.gold -= ECON.fest; F.stab = Math.min(100, F.stab + 15); F.ww = Math.max(0, F.ww - 3); F.festT = G.round + 2; if (G.food[F.capI] != null) G.food[F.capI] = Math.max(0, G.food[F.capI] - 5); // S-24
+  } else if (a === 'colo') { // S-26: colonos saem de uma cidade e fazem crescer uma aldeia vizinha sua
+    const p = coloPair(f); if (!p) return 'Precisa de uma cidade vizinha de uma aldeia sua.';
+    if (F.gold < 3) return 'Ouro insuficiente.';
+    spend(f); F.gold -= 3; G.lv[p[0]]--; G.lv[p[1]]++; log(f, `Colonos de ${tname(p[0])} fundam vila em ${tname(p[1])}.`);
   } else if (a === 'tax') {
-    spend(f); const g = Math.ceil(owned(f).length / 2); F.gold += g; F.stab = Math.max(0, F.stab - 8);
+    spend(f); const g = Math.ceil(owned(f).length / 2); F.gold += g; F.stab = Math.max(0, F.stab - 8); F.taxT = G.round + 2;
     log(f, `${fname(f)} cobra impostos extraordinários (+${g} ouro).`);
   } else if (a === 'rota') {
     return openRoute(f, x, y);
@@ -1546,7 +1595,7 @@ function conquer(i, j, n) {
   const a = G.own[i], d = G.own[j];
   G.own[j] = a; G.tr[j] = n; G.tr[i] -= n; G.fort[j] = 0; delete G.rl[j];
   G.lv[j] = Math.max(1, G.lv[j] - 1); G.food[j] = 0; // saque e fuga: o território perde um nível
-  G.win[j] = (G.win[i] || 0) + 1; G.dug[j] = 0; // A-43: veteranos
+  G.asm[j] = 0; G.win[j] = (G.win[i] || 0) + 1; G.dug[j] = 0; // A-43: veteranos
   G.arr[j] = n; // tropas que entraram por conquista já se moveram neste turno
   // P-08: o conquistador fica com metade do progresso das obras; maravilha em andamento se perde
   G.q[j] = real(a) ? G.q[j].filter(x => !STRUCT[x.k].wonder).map(x => ({ ...x, p: Math.floor(x.p / 2) })).slice(0, qMax(a)) : [];
@@ -1591,7 +1640,7 @@ function beginTurn(f) {
   checkRoutes();
   for (const r of myRoutes(f)) if (r.k === 'mar' && rLive(r) && navOf(f) < 2 && rnd() < 1 / 6) { r.cut = G.round; log(f, `Piratas atacam a rota marítima de ${fname(f)} saindo de ${tname(r.a)}: ela não rende nesta rodada.`); } // T-17
   const inc = income(f); F.gold += inc.gold; F.sci += inc.sci; F.pre += inc.pre;
-  payUpkeep(f); produce(f); grow(f); research(f);
+  payUpkeep(f); produce(f); grow(f); society(f); research(f);
   F.navLeft = navOf(f); F.planes = planesOf(f);
   F.pa = paOf(f); F.camp = F.recOn = F.tradeOn = F.bldOn = false;
   if (F.stab < 35) {
@@ -1718,14 +1767,14 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ, tech0: X.tech0 }; });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, win: G.win, dug: G.dug, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function restore(s) {
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, win: s.win || G.win, dug: s.dug || G.dug, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -1809,7 +1858,7 @@ function aiOptions(f) {
     if (idle || rich) o.push([2.4 + Math.min(3, idle * .8) + (rich ? 1.5 : 0), 'obras']);
   }
   if (!F.recOn && F.gold >= 2 * troopCost(f)) o.push([2.4 + Math.min(3, F.gold / troopCost(f) * .2) + (hot != null && threat(f, hot) > G.tr[hot] ? 1 : 0), 'rec']);
-  if (F.stab < 35 && F.gold >= ECON.fest) o.push([5, 'fest']);
+  if ((F.stab < 35 || hap(f) < 0) && F.gold >= ECON.fest) o.push([5, 'fest']);
   const inf = T.flatMap(i => G.A[i]).filter(j => canInfl(f, j)).sort((a, b) => tval(f, b) / inflCost(f, b) - tval(f, a) / inflCost(f, a))[0];
   if (inf != null) o.push([3.4 + tval(f, inf) * .4, 'infl', inf]);
   if (F.pre >= ECON.agit + 2) { const j = border.flatMap(i => G.A[i]).find(j => real(G.own[j]) && hostile(f, j) && Fa(G.own[j]).stab < 45); if (j != null) o.push([1.8, 'agit', j]); }
@@ -2312,6 +2361,7 @@ function renderSide() {
     <p class="ab">${esc(ABIL[F.ab][1])}</p>
     <div class="stab">Estabilidade ${bar(F.stab)}</div>
     <p class="hint">${F.stab < 15 ? 'Crise: reforços pela metade e risco alto de revolta.' : F.stab < 35 ? 'Instável: províncias podem se rebelar no início do turno.' : 'Povo sob controle.'}${F.ww >= 3 ? ` Cansaço de guerra ${F.ww}: −${Math.floor(F.ww / 5)} de estabilidade por turno.` : ''}</p>
+    <p class="hint" title="Luxos, templos, arenas, teatros e festas sobem; cidades grandes, cansaço de guerra e impostos descem. Abaixo de 0: −10% de ouro e saber; abaixo de −10: perde estabilidade.">Felicidade <b>${hap(me)}</b>${hap(me) < 0 ? ' · povo infeliz: −10% de ouro e saber' : hap(me) >= 6 ? ' · atrai migrantes de vizinhos infelizes' : ''}</p>
     <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
   $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda, −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
@@ -2345,9 +2395,10 @@ function renderSide() {
         ${F.bldOn ? `<div class="row">${blds}</div>` : ''}</div>
       <div class="grp"><b>🔬 Ciência</b><div class="row"><button class="ab2" data-a="techs">Árvore de tecnologias <small>${F.sci}🔬</small></button></div></div>
       <div class="grp"><b>🤝 Sociedade</b><div class="row">
-        ${Bt('act', 'fest', `Festividades <small>${ECON.fest}💰</small>`, '+15 de estabilidade.', noPA || F.gold < ECON.fest, false)}
+        ${Bt('act', 'fest', `Festividades <small>${ECON.fest}💰</small>`, '+15 de estabilidade e +4 de felicidade por 2 turnos. Gasta 5 de comida da capital.', noPA || F.gold < ECON.fest, false)}
         ${Bt('act', 'infl', 'Influenciar <small>⭐</small>', 'Anexe um território neutro ou rebelde vizinho sem lutar. Custa as tropas dele + 1 de prestígio.', noPA, G.mode === 'infl')}
-        ${Bt('act', 'agit', `Agitadores <small>${ECON.agit}⭐</small>`, 'Uma facção rival perde 15 de estabilidade.', noPA || F.pre < ECON.agit, G.mode === 'agit')}</div></div>
+        ${Bt('act', 'agit', `Agitadores <small>${ECON.agit}⭐</small>`, 'Uma facção rival perde 15 de estabilidade.', noPA || F.pre < ECON.agit, G.mode === 'agit')}
+        ${Bt('act', 'colo', 'Colonos <small>3💰</small>', 'Uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1 nível.', noPA || F.gold < 3 || !coloPair(me), false)}</div></div>
       <div class="grp"><b>💰 Economia</b><div class="row">
         ${Bt('act', 'tax', 'Impostos', `+${Math.ceil(owned(me).length / 2)} de ouro agora, −8 de estabilidade.`, noPA, false)}
         ${Bt('act', 'trade', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', !F.tradeOn && noPA, F.tradeOn)}<button class="ab2" data-a="routes">Rotas ${myRoutes(me).length}/${routeMax(me)}</button></div></div>
@@ -2367,6 +2418,7 @@ function renderSide() {
       const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
       inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
         <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
+      if (real(o)) { const cd = capDist(o)[i], ts = tStab(i, cd), hs = health(i); inf += `<p class="hint">Saúde ${hs}${hs < 0 ? ' (risco de epidemia)' : ''} · estabilidade local ${ts}${ts < 10 ? ' (pode se separar)' : ts < 30 ? ' (rende metade)' : ''} · corrupção ${Math.round(100 * corrupt(i, cd))}% · cultura ${G.cul[i] === o ? 'própria' : esc(fname(G.cul[i]) || 'local') + ` (assimila ${G.asm[i]}/8)`}</p>`; }
       if (real(o)) { const y = yieldOf(i); inf += `<p class="hint">Rende 🍞 ${y.food} (consome ${foodUse(i)}${G.lv[i] < 4 ? `, estoque ${G.food[i]}/${growNeed(i)}${growOk(i) ? '' : ' · para crescer: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}` : ''}) · ⚒ ${prodOf(i)} · 💰 ${y.gold} · 🔬 ${y.sci}</p>`; }
     }
     if (o === me) inf += qHtml(i);

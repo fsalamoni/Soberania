@@ -82,6 +82,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.screenshot({ path: shot('lente-terreno') });
   await p.click('[data-a=lens][data-l=own]');
   ok(await p.evaluate(() => /Jazidas/.test(document.querySelector('#info').textContent)), 'painel mostra jazidas do território');
+  ok(await p.evaluate(() => /Saúde/.test(document.querySelector('#info').textContent) && /Felicidade/.test(document.querySelector('#me').textContent)), 'painel mostra saúde, estabilidade local e felicidade');
   await p.click('[data-a=works]');
   await p.screenshot({ path: shot('obras-imperio') });
   await p.click('#modal [data-m="0"]');
