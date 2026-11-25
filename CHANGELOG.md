@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## v22 — 25/11/2026 · Fronteiras desenhadas a partir das divisas reais
+
+Atende ao retorno do Flavio sobre marcações sem nome e vizinhos que não contavam como fronteira (imagem do Sengoku).
+
+- Marcações sem nome: eram partes de territórios desenhados em vários pedaços (Shinano, Goiás, Mato Grosso, Alto Amazonas e outros). As linhas entre os pedaços de um mesmo território sumiram; agora cada território aparece como uma peça só.
+- Fronteiras calculadas: o mapa descobre de que lado de cada trecho de contorno está cada vizinho e desenha três tipos de linha. Costa em traço firme, divisa entre territórios do mesmo dono em pontilhado discreto e divisa entre impérios em traço forte com halo claro, para enxergar a extensão de cada império de longe.
+- Vizinhanças que o desenho mostrava e a lista não tinha: Hyuga e Higo, Mino e Mikawa e Tōtōmi, Kai e Sagami e Musashi, Shinano e Echigo (Japão) e Germânia Ocidental e Marcomânia (Mediterrâneo). Nova varredura de todos os mapas: nenhuma divisa desenhada sem ligação.
 ## v21 — 25/11/2026 · Mapa mais claro: travessias, fronteiras e porte dos territórios
 
 Atende ao retorno do Flavio sobre ligações entre vizinhos, demarcações e o tamanho dos territórios.

@@ -1951,11 +1951,11 @@ function buildMap() {
   vb = { x: 0, y: 0, w: m.w, h: m.h };
   let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern></defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
   if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
-  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g>';
+  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g><g id="brd"></g>';
   const sl = seaEnds(m);
   h += '<g class="sealinks">' + m.sea.map(([a, b, w], k) => { const A = m.terr[a], C = m.terr[b], tt = `<title>Travessia por mar: ${esc(A.n)} e ${esc(C.n)}</title>`; if (!w) { const [x1, y1, x2, y2] = sl[k]; return `<g data-k="${k}">${tt}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="2.2"/><circle cx="${x2}" cy="${y2}" r="2.2"/></g>`; } const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<g data-k="${k}">${tt}<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/></g>`; }).join('') + '</g>';
   h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><g class="lvp">${[0, 1, 2, 3].map(n => `<circle cx="${-7.5 + 5 * n}" cy="-17" r="2.1"/>`).join('')}</g><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
-  svg.innerHTML = h;
+  svg.innerHTML = h; brdKey = '';
   P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')]; NM = null;
   seaVia();
   setVB();
@@ -1968,7 +1968,35 @@ function setVB() {
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
-let NM = null;
+let NM = null, brdKey = '';
+// contorno de cada território dividido em segmentos, cada um com o vizinho do outro lado (-1 = costa).
+// Segmento colado a outra parte do mesmo território é linha interna e some. Tolerância de 2,5 porque
+// alguns mapas desenham os vizinhos com frestas pequenas.
+function outlines(m) {
+  if (m._ol) return m._ol;
+  const segs = [], cell = 10, grid = new Map(), TOL = 2.5;
+  m.terr.forEach((t, i) => t.d.split(/(?=M)/).forEach((s, k) => { const a = (s.match(/-?\d+(?:\.\d+)?/g) || []).map(Number); if (a.length < 6) return; for (let p = 0; p < a.length; p += 2) { const q = (p + 2) % a.length; segs.push([a[p], a[p + 1], a[q], a[q + 1], i, k]); } }));
+  segs.forEach((s, n) => { for (let x = Math.floor(Math.min(s[0], s[2]) / cell); x <= Math.floor(Math.max(s[0], s[2]) / cell); x++) for (let y = Math.floor(Math.min(s[1], s[3]) / cell); y <= Math.floor(Math.max(s[1], s[3]) / cell); y++) { const c = x + ',' + y; if (!grid.has(c)) grid.set(c, []); grid.get(c).push(n); } });
+  const dps = (px, py, s) => { const dx = s[2] - s[0], dy = s[3] - s[1], L = dx * dx + dy * dy, t = L ? Math.max(0, Math.min(1, ((px - s[0]) * dx + (py - s[1]) * dy) / L)) : 0; return Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy); };
+  const out = [];
+  for (const s of segs) {
+    const mx = (s[0] + s[2]) / 2, my = (s[1] + s[3]) / 2, cx = Math.floor(mx / cell), cy = Math.floor(my / cell); let best = TOL, who = -1;
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (const n of grid.get((cx + dx) + ',' + (cy + dy)) || []) { const o = segs[n]; if (o[4] === s[4] && o[5] === s[5]) continue; const d = dps(mx, my, o); if (d < best) { best = d; who = o[4]; } }
+    if (who !== s[4]) out.push([s[0], s[1], s[2], s[3], s[4], who]);
+  }
+  return m._ol = out;
+}
+// costa, divisa entre territórios do mesmo dono e divisa entre impérios (destacada); refaz só quando os donos mudam
+function drawBorders() {
+  const key = G.own.join() + (G.seen ? G.seen.size : ''); if (key === brdKey) return; brdKey = key;
+  const O = outlines(G.m), d = { c: '', p: '', e: '' }, last = { c: null, p: null, e: null };
+  for (const s of O) {
+    const j = s[5], k = j < 0 ? 'c' : G.own[s[4]] === G.own[j] ? (s[4] < j ? 'p' : null) : 'e'; if (!k) continue;
+    if (last[k] && last[k][0] === s[0] && last[k][1] === s[1]) d[k] += `L${s[2]} ${s[3]}`; else d[k] += `M${s[0]} ${s[1]}L${s[2]} ${s[3]}`;
+    last[k] = [s[2], s[3]];
+  }
+  $('#brd').innerHTML = `<path class="bc0" d="${d.c}"/><path class="bp" d="${d.p}"/><path class="beh" d="${d.e}"/><path class="be" d="${d.e}"/>`;
+}
 // ligação marítima: pontos de costa mais próximos entre os dois territórios (guardados no mapa)
 function seaEnds(m) {
   if (m._sl) return m._sl;
@@ -2047,11 +2075,13 @@ function initPan() {
 function renderMap() {
   civSee(); if (G.seen) svg.querySelectorAll('.sealinks > g').forEach(l => { const s = G.m.sea[+l.dataset.k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
+  drawBorders();
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
     const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
     P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
     const fog = !!G.seen && !G.seen.has(i); if (fog) P[i].setAttribute('fill', '#161b22'); // MC-11
+    P[i].setAttribute('stroke', P[i].getAttribute('fill')); // fecha as frestas entre partes do mesmo território
     P[i].classList.toggle('off', o === 'off');
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
