@@ -248,7 +248,7 @@ const pName = i => PORTE[porte(i)] || 'Ermo';
 // moradia: quantos portes o território comporta (crescer exige moradia acima do porte atual)
 function housing(i, L) {
   let h = 0; const A = (v, w) => { if (v) { h += v; if (L) L.push([v, w]); } };
-  A(3, 'Base'); A(G.riv[i] ? 1 : 0, 'Rio'); A(coastal(i) ? 1 : 0, 'Litoral'); A(real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 0, 'Capital');
+  A(3, 'Base'); A({ p: 1, m: -1, d: -1, t: -1, w: -1 }[G.ter[i]] || 0, TERR[G.ter[i]].n); A(G.riv[i] ? 1 : 0, 'Rio'); A(coastal(i) ? 1 : 0, 'Litoral'); A(real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 0, 'Capital');
   for (const [k, v] of [['aqu', 2], ['san', 2], ['hos', 1], ['cel', 1]]) if (nb(i, k)) A(v, sName(k));
   return h;
 }
@@ -275,7 +275,7 @@ function ledgerHtml(i) {
   const rows = Object.keys(RES_IC).map(r => { const it = L.filter(x => x[0] === r); if (!it.length && !net[r]) return ''; return `<tr><td>${RES_IC[r][0]} ${RES_IC[r][1]}</td><td class="n"><b>${sg(net[r])}</b></td><td>${it.map(x => `<span class="${x[1] < 0 ? 'neg' : ''}">${sg(x[1])} ${esc(x[2])}</span>`).join(' · ') || '—'}</td></tr>`; }).join('');
   const HL = [], JL = [], hv = housing(i, HL), jv = jobs(i, JL), pp = porte(i);
   const gr = `<b>${pName(i)}</b> (porte ${pp} de 8). ` + (growMax(i) ? 'Porte máximo.' : `Comida ${G.food[i]}/${growNeed(i)} para virar ${PORTE[pp + 1].toLowerCase()}${growOk(i) ? '' : ' · falta ' + growWhy(i).join(' e ')}${net.food < 0 ? ' · passando fome' : ''}.`) +
-    `<br>🏠 Moradia ${hv}: ${HL.map(x => '+' + x[0] + ' ' + esc(x[1])).join(' · ')}<br>🛠 Empregos ${jv} para ${pp}: ${JL.map(x => '+' + x[0] + ' ' + esc(x[1])).join(' · ')}${jobless(i) ? ` · <span class="neg">${jobless(i)} sem trabalho (−${jobless(i)} ouro)</span>` : ''}`;
+    `<br>🏠 Moradia ${hv}: ${HL.map(x => (x[0] > 0 ? '+' : '') + x[0] + ' ' + esc(x[1])).join(' · ')}<br>🛠 Empregos ${jv} para ${pp}: ${JL.map(x => '+' + x[0] + ' ' + esc(x[1])).join(' · ')}${jobless(i) ? ` · <span class="neg">${jobless(i)} sem trabalho (−${jobless(i)} ouro)</span>` : ''}`;
   return `<details class="ledger" ${ledOpen ? 'open' : ''}><summary>Rendimento da região: 🍞 ${sg(net.food)} · ⚒ ${net.prod} · 💰 ${net.gold} · 🔬 ${net.sci}${net.pre ? ' · ⭐ ' + net.pre : ''}</summary><table>${rows}</table><p class="hint">${gr} <button class="mini" data-a="empire">Resumo do império</button></p></details>`;
 }
 // resumo do império: soma das regiões e os ajustes que valem para o império todo
@@ -1079,7 +1079,7 @@ const CHEAP = { ped: ['for', 'tem', 'mar', 'cas', 'cat', 'aqu'], mad: ['por', 'o
 const STONE = ['for', 'tem', 'mon', 'pdr', 'cas', 'cat']; // Grandes Pirâmides (C-200)
 const pCost = (f, k, i) => {
   const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)), p = STONE.includes(k) && hasW(f, 'pir');
-  const t = STRUCT[k].road && i != null ? ({ m: 2, w: 2, d: 1.5 }[G.ter[i]] || 1) : 1; // L-11
+  const t = i == null ? 1 : STRUCT[k].road ? ({ m: 2, w: 2, d: 1.5 }[G.ter[i]] || 1) : ({ m: 1.25, w: 1.25 }[G.ter[i]] || 1); // L-11; v26: relevo encarece obras
   const gv = (STRUCT[k].road && pol(f, 'est') ? .5 : 1) * (k === 'cas' && gov(f) === 'feu' ? .75 : 1) * (STRUCT[k].wonder && gov(f) === 'abs' ? .75 : 1) * (gov(f) === 'pce' && ['zin', 'zen'].includes(STRUCT[k].need) ? .75 : 1); // G-10 // G-22, G-05, G-07
   return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1) * (p ? .75 : 1) * t * gv);
 };
@@ -2017,13 +2017,13 @@ let svg, vb, P = [], B = [];
 function buildMap() {
   const m = G.m; svg = $('#map');
   vb = { x: 0, y: 0, w: m.w, h: m.h };
-  let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern></defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
+  let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern>${terrDefs()}</defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
   if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
-  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g><g id="brd"></g>';
+  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g><g id="rib"></g><g id="brd"></g>';
   const sl = seaEnds(m);
   h += '<g class="sealinks">' + m.sea.map(([a, b, w], k) => { const A = m.terr[a], C = m.terr[b], tt = `<title>Travessia por mar: ${esc(A.n)} e ${esc(C.n)}</title>`; if (!w) { const [x1, y1, x2, y2] = sl[k]; return `<g data-k="${k}">${tt}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="2.2"/><circle cx="${x2}" cy="${y2}" r="2.2"/></g>`; } const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<g data-k="${k}">${tt}<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/></g>`; }).join('') + '</g>';
   h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><g class="lvp">${[0, 1, 2, 3].map(n => `<circle cx="${-7.5 + 5 * n}" cy="-17" r="2.1"/>`).join('')}</g><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
-  svg.innerHTML = h; brdKey = '';
+  svg.innerHTML = h; brdKey = ''; ribOn = false;
   P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')]; NM = null;
   seaVia();
   setVB();
@@ -2036,7 +2036,28 @@ function setVB() {
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
-let NM = null, brdKey = '';
+let NM = null, brdKey = '', ribOn = false;
+const TMARK = {
+  p: '<path d="M2 9h4M8 4h3" stroke="#0002" stroke-width=".8"/>',
+  c: '<path d="M2 8l1-2 1 2M8 3l1-2 1 2" fill="none" stroke="#0003" stroke-width=".7"/>',
+  f: '<circle cx="3" cy="3" r="1.7" fill="#0004"/><circle cx="9" cy="9" r="1.7" fill="#0004"/><circle cx="9" cy="3" r="1" fill="#0003"/>',
+  s: '<circle cx="2.5" cy="2.5" r="1.6" fill="#0005"/><circle cx="8.5" cy="4" r="1.6" fill="#0005"/><circle cx="5" cy="9" r="1.6" fill="#0005"/><circle cx="11" cy="10" r="1.2" fill="#0004"/>',
+  h: '<path d="M1 8q3-4 6 0M6 3q3-3 6 0" fill="none" stroke="#0005" stroke-width=".9"/>',
+  m: '<path d="M1 10l3-6 3 6zM6.5 6l2.8-5 2.7 5z" fill="#fff4" stroke="#0006" stroke-width=".5"/>',
+  d: '<circle cx="2" cy="3" r=".7" fill="#0004"/><circle cx="8" cy="7" r=".7" fill="#0004"/><circle cx="4" cy="10" r=".7" fill="#0004"/><path d="M6 2q2-1.5 4 0" fill="none" stroke="#0003" stroke-width=".6"/>',
+  e: '<path d="M1 4h3M7 9h3M3 11h2" stroke="#0004" stroke-width=".8"/>',
+  t: '<path d="M3 2v3M1.5 3.5h3M9 7v3M7.5 8.5h3" stroke="#fff6" stroke-width=".7"/>',
+  w: '<path d="M0 4q1.5-1.5 3 0t3 0 3 0 3 0M0 10q1.5-1.5 3 0t3 0 3 0 3 0" fill="none" stroke="#0005" stroke-width=".7"/>',
+};
+const terrDefs = () => Object.entries(TERR).map(([k, T]) => `<pattern id="tr-${k}" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${T.c}"/>${TMARK[k] || ''}</pattern>`).join('');
+// faixa da cor do dono por dentro do contorno (recorte do próprio território); feita só quando a visão de relevo abre
+function ribbons() {
+  const R = $('#rib'); if (!R) return;
+  const on = G.lens === 'rel'; R.style.display = on ? '' : 'none'; if (!on) return;
+  if (!ribOn) { R.innerHTML = G.m.terr.map((t, i) => `<clipPath id="ck${i}"><path d="${t.d}"/></clipPath><path class="rb" d="${t.d}" clip-path="url(#ck${i})"/>`).join(''); ribOn = true; }
+  const ps = R.querySelectorAll('path.rb');
+  for (let i = 0; i < G.N; i++) { const o = G.own[i], show = (real(o) || o === 'reb') && !(G.seen && !G.seen.has(i)); ps[i].style.display = show ? '' : 'none'; if (show) ps[i].setAttribute('stroke', Fa(o).c); }
+}
 // contorno de cada território dividido em segmentos, cada um com o vizinho do outro lado (-1 = costa).
 // Segmento colado a outra parte do mesmo território é linha interna e some. Tolerância de 2,5 porque
 // alguns mapas desenham os vizinhos com frestas pequenas.
@@ -2143,13 +2164,13 @@ function initPan() {
 function renderMap() {
   civSee(); if (G.seen) svg.querySelectorAll('.sealinks > g').forEach(l => { const s = G.m.sea[+l.dataset.k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
-  drawBorders();
+  drawBorders(); ribbons();
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
     const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
-    P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
+    P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'rel' ? `url(#tr-${G.ter[i]})` : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : F.c);
     const fog = !!G.seen && !G.seen.has(i); if (fog) P[i].setAttribute('fill', '#161b22'); // MC-11
-    P[i].setAttribute('stroke', P[i].getAttribute('fill')); // fecha as frestas entre partes do mesmo território
+    P[i].setAttribute('stroke', L === 'rel' && !fog ? TERR[G.ter[i]].c : P[i].getAttribute('fill')); // fecha as frestas entre partes do mesmo território
     P[i].classList.toggle('off', o === 'off');
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
@@ -2523,7 +2544,7 @@ function rules() {
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
   <p><b>No mapa.</b> O número é a tropa do território; os quatro pontos acima dele mostram o porte (1 aldeia, 2 vila, 3 cidade, 4 metrópole). Linhas tracejadas e pontos azuis na costa são travessias por mar. Terra hachurada fica fora do jogo.</p>
-  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer um porte por vez, em 8 portes: aldeia, povoado, vila, vila grande, cidade, cidade grande, metrópole e megalópole. Para crescer, além da comida, é preciso <b>moradia</b> acima do porte atual (base 3, +1 com rio, litoral ou capital, +2 com aqueduto, +2 com saneamento, +1 com hospital ou celeiro) e ninguém sem <b>emprego</b> (o porte dá alguns empregos, cada zona dá 2 e cada obra que rende dá 1). Cada desempregado custa 1 ouro por turno. Cada porte consome mais comida; com fome, o território perde um porte. Conquistado, perde um nível. Os portes "grandes" dão +1 produção e +1 ouro. O nível (aldeia, vila, cidade, metrópole) dá ouro, saber e vagas de zona: 1, 2, 3 e 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
+  <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno, ou a visão Relevo, que desenha o terreno e mostra os impérios só pela faixa colorida da fronteira), talvez rio e litoral, e jazidas (lente Recursos). O relevo pesa: planície fértil dá +1 de moradia; montanha, deserto, tundra e pântano, −1; obras em montanha e pântano custam 25% a mais; colina, montanha, floresta e pântano ajudam a defesa. A comida que sobra enche o estoque e faz o território crescer um porte por vez, em 8 portes: aldeia, povoado, vila, vila grande, cidade, cidade grande, metrópole e megalópole. Para crescer, além da comida, é preciso <b>moradia</b> acima do porte atual (base 3, +1 com rio, litoral ou capital, +2 com aqueduto, +2 com saneamento, +1 com hospital ou celeiro) e ninguém sem <b>emprego</b> (o porte dá alguns empregos, cada zona dá 2 e cada obra que rende dá 1). Cada desempregado custa 1 ouro por turno. Cada porte consome mais comida; com fome, o território perde um porte. Conquistado, perde um nível. Os portes "grandes" dão +1 produção e +1 ouro. O nível (aldeia, vila, cidade, metrópole) dá ouro, saber e vagas de zona: 1, 2, 3 e 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>

@@ -103,6 +103,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.evaluate(() => document.querySelector('[data-a=empire]').click());
   ok(await p.evaluate(() => /Soma das regiões/.test(document.querySelector('#modal').textContent)), 'resumo do império soma as regiões');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.F[G.player].capI, p0 = porte(i), f0 = G.food[i]; G.food[i] = 999; const h = housing(i), ok0 = growOk(i); G.sub = G.sub || Array(G.N).fill(0); const s0 = G.sub[i], l0 = G.lv[i]; grow(G.player); const p1 = porte(i); G.lv[i] = l0; G.sub[i] = s0; G.food[i] = f0; return PORTE.length === 9 && h >= 3 && (ok0 ? p1 === p0 + 1 : p1 === p0); }), 'porte cresce um passo só com moradia e empregos');
+  ok(await p.evaluate(() => { document.querySelector('[data-a=lens][data-l=rel]').click(); const ok1 = /url\(#tr-/.test(document.querySelector('path.t[data-i="' + window.__sob.G.F[window.__sob.G.player].capI + '"]').getAttribute('fill')) && document.querySelectorAll('#rib path.rb').length === window.__sob.G.N; document.querySelector('[data-a=lens][data-l=own]').click(); return ok1; }), 'visão de relevo desenha o terreno e a faixa dos impérios');
   await p.click('#modal [data-m="0"]');
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');

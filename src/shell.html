@@ -206,6 +206,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .b .lvp circle{fill:#0b0e12b3;stroke:#efe9dc;stroke-width:.8}.b .lvp circle.on{fill:#efe9dc}
 .lvp circle.half{fill:#efe9dc80}
 .ledger{margin:.4em 0}.ledger summary{cursor:pointer;font-size:.85em}.ledger table,.emp{border-collapse:collapse;font-size:.8em;width:100%}.ledger td,.emp td,.emp th{padding:2px 4px;border-bottom:1px solid #ffffff14;vertical-align:top;text-align:left}.ledger td.n,.ledger td:first-child{white-space:nowrap}.ledger .neg,.emp .neg{color:#e58b7c}.emp .tot td{font-weight:700;border-top:1px solid #ffffff40}.emp a{color:inherit}
+#rib path.rb{fill:none;stroke-width:7;stroke-opacity:.85;vector-effect:non-scaling-stroke;pointer-events:none}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -224,7 +225,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 <div id="game" hidden>
   <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
-    <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
+    <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
   <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>

@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v26 — 25/11/2026 · Visão de relevo e relevo que pesa
+
+Quarta parte do plano de aprimoramento. A visão de relevo fica num botão, como o Flavio escolheu; o mapa político continua sendo o padrão.
+
+- Nova visão Relevo (botão ao lado de Dono): cada território é desenhado com o seu terreno, com marcas próprias: montanhas, colinas, árvores, selva, dunas, estepe, tundra e alagado. Os impérios aparecem só por uma faixa da cor do dono por dentro da fronteira, sobre as linhas de divisa da v22.
+- O relevo pesa mais:
+  - Moradia: planície fértil +1; montanha, deserto, tundra e pântano −1.
+  - Obras em montanha e pântano custam 25% a mais. As estradas continuam com o custo próprio de antes.
+- A defesa por relevo continua como antes. Regras atualizadas e teste novo para a visão de relevo.
 ## v25 — 25/11/2026 · Oito portes, moradia e empregos
 
 Terceira parte do plano de aprimoramento: mais níveis de cidade, cada um com ganhos e custos, e crescimento que depende de comida, moradia e empregos.
