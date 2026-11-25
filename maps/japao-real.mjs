@@ -55,17 +55,20 @@ function wiggle(line, depth = 5, amp = .035) {
   }
   return L;
 }
-const westOf = line => { const l = wiggle(line); return [[...l, [l[l.length - 1][0] - 5, l[l.length - 1][1] - 3], [l[0][0] - 5, l[0][1] + 3], l[0]]]; };
+// uma só linha sinuosa por corte: os dois lados (< e >) usam a mesma, senão sobra uma fresta entre eles
+const WL = {}, westOf = (name, line) => WL[name] || (WL[name] = westOf0(line));
+const westOf0 = line => { const l = wiggle(line); return [[...l, [l[l.length - 1][0] - 5, l[l.length - 1][1] - 3], [l[0][0] - 5, l[0][1] + 3], l[0]]]; };
 const geoOf = n => { const f = pref.find(p => p.properties.name === n); if (!f) throw new Error('província não encontrada: ' + n); return f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates; };
 // descarta ilhas distantes (Ogasawara, Izu do sul) que sairiam do enquadramento
 const near = poly => poly[0].every(([x, y]) => y > 33.0 || x < 136.5);
 function piece(spec) {
   const side = spec.slice(-1), name = '<>'.includes(side) ? spec.slice(0, -1) : spec, g = geoOf(name).filter(near);
   if (!'<>'.includes(side)) return g;
-  const w = westOf(CUT[name]);
+  const w = westOf(name, CUT[name]);
   return side === '<' ? pc.intersection(g, w) : pc.difference(g, w);
 }
-const thin = r => { const o = [r[0]]; for (const p of r) { const q = o[o.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) > .9) o.push(p); } return o; };
+// simplifica encaixando na grade de 0,4: vizinhos que dividem a divisa caem nos mesmos pontos (sem frestas)
+const thin = r => { const o = []; for (const p of r) { const s = [Math.round(p[0] / .4) * .4, Math.round(p[1] / .4) * .4], q = o[o.length - 1]; if (!q || q[0] !== s[0] || q[1] !== s[1]) o.push(s); } return o; };
 function ringsOf(geo) { const rings = []; let cur = null; path.context({ moveTo(x, y) { cur = [[x, y]]; rings.push(cur); }, lineTo(x, y) { cur.push([x, y]); }, closePath() { }, arc() { } })(geo); return rings.filter(r => r.length > 2); }
 const area = r => { let a = 0; for (let i = 0; i < r.length; i++) { const [x0, y0] = r[i], [x1, y1] = r[(i + 1) % r.length]; a += x0 * y1 - x1 * y0; } return a / 2; };
 function inside(rings, x, y) { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
@@ -95,6 +98,9 @@ m.terr.forEach((t, i) => { t.d = dstr(all[i]); const [x, y] = label(all[i]); t.x
 const adj = adjacency(all, 1.5);
 for (const [a, b] of m.sea) if (!adj.some(([x, y]) => (x === a && y === b) || (x === b && y === a))) adj.push([a, b]);
 m.adj = adj;
+// terra de fundo: os outros países (sem o Japão, que agora é todo desenhado pelos territórios)
+const bgGeo = topo.merge(world50, world50.objects.countries.geometries.filter(g => !['Japan', 'Antarctica'].includes(g.properties.name)));
+m.bg = dstr(ringsOf({ type: 'MultiPolygon', coordinates: wind(bgGeo.coordinates) }).map(thin));
 m.credit = 'Fronteiras: Natural Earth (domínio público), províncias atuais agrupadas nas províncias do período Sengoku.';
 fs.writeFileSync(MAPS, JSON.stringify(M) + '\n');
 console.log('japao:', m.terr.length, 'territórios,', adj.length, 'vizinhanças');

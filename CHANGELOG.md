@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v30 — 25/11/2026 · Japão sem faixas cinzas nem frestas
+
+Correções que o Flavio apontou no mapa do Japão.
+
+- **Faixas cinzas na costa:** a terra de fundo ("terra fora do jogo") ainda trazia o Japão no traçado antigo, mais grosseiro. Ela aparecia como faixas e manchas cinzas onde a costa velha passava da nova. Agora o fundo traz só os outros países.
+- **Frestas entre províncias:** os dois lados das divisas cortadas (Owari/Mikawa e Tōtōmi/Suruga) recebiam linhas sinuosas sorteadas de forma diferente, e sobrava um corte entre eles. Agora os dois lados usam a mesma linha.
+- **Simplificação do desenho:** agora os pontos são encaixados numa grade fina, então vizinhos que dividem uma divisa caem exatamente nos mesmos pontos.
+- O relevo e o traçado das estradas foram recalculados sobre o desenho corrigido.
 ## v29 — 25/11/2026 · Construções desenhadas no mapa
 
 Terceira etapa da reforma visual. O Flavio pediu que as construções deixassem de ser emojis listados lado a lado e quase sobrepostos, e que tivessem imagens condizentes.
