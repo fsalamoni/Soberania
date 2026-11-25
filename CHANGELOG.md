@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v21 — 25/11/2026 · Mapa mais claro: travessias, fronteiras e porte dos territórios
+
+Atende ao retorno do Flavio sobre ligações entre vizinhos, demarcações e o tamanho dos territórios.
+
+- Varredura de todos os mapas (16 cenários e o modo Civilização em quatro tamanhos): as vizinhanças por terra batem com o desenho. Os casos restantes são frestas de 2 a 7 unidades entre territórios que de fato fazem fronteira (Maranhão e Bahia, Mino e Echizen, entre outros), e a ligação foi mantida.
+- Travessias por mar agora vão de costa a costa, do ponto de litoral mais próximo de cada lado. Antes a linha ia de centro a centro e cruzava terra (por exemplo, Grão-Pará até a Corte atravessando o Brasil), parecendo uma fronteira errada. Quando nem a linha de costa a costa escapa da terra, só os dois portos aparecem.
+- Cada travessia tem dica ao passar o mouse ("Travessia por mar: A e B"). Conserto: a névoa de guerra escondia a travessia errada quando o mapa tinha ligação pela borda.
+- Terra fora do jogo agora é hachurada e identificada, para não parecer um território sem demarcação.
+- Porte do território no marcador: quatro pontos acima do número de tropas (1 aldeia, 2 vila, 3 cidade, 4 metrópole). A dica do território mostra nome, porte e tropas. Ermo vazio não mostra pontos.
+- Nomes de territórios também não cobrem mais os marcadores vizinhos.
+- Regras: novo parágrafo "No mapa" explica número, pontos, travessias e terra hachurada.
+
 ## v20 — 25/11/2026 · Guia da primeira partida e exportação no link online
 
 Continuação das pendências da revisão (UI-12 completo).

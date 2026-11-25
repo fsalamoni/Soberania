@@ -79,7 +79,7 @@ ul.q .bar{width:60px}
 #mapw{position:relative;min-height:0;overflow:hidden;background:var(--sea)}
 #map{width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
 .sea{fill:var(--sea)}
-.bgl{fill:#2a313b;stroke:#0b0e12;stroke-width:.6;vector-effect:non-scaling-stroke}
+.bgl{fill:url(#fora);stroke:#0b0e12;stroke-width:.6;vector-effect:non-scaling-stroke}
 path.t{stroke:#0b0e12;stroke-width:.9;vector-effect:non-scaling-stroke;cursor:pointer;fill-opacity:.88}
 path.t:hover{fill-opacity:1}
 .sealinks line{stroke:#cfe3ff;stroke-opacity:.35;stroke-width:1.2;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
@@ -201,6 +201,8 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 }
 .news{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--brass);background:#ffffff08;border-radius:4px}.news ul{margin:4px 0 0;padding-left:16px}.hist{width:100%;height:auto;margin:4px 0 8px}.tl{font-size:13px;max-height:12em;overflow:auto;padding-left:18px}
 .guide{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--good);background:#ffffff08;border-radius:4px}.guide ul{list-style:none;margin:4px 0 0;padding:0}.guide li{margin:2px 0;color:var(--mute)}.guide li.ok{color:var(--good)}
+.sealinks circle{fill:#cfe3ff;fill-opacity:.7;stroke:#0b0e12;stroke-width:.5;vector-effect:non-scaling-stroke}.sealinks .via line{display:none}.sealinks .via circle{fill:#8fd3ff;fill-opacity:1}
+.b .lvp circle{fill:#0b0e12b3;stroke:#efe9dc;stroke-width:.8}.b .lvp circle.on{fill:#efe9dc}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -3170,13 +3172,15 @@ let svg, vb, P = [], B = [];
 function buildMap() {
   const m = G.m; svg = $('#map');
   vb = { x: 0, y: 0, w: m.w, h: m.h };
-  let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern></defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
-  if (m.bg) h += `<path d="${m.bg}" class="bgl"/>`;
+  let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern></defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
+  if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
   h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g>';
-  h += '<g class="sealinks">' + m.sea.map(([a, b, w]) => { const A = m.terr[a], C = m.terr[b]; if (!w) return `<line x1="${A.x}" y1="${A.y}" x2="${C.x}" y2="${C.y}"/>`; const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/>`; }).join('') + '</g>';
-  h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
+  const sl = seaEnds(m);
+  h += '<g class="sealinks">' + m.sea.map(([a, b, w], k) => { const A = m.terr[a], C = m.terr[b], tt = `<title>Travessia por mar: ${esc(A.n)} e ${esc(C.n)}</title>`; if (!w) { const [x1, y1, x2, y2] = sl[k]; return `<g data-k="${k}">${tt}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="2.2"/><circle cx="${x2}" cy="${y2}" r="2.2"/></g>`; } const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<g data-k="${k}">${tt}<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/></g>`; }).join('') + '</g>';
+  h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><g class="lvp">${[0, 1, 2, 3].map(n => `<circle cx="${-7.5 + 5 * n}" cy="-17" r="2.1"/>`).join('')}</g><text class="ic" x="13" y="-8"></text><text class="nm" y="23">${esc(t.n)}</text></g>`).join('') + '</g>';
   svg.innerHTML = h;
-  P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')];
+  P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')]; NM = null;
+  seaVia();
   setVB();
 }
 function upp() { const r = svg.getBoundingClientRect(); return r.width ? Math.max(vb.w / r.width, vb.h / r.height) : 1; }
@@ -3188,12 +3192,44 @@ function setVB() {
   if (svg.classList.contains('names')) declutter(k);
 }
 let NM = null;
+// ligação marítima: pontos de costa mais próximos entre os dois territórios (guardados no mapa)
+function seaEnds(m) {
+  if (m._sl) return m._sl;
+  const pts = d => (d.match(/-?\d+(?:\.\d+)?/g) || []).map(Number), V = m.terr.map(t => pts(t.d)), cell = 6, grid = new Map(), key = (x, y) => Math.floor(x / cell) + ',' + Math.floor(y / cell);
+  V.forEach((A, i) => { for (let p = 0; p < A.length; p += 2) { const k = key(A[p], A[p + 1]); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i, A[p], A[p + 1]); } });
+  // costa: vértice sem vértice de outro território por perto (a fronteira terrestre fica de fora)
+  const coast = i => {
+    const A = V[i], out = [];
+    for (let p = 0; p < A.length; p += 2) {
+      const x = A[p], y = A[p + 1], cx = Math.floor(x / cell), cy = Math.floor(y / cell); let near = false;
+      for (let dx = -1; dx <= 1 && !near; dx++) for (let dy = -1; dy <= 1 && !near; dy++) { const c = grid.get((cx + dx) + ',' + (cy + dy)) || []; for (let q = 0; q < c.length; q += 3) if (c[q] !== i && Math.abs(c[q + 1] - x) < 2.5 && Math.abs(c[q + 2] - y) < 2.5) { near = true; break; } }
+      if (!near) out.push(x, y);
+    }
+    return out.length ? out : A;
+  };
+  return m._sl = m.sea.map(([a, b, w]) => {
+    let best = [Infinity, m.terr[a].x, m.terr[a].y, m.terr[b].x, m.terr[b].y]; if (w) return best.slice(1);
+    const A = coast(a), C = coast(b);
+    for (let p = 0; p < A.length; p += 2) for (let q = 0; q < C.length; q += 2) { const d = (A[p] - C[q]) ** 2 + (A[p + 1] - C[q + 1]) ** 2; if (d < best[0]) best = [d, A[p], A[p + 1], C[q], C[q + 1]]; }
+    return best.slice(1).map(v => +v.toFixed(1));
+  });
+}
+// ligação que ainda cruzaria terra vira só os dois portos (a linha some)
+function seaVia() {
+  const bg = svg.querySelector('.bgl'), tests = bg ? [bg, ...P] : P; if (!tests[0] || !tests[0].isPointInFill) return;
+  svg.querySelectorAll('.sealinks > g').forEach(gr => {
+    const l = gr.querySelector('line'), s = G.m.sea[+gr.dataset.k]; if (!l || s[2]) return;
+    const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +l.getAttribute(a)), pt = svg.createSVGPoint();
+    const land = [.2, .3, .4, .5, .6, .7, .8].some(t => { pt.x = x1 + (x2 - x1) * t; pt.y = y1 + (y2 - y1) * t; return tests.some(e => e.isPointInFill(pt)); });
+    gr.classList.toggle('via', land);
+  });
+}
 function declutter(k) { // ponytail: caixas aproximadas pelo número de letras, O(n²) com n até 160
   if (!NM || NM.length !== B.length || !NM[0].isConnected) NM = B.map(g => g.querySelector('.nm'));
   const me = G.player, pr = i => G.own[i] === me ? 0 : real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 2, box = [];
   G.m.terr.map((t, i) => i).sort((a, b) => pr(a) - pr(b)).forEach(i => {
     const t = G.m.terr[i], w = t.n.length * 3.1 * k, x = t.x, y = t.y + 23 * k;
-    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 13 * k);
+    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 13 * k) || G.m.terr.some((o, j) => j !== i && !B[j].hasAttribute('hidden') && Math.abs(o.x - x) < w + 11 * k && Math.abs(o.y - y + 4 * k) < 16 * k);
     NM[i].style.visibility = hit ? 'hidden' : ''; if (!hit) box.push([x, y, w]);
   });
 }
@@ -3232,7 +3268,7 @@ function initPan() {
   new ResizeObserver(() => G && setVB()).observe(svg);
 }
 function renderMap() {
-  civSee(); if (G.seen) svg.querySelectorAll('.sealinks line').forEach((l, k) => { const s = G.m.sea[k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
+  civSee(); if (G.seen) svg.querySelectorAll('.sealinks > g').forEach(l => { const s = G.m.sea[+l.dataset.k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
@@ -3243,6 +3279,8 @@ function renderMap() {
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
+    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.querySelectorAll('.lvp circle').forEach((c, n) => c.classList.toggle('on', n < lv)); g.querySelector('.lvp').toggleAttribute('hidden', !lv);
+    P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? LEVEL[lv].n : 'ermo'} · ${G.tr[i]} tropas`;
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : G.bld[i].map(k => STRUCT[k].ic);
     if (L === 'ter') ics.unshift(TERR[G.ter[i]].ic + (G.riv[i] ? '〰' : ''), LEVEL[G.lv[i]].ic);
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
@@ -3609,6 +3647,7 @@ function rules() {
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido.</p>
+  <p><b>No mapa.</b> O número é a tropa do território; os quatro pontos acima dele mostram o porte (1 aldeia, 2 vila, 3 cidade, 4 metrópole). Linhas tracejadas e pontos azuis na costa são travessias por mar. Terra hachurada fica fora do jogo.</p>
   <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também aqueduto) e metrópole (exige saneamento). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
