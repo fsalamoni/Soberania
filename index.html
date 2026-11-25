@@ -204,6 +204,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .guide{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--good);background:#ffffff08;border-radius:4px}.guide ul{list-style:none;margin:4px 0 0;padding:0}.guide li{margin:2px 0;color:var(--mute)}.guide li.ok{color:var(--good)}
 .sealinks circle{fill:#cfe3ff;fill-opacity:.7;stroke:#0b0e12;stroke-width:.5;vector-effect:non-scaling-stroke}.sealinks .via line{display:none}.sealinks .via circle{fill:#8fd3ff;fill-opacity:1}
 .b .lvp circle{fill:#0b0e12b3;stroke:#efe9dc;stroke-width:.8}.b .lvp circle.on{fill:#efe9dc}
+.ledger{margin:.4em 0}.ledger summary{cursor:pointer;font-size:.85em}.ledger table,.emp{border-collapse:collapse;font-size:.8em;width:100%}.ledger td,.emp td,.emp th{padding:2px 4px;border-bottom:1px solid #ffffff14;vertical-align:top;text-align:left}.ledger td.n,.ledger td:first-child{white-space:nowrap}.ledger .neg,.emp .neg{color:#e58b7c}.emp .tot td{font-weight:700;border-top:1px solid #ffffff40}.emp a{color:inherit}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -1295,10 +1296,19 @@ function newGame(sc, player, diff, len) {
     if (op === 'rebels' || op === 'place' || op === 'troops') need(a); else if (op === 'give') a.forEach(need); else if (op === 'attrit') expand(m, [].concat(a)).forEach(need);
     else if (a !== '*' && !g.F[a]) throw Error(sc.id + ': facção desconhecida ' + a);
   }
-  const G0 = G; G = g; for (const f of g.order) if (g.F[f].ab === 'espiao') g.F[f].cards.push(drawCard(), drawCard()); g.order.forEach(f => g.F[f].t0 = g.own.filter(o => o === f).length); if (sc.civ) civInit(); G = G0;
+  const G0 = G; G = g; for (const f of g.order) if (g.F[f].ab === 'espiao') g.F[f].cards.push(drawCard(), drawCard()); g.order.forEach(f => g.F[f].t0 = g.own.filter(o => o === f).length); if (sc.civ) civInit(); recolor(g.order.map(f => g.F[f])); G = G0;
   return g;
 }
 const tk = (a, b) => a < b ? a + '|' + b : b + '|' + a;
+// paleta com todas as cores bem distantes entre si (testada); a facção fica com a mais próxima da cor original ainda livre
+const PAL = ['#d64541', '#3d6fd6', '#e3c13b', '#3aa65a', '#9156c8', '#e67e22', '#2bb3b1', '#e8e2cf', '#6b7380', '#e06fb8', '#8b5a2b', '#76c7f0'];
+const rgbOf = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
+function colDist(a, b) { const [r1, g1, b1] = rgbOf(a), [r2, g2, b2] = rgbOf(b), rm = (r1 + r2) / 2; return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2); }
+function recolor(L) {
+  if (L.length > PAL.length) return; const free = [...PAL];
+  for (const x of L) { if (!x.c0) x.c0 = x.c; const k = free.reduce((b, c, n) => colDist(c, x.c0) < colDist(free[b], x.c0) ? n : b, 0); x.c = free.splice(k, 1)[0]; }
+}
+SCEN.forEach(s => s.f && recolor(s.f));
 const Fa = id => G.F[id];
 const owned = f => { const o = []; for (let i = 0; i < G.N; i++) if (G.own[i] === f) o.push(i); return o; };
 const allied = (a, b) => a === b || (!!Fa(a).team && Fa(a).team === Fa(b).team) || (!!G.ally && G.ally.has(tk(a, b)));
@@ -1422,30 +1432,64 @@ const goodsAt = T => { const s = new Set(); for (const i of T) if (!occupied(i))
 const goods = f => { const s = goodsAt(netOf(f).linked); if (real(f)) { routeGoods(f).forEach(d => s.add(d)); bought(f).forEach(d => s.add(d)); } return s; }; // T-21
 const goodsAll = f => goodsAt(owned(f));
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
-function yieldOf(i) {
-  const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i;
-  const y = { pre: 0, stab: 0, food: T.food + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0) + (hasW(f, 'jar') ? 1 : 0), prod: T.prod + (cap ? 2 : 0), gold: T.gold + (G.riv[i] ? 1 : 0) + (cap ? 1 : 0) + (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), sci: (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0) };
+function yieldOf(i, L) {
+  const f = G.own[i], T = TERR[G.ter[i]], lv = G.lv[i], cap = real(f) && Fa(f).capI === i, LN = 'Porte: ' + LEVEL[lv].n.toLowerCase();
+  const y = { pre: 0, stab: 0, food: 0, prod: 0, gold: 0, sci: 0 }, A = (r, v, w) => { if (!v) return; y[r] += v; if (L) L.push([r, v, w]); };
+  A('food', T.food, T.n); A('prod', T.prod, T.n); A('gold', T.gold, T.n);
+  if (G.riv[i]) { A('food', 1, 'Rio'); A('gold', 1, 'Rio'); }
+  if (coastal(i)) A('food', 1, 'Litoral');
+  if (hasW(f, 'jar')) A('food', 1, 'Maravilha: ' + sName('jar'));
+  if (cap) { A('prod', 2, 'Capital'); A('gold', 1, 'Capital'); }
+  A('gold', (lv >= 2 ? 1 : 0) + (lv >= 4 ? 1 : 0), LN); A('sci', (lv >= 3 ? 1 : 0) + (lv >= 4 ? 1 : 0), LN);
   for (const k of G.bld[i]) {
-    const S = STRUCT[k]; if (!nb(i, k)) continue; if (S.sciLv) y.sci += lv; if (!S.y) continue;
-    if ((k === 'ztc' || k === 'zae') && real(f) && has(f, 'sat')) y.sci++; // K-113
-    for (const [r, v] of Object.entries(S.y)) y[r] += v;
-    if (k === 'mer' && real(f) && has(f, 'com')) y.gold++;
-    if (k === 'ofi' && real(f) && has(f, 'gui')) y.prod++; // K-39
-    if (k === 'ofi' && pol(f, 'pro')) y.prod++; // G-24
-    if (k === 'aca' && pol(f, 'esc')) y.sci++; // G-26
-    if (k === 'tem' && gov(f) === 'teo') y.sci++; // G-04
-    if (k === 'uni' && real(f) && has(f, 'imp')) y.sci++; // K-50
-    if (k === 'agr' && G.riv[i]) y.food++;
-    if (S.z) { const r = Object.keys(S.y)[0]; y[r] += Math.min(3, G.A[i].filter(j => G.own[j] === f && nb(j, k)).length); } // polo
+    const S = STRUCT[k], n = sName(k); if (!nb(i, k)) continue; if (S.sciLv) A('sci', lv, n + ' (pelo porte)'); if (!S.y) continue;
+    if ((k === 'ztc' || k === 'zae') && real(f) && has(f, 'sat')) A('sci', 1, n + ' · ' + tName('sat')); // K-113
+    for (const [r, v] of Object.entries(S.y)) A(r, v, n);
+    if (k === 'mer' && real(f) && has(f, 'com')) A('gold', 1, n + ' · ' + tName('com'));
+    if (k === 'ofi' && real(f) && has(f, 'gui')) A('prod', 1, n + ' · ' + tName('gui')); // K-39
+    if (k === 'ofi' && pol(f, 'pro')) A('prod', 1, n + ' · ' + POL.pro.n); // G-24
+    if (k === 'aca' && pol(f, 'esc')) A('sci', 1, n + ' · ' + POL.esc.n); // G-26
+    if (k === 'tem' && gov(f) === 'teo') A('sci', 1, n + ' · ' + GOV.teo.n); // G-04
+    if (k === 'uni' && real(f) && has(f, 'imp')) A('sci', 1, n + ' · ' + tName('imp')); // K-50
+    if (k === 'agr' && G.riv[i]) A('food', 1, n + ' · rio');
+    if (S.z) A(Object.keys(S.y)[0], Math.min(3, G.A[i].filter(j => G.own[j] === f && nb(j, k)).length), n + ' · vizinhas com o mesmo polo'); // polo
   }
-  for (const d of worked(i)) for (const [r, v] of Object.entries(DEP[d].y)) y[r] += v;
-  const pn = real(f) && Fa(f).pan; if (pn === 'col' && G.riv[i]) y.food++; if (pn === 'frj' && G.bld[i].includes('min')) y.prod++; if (pn === 'mar' && coastal(i)) y.gold++; // G-50
-  y.prod += G.routes.filter(r => r.k === 'int' && r.b === i && rLive(r)).length; // T-01
-  if (G.nat && G.nat.has(i)) { y.gold += 2; y.pre++; } // MC-07
-  if (occupied(i)) for (const r in y) y[r] = Math.floor(y[r] / 2);
+  for (const d of worked(i)) for (const [r, v] of Object.entries(DEP[d].y)) A(r, v, 'Jazida: ' + DEP[d].n);
+  const pn = real(f) && Fa(f).pan, pt = pn && 'Crença: ' + PANT[pn].n;
+  if (pn === 'col' && G.riv[i]) A('food', 1, pt); if (pn === 'frj' && G.bld[i].includes('min')) A('prod', 1, pt); if (pn === 'mar' && coastal(i)) A('gold', 1, pt); // G-50
+  A('prod', G.routes.filter(r => r.k === 'int' && r.b === i && rLive(r)).length, 'Rotas internas'); // T-01
+  if (G.nat && G.nat.has(i)) { A('gold', 2, 'Maravilha natural'); A('pre', 1, 'Maravilha natural'); } // MC-07
+  if (occupied(i)) for (const r of Object.keys(y)) A(r, Math.floor(y[r] / 2) - y[r], 'Ocupação (metade)');
   return y;
 }
 const foodUse = i => 2 * G.lv[i] - 1;
+// livro-razão da região: cada ganho e perda com a causa; o líquido é o que chega ao império
+let ledOpen = false; document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ledger')) ledOpen = e.target.open; }, true);
+const RES_IC = { food: ['🍞', 'Comida'], prod: ['⚒', 'Produção'], gold: ['💰', 'Ouro'], sci: ['🔬', 'Saber'], pre: ['⭐', 'Prestígio'] };
+function regionNet(i) {
+  const L = [], y = yieldOf(i, L), f = G.own[i], cd = capDist(f)[i], c = corrupt(i, cd), lo = tStab(i, cd) < 30, net = { ...y };
+  L.push(['food', -foodUse(i), 'Consumo da população']); net.food = y.food - foodUse(i);
+  const p = prodOf(i); if (p !== y.prod) L.push(['prod', p - y.prod, 'Governador, obras e governo']); net.prod = p;
+  for (const r of ['gold', 'sci']) { const v = y[r] * (1 - c) * (lo ? .5 : 1); if (c && y[r]) L.push([r, -Math.round(y[r] * c * 10) / 10, `Corrupção (${Math.round(c * 100)}%, distância da capital)`]); if (lo && y[r]) L.push([r, -Math.round(y[r] * (1 - c) * 5) / 10, 'Estabilidade baixa (metade)']); net[r] = Math.round(v * 10) / 10; }
+  return { L, net };
+}
+function ledgerHtml(i) {
+  const { L, net } = regionNet(i), sg = v => (v > 0 ? '+' : '') + v;
+  const rows = Object.keys(RES_IC).map(r => { const it = L.filter(x => x[0] === r); if (!it.length && !net[r]) return ''; return `<tr><td>${RES_IC[r][0]} ${RES_IC[r][1]}</td><td class="n"><b>${sg(net[r])}</b></td><td>${it.map(x => `<span class="${x[1] < 0 ? 'neg' : ''}">${sg(x[1])} ${esc(x[2])}</span>`).join(' · ') || '—'}</td></tr>`; }).join('');
+  const gr = G.lv[i] < 4 ? `Estoque de comida ${G.food[i]}/${growNeed(i)} para crescer${growOk(i) ? '' : ' · falta: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}${net.food < 0 ? ' · passando fome' : ''}.` : 'Porte máximo.';
+  return `<details class="ledger" ${ledOpen ? 'open' : ''}><summary>Rendimento da região: 🍞 ${sg(net.food)} · ⚒ ${net.prod} · 💰 ${net.gold} · 🔬 ${net.sci}${net.pre ? ' · ⭐ ' + net.pre : ''}</summary><table>${rows}</table><p class="hint">${gr} <button class="mini" data-a="empire">Resumo do império</button></p></details>`;
+}
+// resumo do império: soma das regiões e os ajustes que valem para o império todo
+function empireModal() {
+  const f = G.player, T = settled(f), inc = income(f), sum = { food: 0, prod: 0, gold: 0, sci: 0, pre: 0 };
+  const rows = T.map(i => { const { net } = regionNet(i); for (const r in sum) sum[r] += net[r] || 0; return [i, net]; }).sort((a, b) => b[1].gold + b[1].prod - a[1].gold - a[1].prod);
+  const r1 = v => Math.round(v * 10) / 10, adj = (k, v) => `${r1(v - sum[k]) >= 0 ? '+' : ''}${r1(v - sum[k])}`;
+  modal(`<h2>Resumo do império</h2><p class="hint">O império é a soma das regiões. Abaixo, o líquido de cada uma (já com consumo, corrupção e estabilidade) e, no fim, os ajustes que valem para o império todo: governo, felicidade, rotas, maravilhas e dificuldade.</p>
+    <div class="techs"><table class="emp"><tr><th>Região</th><th>Porte</th><th>🍞</th><th>⚒</th><th>💰</th><th>🔬</th><th>⭐</th></tr>${rows.map(([i, n]) => `<tr><td><a href="#" data-a="goto" data-i="${i}">${esc(tname(i))}</a></td><td>${LEVEL[G.lv[i]].n}</td><td class="${n.food < 0 ? 'neg' : ''}">${n.food}</td><td>${n.prod}</td><td>${r1(n.gold)}</td><td>${r1(n.sci)}</td><td>${n.pre || ''}</td></tr>`).join('')}
+    <tr class="tot"><td>Soma das regiões</td><td>${T.length} reg.</td><td>${sum.food}</td><td>${sum.prod}</td><td>${r1(sum.gold)}</td><td>${r1(sum.sci)}</td><td>${sum.pre}</td></tr>
+    <tr><td>Ajustes do império</td><td></td><td></td><td></td><td>${adj('gold', inc.gold)}</td><td>${adj('sci', inc.sci)}</td><td>${adj('pre', inc.pre)}</td></tr>
+    <tr class="tot"><td>Por turno</td><td></td><td></td><td></td><td>${inc.gold}</td><td>${inc.sci}</td><td>${inc.pre}</td></tr></table></div>`, [['Fechar']]);
+}
 const growNeed = i => LEVEL[G.lv[i]].need * G.len.k;
 const growOk = i => !LEVEL[G.lv[i]].req || LEVEL[G.lv[i]].req.some(k => nb(i, k));
 function grow(f) {
@@ -3643,7 +3687,7 @@ function renderSide() {
       inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
         <p class="hint">Jazidas: ${G.dep[i].length ? G.dep[i].map(d => DEP[d].ic + ' ' + esc(DEP[d].n) + (wk.includes(d) ? ' ✓' : '')).join(', ') : 'nenhuma conhecida'}${G.dep[i].length > wk.length && real(o) ? ' (✓ = explorada; as outras pedem a zona certa)' : ''}</p>`;
       if (real(o)) { const cd = capDist(o)[i], ts = tStab(i, cd), hs = health(i); inf += `<p class="hint">Saúde ${hs}${hs < 0 ? ' (risco de epidemia)' : ''} · estabilidade local ${ts}${ts < 10 ? ' (pode se separar)' : ts < 30 ? ' (rende metade)' : ''} · corrupção ${Math.round(100 * corrupt(i, cd))}% · cultura ${G.cul[i] === o ? 'própria' : esc(fname(G.cul[i]) || 'local') + ` (assimila ${G.asm[i]}/8)`}</p>`; }
-      if (real(o)) { const y = yieldOf(i); inf += `<p class="hint">Rende 🍞 ${y.food} (consome ${foodUse(i)}${G.lv[i] < 4 ? `, estoque ${G.food[i]}/${growNeed(i)}${growOk(i) ? '' : ' · para crescer: ' + LEVEL[G.lv[i]].req.map(sName).join(' ou ')}` : ''}) · ⚒ ${prodOf(i)} · 💰 ${y.gold} · 🔬 ${y.sci}</p>`; }
+      if (real(o)) inf += ledgerHtml(i);
     }
     if (o === me) inf += qHtml(i);
   }
@@ -3770,6 +3814,8 @@ document.addEventListener('click', e => {
   else if (a === 'act') playerAct(el.dataset.k);
   else if (a === 'bld') playerAct('bld', el.dataset.k);
   else if (a === 'techs') techModal();
+  else if (a === 'empire') empireModal();
+  else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; renderMap(); render(); }
   else if (a === 'works') worksModal();
   else if (a === 'rush' || a === 'unq') { const e = act(G.player, a, +el.dataset.i, +el.dataset.n); if (e) toast(e); render(); if (!$('#modal').hidden) worksModal(); }
   else if (a === 'save') saveModal();

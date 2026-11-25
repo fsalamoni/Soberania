@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v23 — 25/11/2026 · Região que mostra o que produz, resumo do império e cores distintas
+
+Primeira parte do plano de aprimoramento (v23 a v30) pedido pelo Flavio: o império como soma das regiões.
+
+- Painel da região com livro-razão: comida, produção, ouro, saber e prestígio, cada um com o líquido e a lista de causas: relevo, rio, litoral, capital, porte, cada obra (e as tecnologias, políticas e governo que a reforçam), jazidas exploradas, crença, rotas internas e maravilhas. As perdas aparecem em vermelho: consumo da população, corrupção pela distância da capital, estabilidade baixa e ocupação. Também diz quanto falta de comida para crescer e o que impede o crescimento.
+- Resumo do império (botão no painel da região): tabela com o líquido de cada região, a soma, os ajustes que valem para o império todo (governo, felicidade, rotas, maravilhas, dificuldade) e o que entra por turno. Clicar numa região leva até ela no mapa.
+- Cores das facções: nova paleta de 12 cores bem distantes entre si. Cada facção fica com a cor da paleta mais próxima da sua cor original. Antes havia 35 pares de facções com cores parecidas, como Oda e Ōtomo no Sengoku ou Aiúbidas e Almóadas nas Cruzadas; agora não há nenhum.
+- Os rendimentos não mudaram: o cálculo é o mesmo, agora com o registro de cada causa (teste novo confere a soma).
 ## v22 — 25/11/2026 · Fronteiras desenhadas a partir das divisas reais
 
 Atende ao retorno do Flavio sobre marcações sem nome e vizinhos que não contavam como fronteira (imagem do Sengoku).

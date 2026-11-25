@@ -99,6 +99,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('#modal [data-m="0"]');
   ok(await p.evaluate(() => /Guia/.test(document.querySelector('.guide')?.textContent || '')), 'guia da primeira partida aparece');
   ok(await p.evaluate(() => document.querySelectorAll('.b .lvp circle.on').length > 0 && document.querySelectorAll('.sealinks > g').length === window.__sob.G.m.sea.length), 'marcador mostra o porte e cada travessia tem seu desenho');
+  ok(await p.evaluate(() => { const G = window.__sob.G, i = G.F[G.player].capI; G.sel = i; render(); const L = [], y = yieldOf(i, L); return !!document.querySelector('.ledger summary') && ['food', 'prod', 'gold', 'sci'].every(r => L.filter(x => x[0] === r).reduce((s, x) => s + x[1], 0) === y[r]); }), 'painel da região mostra cada ganho com a causa');
+  await p.evaluate(() => document.querySelector('[data-a=empire]').click());
+  ok(await p.evaluate(() => /Soma das regiões/.test(document.querySelector('#modal').textContent)), 'resumo do império soma as regiões');
+  await p.click('#modal [data-m="0"]');
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');
