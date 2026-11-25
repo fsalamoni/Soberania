@@ -52,13 +52,13 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   // governo (v5): abre as obras (1 ação), põe mercado e oficina na fila, escolhe pesquisa (sem ação) e declara campanha
   await p.evaluate(() => { window.__sob.G.F.fa.gold = 60; window.__sob.G.F.fa.sci = 5; window.__sob.render(); });
   await p.click('[data-a=act][data-k=obras]');
-  ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.bldOn && F.pa === 2; }), 'abrir obras gasta 1 ação');
+  ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.bldOn && F.pa === 99; }), 'abrir obras não gasta ação (v24: sem limite)');
   await p.click('[data-a=bld][data-k=mer]');
   await p.screenshot({ path: shot('construir') });
   await clickT('Rio Grande do Sul');
   await p.click('[data-a=bld][data-k=ofi]');
   await clickT('Rio Grande do Sul');
-  ok(await p.evaluate(() => { const G = window.__sob.G, q = G.q[G.ix['Rio Grande do Sul']]; return q.length === 2 && q[0].k === 'mer' && G.F.fa.pa === 2; }), 'duas obras na fila sem gastar mais ações');
+  ok(await p.evaluate(() => { const G = window.__sob.G, q = G.q[G.ix['Rio Grande do Sul']]; return q.length === 2 && q[0].k === 'mer' && G.F.fa.pa === 99; }), 'duas obras na fila sem gastar mais ações');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.ix['Rio Grande do Sul']; return window.__sob.act('fa', 'rush', i, 0) !== ''; }), 'não apressa no turno em que a obra começou');
   // parte 3: zonas pedem terreno ou jazida e cabem no nível do território
   ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.ix['Rio Grande do Sul']; const a = S.act('fa', 'bld', 'flo', i) !== '', b = S.act('fa', 'bld', 'pec', i) === ''; S.act('fa', 'unq', i, 2); return a && b && G.q[i].length === 2; }), 'zona florestal recusada na pradaria, pecuária aceita');
@@ -92,7 +92,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const a = civScenario({ seed: 5, size: 'p', type: 'pan' }), b = civScenario({ seed: 5, size: 'p', type: 'pan' }); return a.f.length === 4 && a._m.terr.length === 40 && JSON.stringify(a._m) === JSON.stringify(b._m); }), 'modo Civilização: mesma semente, mesmo mundo');
   ok(await p.evaluate(() => /Era da Informação/.test(document.querySelector('#modal').textContent) && !!window.__sob.STRUCT.cpa), 'árvore chega à Era da Informação');
   ok(await p.evaluate(() => /Idade Média/.test(document.querySelector('#modal').textContent) && /libera:/.test(document.querySelector('#modal').textContent) && window.__sob.G.F.fa.tech.includes('agri')), 'árvore por era mostra o que cada tecnologia libera');
-  ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 2; }), 'pesquisa escolhida sem gastar ação');
+  ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 99; }), 'pesquisa escolhida sem gastar ação');
   await p.click('#modal [data-m="0"]');
   await p.click('[data-a=figm]');
   ok(await p.evaluate(() => /Grandes figuras/.test(document.querySelector('#modal').textContent) && /Governadores/.test(document.querySelector('#modal').textContent)), 'painel de personagens');

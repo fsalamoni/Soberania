@@ -1320,7 +1320,7 @@ const seaOk = (f, i, j) => !isSea(i, j) || G.seaUsed.has(tk(i, j)) || Fa(f).navL
 function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; Fa(f).navLeft--; G.seaUsed.add(tk(i, j)); }
 // probe: a IA avalia ataques antes de declarar campanha
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
-const cqMax = f => ECON.cq + (has(f, 'dou') ? 1 : 0);
+const cqMax = f => Infinity; // v24: ataques ilimitados enquanto houver tropas (escolha do Flavio)
 const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round === 1 && real(G.own[j]) && Fa(G.own[j]).capI === j); // capitais protegidas na 1ª rodada
 // conjunto refeito quando a lista de tecnologias muda (push ou troca); a lista fica longa nos cenários modernos
 const has = (f, k) => { const F = Fa(f), t = F && F.tech; if (!t) return false; if (F.tS !== t || F.tN !== t.length) { F.tS = t; F.tN = t.length; F.tSet = new Set(t); } return F.tSet.has(k); };
@@ -1591,7 +1591,7 @@ function govAct(f, a, x, y) {
     const p = POL[x]; if (!p || !civ(f, p.c)) return 'Política indisponível.';
     if (pol(f, x)) { F.pol = F.pol.filter(k => k !== x); return ''; }
     if (freeSlot(f, p.t) < 1) return `Sem vaga ${SLOTN[p.t]} livre no governo atual.`;
-    if (F.pfree !== G.round && !spend(f)) return 'Trocar política fora do turno de uma cívica nova custa 1 ação.';
+    if (F.pfree !== G.round && !spend(f)) return 'Trocar política fora do turno de uma cívica nova não é possível agora.';
     F.pol.push(x); return '';
   }
   if (a === 'pan') {
@@ -1738,7 +1738,7 @@ function spy(f, i, k) {
   if (k === 'ppg' && !has(f, 'imp')) return 'Propaganda exige Imprensa.';
   if (k === 'tec' && !nb(i, 'aca') && !nb(i, 'uni')) return 'Roubar tecnologia exige biblioteca ou universidade no território.';
   if (F.gold < 3) return 'Ouro insuficiente.';
-  if (!spend(f)) return 'Sem pontos de ação.';
+  if (!spend(f, 'spy' + i)) return 'Já há uma missão de espionagem aqui neste turno.';
   F.gold -= 3;
   if (d6() <= S.r + spyDef(i)) { // F-38: espião pego
     remember(o, f, 'pegamos um espião seu', -20); G.cb.add(o + '>' + f);
@@ -2252,7 +2252,7 @@ function eraCrisis() {
 }
 // UI-12: guia em camadas. Primeiro o turno básico; depois comércio, diplomacia, governo e vitórias
 const GUIDE = [
-  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Em Ações, declare campanha para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
+  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Em Ações, declare campanha (não custa nada) para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
   [['routes', 'Abra Comércio e veja onde cabem rotas'], ['dipl', 'Abra Diplomacia e veja o que cada facção aceita'], ['govm', 'Abra Governo e fé'], ['vicm', 'Abra Vitórias e veja quem está perto de vencer']],
 ];
 let guideLv = (() => { try { return +(localStorage.getItem('sob_guia') || 0); } catch (e) { return 9; } })();
@@ -2270,7 +2270,7 @@ function guideHtml() {
 }
 const mktHtml = me => { const g = goods(me), L = Object.keys(DEP).filter(d => !g.has(d) && G.order.some(o => o !== me && Fa(o).alive && real(o) && goodsAll(o).has(d))); return `<h4>Mercado mundial</h4><p class="hint">Compre o acesso a um bem por 5 turnos. O preço sobe quando poucos produzem.</p><p>${L.map(d => `<button class="mini" data-a="buy" data-d="${d}" ${Fa(me).gold >= mktPrice(d) ? '' : 'disabled'}>${DEP[d].ic} ${esc(DEP[d].n)} ${mktPrice(d)}💰</button>`).join(' ') || 'Nada à venda agora.'}</p>${bought(me).length ? `<p class="hint">Comprado: ${bought(me).map(d => DEP[d].n).join(', ')}</p>` : ''}`; };
 const coloPair = f =>{ for (const i of owned(f).filter(i => G.lv[i] >= 3).sort((a, b) => G.lv[b] - G.lv[a])) { const j = G.A[i].find(j => G.own[j] === f && G.lv[j] === 1 && !occupied(j)); if (j != null) return [i, j]; } return null; };
-const paOf = f => ECON.pa + agePA(f) + (has(f, 'adm') ? 1 : 0) + ({ rep: 1, abs: 1, dem: 2 }[gov(f)] || 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
+const paOf = f => 99 || ECON.pa + agePA(f) + (has(f, 'adm') ? 1 : 0) + ({ rep: 1, abs: 1, dem: 2 }[gov(f)] || 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => Math.max(1, Math.round(((has(f, 'con') ? 1 : ECON.troop) - (gov(f) === 'feu' ? 1 : 0)) * (pol(f, 'csc') ? .75 : 1))); // G-05, G-20
 // ---------- obras em turnos (parte 2: P-01 a P-04, P-08, P-11) ----------
 // pedra barateia muralhas, templos e maravilhas; madeira, portos, oficinas e quartéis (R-25, R-26)
@@ -2371,7 +2371,8 @@ const techOk = (f, t) => !has(f, t.k) && (t.req || []).every(r => has(f, r));
 const inflCost = (f, j) => Math.max(1, G.tr[j] + 1 - (has(f, 'ret') ? 1 : 0));
 const canRecruitAt = (f, i) => G.own[i] === f && (i === Fa(f).capI || nb(i, 'qua'));
 const canInfl = (f, j) => (G.own[j] === 'neu' || G.own[j] === 'reb') && !capOwner(j) && (!csOf(j) || suz(j) === f) && G.A[j].some(i => G.own[i] === f) && Fa(f).pre >= inflCost(f, j);
-const spend = f => { const F = Fa(f); if (F.pa < 1) return false; F.pa--; return true; };
+// v24: sem pontos de ação. Com chave, a ação só vale 1 vez por turno (festas, impostos, agitadores, espião, enviado)
+const spend = (f, k) => { if (!k) return true; const U = Fa(f).used || (Fa(f).used = {}); if (U[k] === G.round) return false; U[k] = G.round; return true; };
 // Cada ação gasta 1 ponto de ação; devolve texto de erro ou '' quando deu certo.
 function act(f, a, x, y) {
   const F = Fa(f);
@@ -2387,7 +2388,7 @@ function act(f, a, x, y) {
     if (cu) F.cu -= 2 * troopCost(f); else F.gold -= 2 * troopCost(f); G.tr[F.capI]++; F.merc = G.round; log(f, `${fname(f)} contrata mercenários em ${tname(F.capI)}.`); return '';
   }
   if (a === 'bld' || a === 'unq' || a === 'rush') { // dentro das obras abertas: sem custo de ação (P-03)
-    if (!F.bldOn) return 'Abra as obras primeiro (1 ação por turno).';
+    if (!F.bldOn) return 'Abra as obras primeiro (botão Ordenar obras).';
     if (a === 'bld') {
       if (!canQueue(f, x, y)) return 'Não dá para pôr esta obra aqui (já existe, já está na fila, fila cheia ou requisito faltando).';
       G.q[y].push({ k: x, p: 0, t: G.round });
@@ -2401,10 +2402,8 @@ function act(f, a, x, y) {
     }
     return '';
   }
-  if (a !== 'camp' && F.pa < 1) return 'Sem pontos de ação neste turno.';
   if (a === 'camp') {
     if (F.camp) return 'A campanha já foi declarada.';
-    if (!has(f, 'dou')) { if (!spend(f)) return 'Sem pontos de ação.'; }
     F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} declara campanha militar.`);
   } else if (a === 'rec') {
     if (F.recOn) return 'O recrutamento já está aberto neste turno.';
@@ -2414,14 +2413,14 @@ function act(f, a, x, y) {
     if (F.bldOn) return 'As obras já estão abertas neste turno.'; spend(f); F.bldOn = true;
   } else if (a === 'fest') {
     if (F.gold < ECON.fest) return 'Ouro insuficiente.';
-    spend(f); F.gold -= ECON.fest; F.stab = Math.min(100, F.stab + 15); F.ww = Math.max(0, F.ww - 3); F.festT = G.round + 2; if (G.food[F.capI] != null) G.food[F.capI] = Math.max(0, G.food[F.capI] - 5); // S-24
+    if (!spend(f, 'fest')) return 'Festividades só uma vez por turno.'; F.gold -= ECON.fest; F.stab = Math.min(100, F.stab + 15); F.ww = Math.max(0, F.ww - 3); F.festT = G.round + 2; if (G.food[F.capI] != null) G.food[F.capI] = Math.max(0, G.food[F.capI] - 5); // S-24
   } else if (a === 'colo') { // S-26: colonos saem de uma cidade e fazem crescer uma aldeia vizinha sua
     const p = coloPair(f); if (!p) return 'Precisa de uma cidade vizinha de uma aldeia sua.';
     if (F.gold < 3) return 'Ouro insuficiente.';
     spend(f); F.gold -= 3; G.lv[p[0]]--; G.lv[p[1]]++; log(f, `Colonos de ${tname(p[0])} fundam vila em ${tname(p[1])}.`);
   } else if (a === 'tax') {
     if (F.noTax >= G.round) return 'Você prometeu não cobrar impostos por alguns turnos.';
-    spend(f); const g = Math.ceil(owned(f).length / 2); F.gold += g; F.stab = Math.max(0, F.stab - 8); F.taxT = G.round + 2;
+    if (!spend(f, 'tax')) return 'Impostos extraordinários só uma vez por turno.'; const g = Math.ceil(owned(f).length / 2); F.gold += g; F.stab = Math.max(0, F.stab - 8); F.taxT = G.round + 2;
     log(f, `${fname(f)} cobra impostos extraordinários (+${g} ouro).`);
   } else if (a === 'rota') {
     return openRoute(f, x, y);
@@ -2434,7 +2433,7 @@ function act(f, a, x, y) {
   } else if (a === 'agit') {
     const o = G.own[x]; if (!real(o) || !hostile(f, x)) return 'Escolha um território de uma facção rival.';
     if (F.pre < ECON.agit) return 'Prestígio insuficiente.';
-    spend(f); F.pre -= ECON.agit; Fa(o).stab = Math.max(0, Fa(o).stab - (pol(o, 'pol') ? 7 : 15)); // G-31
+    if (!spend(f, 'agit' + o)) return 'Já há agitadores contra esta facção neste turno.'; F.pre -= ECON.agit; Fa(o).stab = Math.max(0, Fa(o).stab - (pol(o, 'pol') ? 7 : 15)); // G-31
     log(f, `${fname(f)} financia agitadores contra ${fname(o)}.`);
   }
   return '';
@@ -2505,7 +2504,7 @@ const techCost = (t, f) => Math.round(t.cost * 2 * G.len.k * (t.e === 3 && hasW(
 function routesModal() {
   const me = G.player, F = Fa(me), my = G.turnF === me, act = G.routes.filter(r => r.f === me || r.o === me), c = routeCands(me).slice(0, 10);
   const row = (r, btn) => `<div class="tech"><div><b>${RT[r.k].ic} ${RT[r.k].n}</b> <span class="hint">${esc(tname(r.a))} → ${esc(tname(r.b))}${r.o !== r.f ? ' · ' + esc(fname(r.f === me ? r.o : r.f)) : ''}${r.k === 'dig' ? ' · +2🔬 cada lado' : RT[r.k].g ? ` · +${RT[r.k].g}💰 cada lado` : ' · +1⚒ no destino e os bens dele na rede'}${r.gd.length ? ' · traz ' + r.gd.map(d => DEP[d].ic + ' ' + DEP[d].n).join(', ') : ''}${r.s > G.round ? ' · começa no próximo turno' : ''}</span></div>${btn || ''}</div>`;
-  modal(`<h2>Comércio</h2><p class="hint">Rotas abertas por você: ${myRoutes(me).length}/${routeMax(me)} (1 por mercado, porto e banco). Abrir custa 1 ação e ${ECON.route} ouro. Caravana pede caravançará e um mercado alheio a até 4 territórios; rota marítima, porto com armazém alfandegário e um porto alheio; rota interna, mercado nas duas pontas. Depois vêm a rota oceânica (companhia de comércio), o oleoduto (refinaria e ferrovia ou rodovia), a rota aérea (aeroportos) e a rede digital (Internet, entre capitais). Bens recebidos contam como ligados para as obras, e rota com quem sabe mais barateia a pesquisa em 20%.</p>
+  modal(`<h2>Comércio</h2><p class="hint">Rotas abertas por você: ${myRoutes(me).length}/${routeMax(me)} (1 por mercado, porto e banco). Abrir custa ${ECON.route} ouro. Caravana pede caravançará e um mercado alheio a até 4 territórios; rota marítima, porto com armazém alfandegário e um porto alheio; rota interna, mercado nas duas pontas. Depois vêm a rota oceânica (companhia de comércio), o oleoduto (refinaria e ferrovia ou rodovia), a rota aérea (aeroportos) e a rede digital (Internet, entre capitais). Bens recebidos contam como ligados para as obras, e rota com quem sabe mais barateia a pesquisa em 20%.</p>
     <h4>Ativas</h4><div class="techs">${act.length ? act.map(r => row(r)).join('') : '<p class="hint">Nenhuma.</p>'}</div>
     <h4>Possíveis</h4><div class="techs">${c.length ? c.map(r => row(r, `<button class="mini pri" data-a="route" data-i="${r.a}" data-j="${r.b}" ${my && F.pa > 0 && F.gold >= ECON.route ? '' : 'disabled'}>Abrir</button>`)).join('') : '<p class="hint">Nenhuma agora: construa mercado, caravançará ou porto com armazém, e faça paz com vizinhos.</p>'}</div>${G.sc.civ ? mktHtml(me) : ''}`, [['Fechar']]);
 }
@@ -3158,7 +3157,7 @@ const misOk = (f, i) => { const m = G.cs[i].mis; return m === 'gold' ? Fa(f).gol
 function envoy(f, i) {
   const F = Fa(f), c = csOf(i); if (!c) return 'Escolha uma cidade-estado.';
   if (F.gold < 2) return 'Ouro insuficiente.';
-  if (!spend(f)) return 'Sem pontos de ação.';
+  if (!spend(f, 'env' + i)) return 'Já mandou um enviado a esta cidade-estado neste turno.';
   const m = misOk(f, i); F.gold -= 2 + (m && c.mis === 'gold' ? 3 : 0);
   c.inf[f] = (c.inf[f] || 0) + (m ? 3 : 1);
   log(f, `${fname(f)} envia um enviado a ${tname(i)}${m ? ' e cumpre a missão' : ''}.`);
@@ -3415,7 +3414,7 @@ function onTerr(i) {
   } else if (G.phase === 'atk') {
     if (G.tgt != null) return;
     if (G.sel != null && canAtk(me, G.sel, i)) { G.tgt = i; showBattlePanel(); }
-    else if (!Fa(me).camp && G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i)) toast('Para atacar, declare uma Campanha (1 ação).');
+    else if (!Fa(me).camp && G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i)) toast('Para atacar, declare uma Campanha (botão em Militar, não custa nada; acumula cansaço de guerra).');
     else if (Fa(me).cq >= cqMax(me) && G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i)) toast(`Limite de ${cqMax(me)} conquistas por turno atingido: as tropas precisam consolidar o terreno.`);
     else if (G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i) && !seaOk(me, G.sel, i)) toast('Sem frota disponível para atravessar o mar neste turno.');
     else G.sel = i;
@@ -3457,11 +3456,11 @@ function playerAct(a, k) {
   G.mode = null;
   const hint = { infl: 'Clique num território neutro ou rebelde vizinho (custa tropas dele + 1 de prestígio).', agit: 'Clique num território da facção rival.' };
   if (a === 'bld') {
-    if (!F.bldOn) return toast('Abra as obras primeiro (1 ação).');
+    if (!F.bldOn) return toast('Abra as obras primeiro (botão Ordenar obras).');
     if (!owned(me).some(i => canQueue(me, k, i))) return toast('Nenhum território seu aceita esta obra agora.');
     G.mode = 'bld:' + k; toast(`Clique nos territórios destacados para pôr ${sName(k)} na fila.`); return render();
   }
-  if (hint[a]) { if (F.pa < 1) return toast('Sem pontos de ação.'); G.mode = a; toast(hint[a]); return render(); }
+  if (hint[a]) { G.mode = a; toast(hint[a]); return render(); }
   if (a === 'rec' && F.recOn) { G.mode = 'rec'; return render(); }
   if (a === 'trade' && F.tradeOn) return tradeModal();
   if (a === 'obras' && F.bldOn) return worksModal();
@@ -3515,7 +3514,7 @@ function catalogModal() {
 function worksModal() {
   const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me);
   const rows = T.map(i => `<div class="tech"><div><b>${esc(tname(i))}</b> <span class="hint">${prodOf(i)} ⚒/turno${occupied(i) ? ' · ocupado' : ''} · ${G.bld[i].length ? G.bld[i].map(k => esc(sName(k)) + (nb(i, k) ? '' : ' (desativada)')).join(', ') : 'sem construções'}</span>${qHtml(i)}</div></div>`).join('');
-  modal(`<h2>Obras do império</h2><p class="hint">${F.bldOn ? 'Obras abertas neste turno: apresse ou retire à vontade.' : 'Abra as obras (1 ação) para pôr, retirar ou apressar.'} Manutenção por turno: ${u.b} 💰 das construções + ${u.t} 💰 de soldo (tropas acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}). Você tem ${F.gold} 💰.</p><div class="techs">${rows}</div>`, [['Fechar']]);
+  modal(`<h2>Obras do império</h2><p class="hint">${F.bldOn ? 'Obras abertas neste turno: apresse ou retire à vontade.' : 'Abra as obras (botão Ordenar obras) para pôr, retirar ou apressar.'} Manutenção por turno: ${u.b} 💰 das construções + ${u.t} 💰 de soldo (tropas acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}). Você tem ${F.gold} 💰.</p><div class="techs">${rows}</div>`, [['Fechar']]);
 }
 function tradeModal() {
   const me = G.player, F = Fa(me), [p, q] = has(me, 'com') ? [3, 2] : [2, 1], ks = Object.keys(RES);
@@ -3644,15 +3643,15 @@ function renderSide() {
     // parte 4: só aparecem as obras que cabem em algum território seu agora; o catálogo mostra o resto
     const avail = F.bldOn ? Object.keys(STRUCT).filter(k => owned(me).some(i => canQueue(me, k, i))) : [];
     const blds = avail.map(k => { const S = STRUCT[k], c = pCost(me, k); return Bt('bld', k, `${S.ic} ${esc(sName(k))} <small>${c}⚒${S.up ? ' · ' + S.up + '💰/t' : ''}</small>`, S.fx + (S.up ? ` Manutenção: ${S.up} ouro por turno.` : ''), false, G.mode === 'bld:' + k); }).join('') + `<button class="ab2" data-a="catalog">Catálogo (${Object.keys(STRUCT).length - avail.length} bloqueadas)</button>`;
-    ph = `<h4>Ações <span class="pa" title="Pontos de ação">${'●'.repeat(F.pa)}${'○'.repeat(Math.max(0, paOf(me) - F.pa))}</span></h4>
-      <p class="hint">Cada ação gasta 1 ponto. Guerra, obras, ciência e política disputam o mesmo turno.</p>
+    ph = `<h4>Ações</h4>
+      <p class="hint">Sem limite de ações: o que segura você é o ouro, as tropas e o prestígio. Festas, impostos, agitadores, espiões e enviados valem 1 vez por turno.</p>
       <div class="grp"><b>⚔ Militar</b><div class="row">
-        ${Bt('act', 'camp', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'Libera ataques e aviação neste turno.' + (has(me, 'dou') ? ' Grátis pela sua doutrina.' : ''), F.camp || (noPA && !has(me, 'dou')), F.camp)}
+        ${Bt('act', 'camp', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'Libera ataques e aviação neste turno, quantos quiser enquanto houver tropas. Cada turno em campanha soma cansaço de guerra.', F.camp, F.camp)}
         ${Bt('act', 'rec', F.recOn ? `Comprar tropas <small>${tc}💰</small>` : `Recrutar <small>${tc}💰/tropa</small>`, `Abre o recrutamento: compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, !F.recOn && (noPA || F.gold < tc), G.mode === 'rec')}
 <button class="ab2" data-a="merc" title="1 tropa já na capital, sem gastar ação (1 vez por turno)." ${F.merc === G.round || F.gold < 2 * tc || G.turnF !== me ? 'disabled' : ''}>Mercenários <small>${2 * tc}💰</small></button>
         ${F.camp && G.air && F.planes ? Bt('air', '', `✈ ${esc(G.air.n)} (${F.planes})`, 'Bombardeie um alvo ao alcance. Não gasta ação.', false, G.mode === 'air') : ''}</div></div>
       <div class="grp"><b>🏛 Obras</b> <span class="hint">fila de até ${qMax(me)} por território; a produção ⚒ de cada território avança a obra do topo. Uma de cada tipo por território. Zonas (🌾🐄🐟🪵⛏💰🔬⚔⭐⚓) ocupam vagas: aldeia 1, vila 2, cidade 3, metrópole 4. Mudam de dono na conquista.</span><div class="row">
-        ${Bt('act', 'obras', F.bldOn ? 'Obras abertas' : 'Ordenar obras', '1 ação por turno: ponha, retire e apresse obras em todas as filas.', !F.bldOn && noPA, F.bldOn)}<button class="ab2" data-a="works">Obras do império</button></div>
+        ${Bt('act', 'obras', F.bldOn ? 'Obras abertas' : 'Ordenar obras', 'Ponha, retire e apresse obras em todas as filas.', !F.bldOn && noPA, F.bldOn)}<button class="ab2" data-a="works">Obras do império</button></div>
         ${F.bldOn ? `<div class="row">${blds}</div>` : ''}</div>
       <div class="grp"><b>🔬 Ciência</b><div class="row"><button class="ab2" data-a="techs">Árvore de tecnologias <small>${F.sci}🔬</small></button></div></div>
       <div class="grp"><b>🤝 Sociedade</b><div class="row">
@@ -3676,12 +3675,12 @@ function renderSide() {
     inf = `<h4>${esc(t.n)}</h4><p><i class="dot" style="background:${O.c}"></i>${esc(o === 'reb' ? (G.rl[i] || 'Rebeldes') : O.n)} · <b>${G.tr[i]}</b> tropas · ${rel}</p>
       <p class="hint">${esc(G.m.regions[t.r])}${co ? ' · capital de ' + esc(fname(co)) : ''}${G.relics.includes(i) ? ' · Runa Antiga' : ''}${G.bld[i].length ? ' · ' + G.bld[i].map(k => esc(sName(k)) + (nb(i, k) ? '' : ' (desativada: sem ouro)')).join(', ') : ''}${G.fort[i] > 0 ? ' · fortificado' : ''}${occupied(i) ? ` · ocupado por mais ${G.occ[i]} turno(s): não conta para renda e reforços, produção pela metade` : ''}${o === me && lowSupply(i) ? ' · longe do suprimento: ataca com 1 dado a menos' : ''}${G.phase === 'mov' && my && o === me ? ` · pode mover ${G.mv[i] || 0}` : ''}${o === me && F.recQ[i] ? ` · +${F.recQ[i]} recruta(s) chegando` : ''}</p>`;
     if (my && o === me) inf += `<p class="hint">Governador: ${govrAt(i) ? GOVR[govrAt(i)][0] : 'nenhum'} (${govrN(me)}/${govrMax(me)}) ${Object.entries(GOVR).map(([k, g]) => `<button class="mini" data-a="gvr" data-i="${i}" data-k="${k}" title="${esc(g[1])}" ${govrAt(i) === k ? 'disabled' : ''}>${g[0]}</button>`).join(' ')}</p>`;
-    if (my && real(o) && o !== me && has(me, 'esc')) inf += `<p class="hint">Espião (1 ação, 3💰): ${Object.entries(SPY).map(([k, s]) => `<button class="mini" data-a="spy" data-i="${i}" data-k="${k}" title="${esc(s.fx)} · risco ${s.r}+${spyDef(i)} no dado" ${Fa(me).pa > 0 && Fa(me).gold >= 3 ? '' : 'disabled'}>${s.n}</button>`).join(' ')}</p>`;
-    if (my && real(o) && o !== me && corpMax(me)) inf += `<p class="hint">Filiais ${corpsOf(me).length}/${corpMax(me)} <button class="mini" data-a="corp" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 5 ? '' : 'disabled'}>Abrir filial (1 ação, 5💰)</button></p>`;
+    if (my && real(o) && o !== me && has(me, 'esc')) inf += `<p class="hint">Espião (3💰, 1 por território a cada turno): ${Object.entries(SPY).map(([k, s]) => `<button class="mini" data-a="spy" data-i="${i}" data-k="${k}" title="${esc(s.fx)} · risco ${s.r}+${spyDef(i)} no dado" ${Fa(me).pa > 0 && Fa(me).gold >= 3 ? '' : 'disabled'}>${s.n}</button>`).join(' ')}</p>`;
+    if (my && real(o) && o !== me && corpMax(me)) inf += `<p class="hint">Filiais ${corpsOf(me).length}/${corpMax(me)} <button class="mini" data-a="corp" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 5 ? '' : 'disabled'}>Abrir filial (5💰)</button></p>`;
     if (my && countB(me, 'sil') && hostile(me, i) && real(o)) inf += `<p class="hint"><button class="mini" data-a="msl" data-i="${i}" ${Fa(me).gold >= 5 ? '' : 'disabled'}>Lançar mísseis (5💰)</button> mata até 2 tropas, alvo a até 3 territórios de um silo</p>`;
     if (G.sc.civ && (G.ruin.has(i) || G.nat.has(i))) inf += `<p class="hint">${G.ruin.has(i) ? '🏚 Ruínas: quem chegar primeiro ganha um prêmio. ' : ''}${G.nat.has(i) ? '🌋 Maravilha natural: +2 ouro e +1 prestígio a quem a tiver.' : ''}</p>`;
     if (my && G.sc.civ && o === 'neu' && !csOf(i) && !G.tr[i] && G.A[i].some(j => G.own[j] === me)) inf += `<p class="hint">Ermo vazio. <button class="mini pri" data-a="fund" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= fundCost(me) ? '' : 'disabled'}>Fundar aldeia (${fundCost(me)}💰, 1 nível de uma vila vizinha)</button> <button class="mini" data-a="post" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= fundCost(me, 1) ? '' : 'disabled'}>Posto avançado (${fundCost(me, 1)}💰)</button></p>`;
-    if (csOf(i)) { const c = G.cs[i], s = suz(i); inf += `<p class="hint">Cidade-estado ${CS[c.t][0]} (${CS[c.t][1]} ao suserano) · suserano ${s ? esc(fname(s)) : 'nenhum'} · sua influência ${c.inf[me] || 0} · missão: ${MIS[c.mis]}</p>${my ? `<button class="mini" data-a="env" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 2 ? '' : 'disabled'}>Enviado (1 ação, 2💰)</button>` : ''}`; }
+    if (csOf(i)) { const c = G.cs[i], s = suz(i); inf += `<p class="hint">Cidade-estado ${CS[c.t][0]} (${CS[c.t][1]} ao suserano) · suserano ${s ? esc(fname(s)) : 'nenhum'} · sua influência ${c.inf[me] || 0} · missão: ${MIS[c.mis]}</p>${my ? `<button class="mini" data-a="env" data-i="${i}" ${Fa(me).pa > 0 && Fa(me).gold >= 2 ? '' : 'disabled'}>Enviado (2💰)</button>` : ''}`; }
     if (o !== 'off') {
       const T = TERR[G.ter[i]], isl = G.A[i].length && G.A[i].every(j => isSea(i, j)), wk = worked(i);
       inf += `<p class="hint">${T.ic} ${T.n}${G.riv[i] ? ' · rio' : ''}${coastal(i) ? ' · litoral' : ''}${isl ? ' · ilha' : ''} · <b>${LEVEL[G.lv[i]].n}</b>${real(o) ? ` · zonas ${zonesAt(i).length}/${G.lv[i]}` : ''}${o === me ? (n => n.core.has(i) ? ' · na rede' : n.linked.has(i) ? ' · ligado por trilha' : ' · fora da rede de bens')(netOf(me)) : ''}${road(i) ? ' · ' + sName(road(i) > 1 ? 'pav' : 'est').toLowerCase() : ''}</p>
@@ -3729,9 +3728,9 @@ function rules() {
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
-  <p><b>2. Ações.</b> Você tem 3 pontos de ação por turno (4 com a primeira tecnologia de administração). Cada ação gasta 1 ponto e pode ser repetida:</p>
+  <p><b>2. Ações.</b> Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>
-  <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno. Sem campanha, não há guerra.</li>
+  <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno, quantos você quiser enquanto houver tropas. Não custa nada, mas cada turno em campanha soma cansaço de guerra.</li>
   <li><b>⚔ Recrutar</b> abre a compra de tropas por ouro, na capital ou num quartel. Elas chegam no início do próximo turno.</li>
   <li><b>🏛 Ordenar obras</b> abre todas as filas por um turno: ponha, retire e apresse obras em quantos territórios quiser. Oficina, mercado, academia, quartel, fortificação, templo, porto, aeródromo e a sua Maravilha.</li>
   <li><b>🤝 Festividades</b> (+15 de estabilidade), <b>Influenciar</b> (anexa um vizinho neutro ou rebelde com prestígio, sem lutar) e <b>Agitadores</b> (rival perde estabilidade).</li>
@@ -3781,7 +3780,7 @@ function startScenario(id, fid, diff, quiet, len) {
   buildMap(); render();
   if (quiet) return;
   const F = Fa(fid);
-  modal(`<p class="kick">${esc(ERA[sc.tech].n)} · ${esc(sc.y)}</p><h2>${esc(sc.n)}</h2><p>${esc(sc.d)}</p><p>Você comanda <b style="color:${F.c}">${esc(F.n)}</b>, liderado por ${esc(F.L)} (${ABIL[F.ab][0]}: ${esc(ABIL[F.ab][1])}).</p><p><b>Objetivo:</b> ${esc(objText(F))}</p><p class="hint">Partida ${G.len.n.toLowerCase()}: ${G.rounds} rodadas. Cada turno: reforços, depois ${ECON.pa} ações para dividir entre guerra, obras, sociedade e economia, e por fim o remanejamento. As obras e a pesquisa andam sozinhas de um turno para o outro. Também dá para vencer por legado: ${legWin()} pontos em tecnologias e construções. Objetivo e legado só valem a partir da rodada ${minWin()}.</p>`, [['Começar', () => loop()], ['Como jogar', () => { rules(); loop(); }]]);
+  modal(`<p class="kick">${esc(ERA[sc.tech].n)} · ${esc(sc.y)}</p><h2>${esc(sc.n)}</h2><p>${esc(sc.d)}</p><p>Você comanda <b style="color:${F.c}">${esc(F.n)}</b>, liderado por ${esc(F.L)} (${ABIL[F.ab][0]}: ${esc(ABIL[F.ab][1])}).</p><p><b>Objetivo:</b> ${esc(objText(F))}</p><p class="hint">Partida ${G.len.n.toLowerCase()}: ${G.rounds} rodadas. Cada turno: reforços, depois as ações que o seu ouro, tropas e prestígio permitirem (guerra, obras, sociedade e economia), e por fim o remanejamento. As obras e a pesquisa andam sozinhas de um turno para o outro. Também dá para vencer por legado: ${legWin()} pontos em tecnologias e construções. Objetivo e legado só valem a partir da rodada ${minWin()}.</p>`, [['Começar', () => loop()], ['Como jogar', () => { rules(); loop(); }]]);
 }
 
 // ---------- cliques ----------

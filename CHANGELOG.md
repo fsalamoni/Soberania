@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v24 — 25/11/2026 · Turno sem limite de ações
+
+Segunda parte do plano de aprimoramento. Atende ao pedido do Flavio de tirar o limite de ações por turno, no estilo dos jogos de império por turnos, com ataques ilimitados enquanto houver tropas (escolha dele no cartão de decisão).
+
+- Acabaram os pontos de ação. Quem limita o turno agora é o ouro, as tropas e o prestígio.
+- Ataques sem teto: acabou o limite de conquistas por turno. A campanha continua sendo declarada no turno, não custa nada e soma cansaço de guerra a cada turno em que fica ativa.
+- Recrutar, ordenar obras e câmbio continuam com seus botões, agora sem custo.
+- Algumas ações seguem valendo 1 vez por turno para não virarem repetição infinita: festividades e impostos extraordinários; agitadores contra cada facção; espião em cada território; enviado a cada cidade-estado.
+- Regras, guia da primeira partida e textos dos botões atualizados.
+- Equilíbrio (partidas simuladas, curtas): Sengoku termina em média na rodada 25,5 (antes 29,9). Ainda vencem com mais frequência Shimazu, Takeda e Uesugi. Napoleônico: rodada 25,9, vencedores variados. Crise do séc. III: rodada 51,6.
 ## v23 — 25/11/2026 · Região que mostra o que produz, resumo do império e cores distintas
 
 Primeira parte do plano de aprimoramento (v23 a v30) pedido pelo Flavio: o império como soma das regiões.
