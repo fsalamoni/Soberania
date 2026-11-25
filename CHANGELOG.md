@@ -1,5 +1,25 @@
 # Histórico de versões
 
+## v32 — 25/11/2026 · Mediterrâneo, Nórdico e Américas com divisas reais e relevo
+
+A reforma visual chega a mais três mapas: o Mediterrâneo (Guerras Púnicas, Crise do séc. III, Queda de Roma e Cruzadas), o Nórdico (Era Viking) e as Américas antes de Colombo.
+
+- **Divisas reais** (Natural Earth admin-1 1:10m) em todos os três, com o mesmo método da Europa. Exemplos:
+  - a Caledônia segue os condados da Escócia;
+  - Gália e Hispânia seguem as regiões atuais;
+  - os Andes, a Amazônia e o Cerrado seguem estados e departamentos.
+- **Relevo real**, com estradas que contornam serras:
+  - na Europa, os Alpes escandinavos, a Islândia e os Pireneus;
+  - no Oriente, o Atlas, o Tauro e o Zagros;
+  - na América do Sul, os Andes, com os picos nevados.
+  - No Mediterrâneo, o Saara e a Arábia ficam cor de areia.
+- **Correções do `maps/real.mjs`:**
+  - Uma divisão entra no mapa pela posição dela no desenho, e não por um quadro lon/lat fixo. Assim a Caledônia e a Dinamarca, ao norte do quadro antigo, entram.
+  - Divisões de um país que nenhuma caixa pegava (Rondônia, entre duas caixas) passam ao território do mesmo país mais próximo, até 1,5° de distância. Antes ficavam como buracos.
+  - A terra de fundo usa só o que aparece na tela.
+  - As definições de território desses mapas ficam em `maps/defs-real.mjs`, copiadas do `maps-build.mjs`.
+- Vizinhanças recalculadas; as travessias por mar foram mantidas.
+- O arquivo do jogo vai a cerca de 3 MB.
 ## v31 — 25/11/2026 · Europa com divisas reais e relevo de verdade
 
 A reforma visual feita no Japão chega aos dois mapas da Europa: o de 1805 (cenário napoleônico) e o de 1914 (Grande Guerra).

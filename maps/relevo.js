@@ -12,9 +12,10 @@ const MAPS = JSON.parse(fs.readFileSync(path.join(__dirname, 'maps.json'), 'utf8
 // euProj do maps-build.mjs / real.mjs para um quadro lon/lat
 const EU = (lon0, lon1, lat0, lat1) => `(() => { const W = ${m.w}, H = ${m.h}; const densify = ring => { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; };
   return d3.geoConicConformal().rotate([${-(lon0 + lon1) / 2}, 0]).parallels([40, 60]).fitExtent([[4, 4], [W - 4, H - 4]], { type: 'Polygon', coordinates: [densify([[${lon0}, ${lat0}], [${lon0}, ${lat1}], [${lon1}, ${lat1}], [${lon1}, ${lat0}], [${lon0}, ${lat0}]])] }); })()`;
-const DRY = { europa1805: 1, europa1914: 1 }; // mapas que pegam o cinturão desértico do norte
+const DRY = { europa1805: 1, europa1914: 1, mediterraneo: 1 }; // mapas que pegam o cinturão desértico do norte
 const PROJ = {
-  europa1805: EU(-11, 43, 33, 63), europa1914: EU(-11, 52, 22, 63),
+  europa1805: EU(-11, 43, 33, 63), europa1914: EU(-11, 52, 22, 63), mediterraneo: EU(-10, 58, 25, 55), nordico: EU(-25, 45, 45, 70),
+  americas: EU(-118, -34.5, -44, 33).replace('d3.geoConicConformal().rotate([76.25, 0]).parallels([40, 60])', 'd3.geoMercator()'),
   japao: `(() => { const W = 1000, H = 620, w50 = WORLD50;
     const clipHalf = (ring, f) => { const out = []; for (let i = 0; i < ring.length; i++) { const A = ring[i], Bp = ring[(i + 1) % ring.length], da = f(A), db = f(Bp); if (da <= 0) out.push(A); if ((da <= 0) !== (db <= 0)) { const t = da / (da - db); out.push([A[0] + (Bp[0] - A[0]) * t, A[1] + (Bp[1] - A[1]) * t]); } } return out; };
     const densify = ring => { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; };

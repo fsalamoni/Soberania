@@ -6,6 +6,7 @@
 import * as d3 from 'd3-geo';
 import pc from 'polygon-clipping';
 import fs from 'fs';
+import { MED, NOR, AME } from './defs-real.mjs';
 
 const [, , ID, ADM1, MAPS] = process.argv;
 const B = (a, b, c, d) => [a, b, c, d];
@@ -50,14 +51,16 @@ const EU1914 = [
   ['Egito', 'Norte da África', 'Egypt'], ['Líbia', 'Norte da África', 'Libya'], ['Argélia e Tunísia', 'Norte da África', { c: ['Algeria', 'Tunisia'] }], ['Marrocos', 'Norte da África', 'Morocco'],
 ];
 // quadro lon/lat de cada mapa (o mesmo do euProj em maps-build.mjs), definições e passo da grade de simplificação
-const CFG = { europa1805: { f: [-11, 43, 33, 63], defs: EU1805, g: .8, e: .5 }, europa1914: { f: [-11, 52, 22, 63], defs: EU1914, g: .8, e: .5 } };
-const ALIAS = { 'Czechia': 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', 'Serbia': 'Republic of Serbia' };
+const CFG = { europa1805: { f: [-11, 43, 33, 63], defs: EU1805, g: .8, e: .5 }, europa1914: { f: [-11, 52, 22, 63], defs: EU1914, g: .8, e: .5 },
+  mediterraneo: { f: [-10, 58, 25, 55], defs: MED, g: .8, e: .5 }, nordico: { f: [-25, 45, 45, 70], defs: NOR, g: .8, e: .5 },
+  americas: { f: [-118, -34.5, -44, 33], defs: AME, g: .8, e: .5, merc: 1 } };
+const ALIAS = { 'Czechia': 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', 'Serbia': 'Republic of Serbia', 'N. Cyprus': 'Northern Cyprus', 'Faeroe Is.': 'Faroe Islands', 'Dominican Rep.': 'Dominican Republic', 'Bahamas': 'The Bahamas' };
 
 const C = CFG[ID]; if (!C) throw new Error('mapa sem configuração: ' + ID);
 const M = JSON.parse(fs.readFileSync(MAPS, 'utf8')), m = M[ID], W = m.w, H = m.h;
 const [lon0, lon1, lat0, lat1] = C.f;
 function densify(ring) { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; }
-const proj = d3.geoConicConformal().rotate([-(lon0 + lon1) / 2, 0]).parallels([40, 60])
+const proj = (C.merc ? d3.geoMercator() : d3.geoConicConformal().rotate([-(lon0 + lon1) / 2, 0]).parallels([40, 60]))
   .fitExtent([[4, 4], [W - 4, H - 4]], { type: 'Polygon', coordinates: [densify([[lon0, lat0], [lon0, lat1], [lon1, lat1], [lon1, lat0], [lon0, lat0]])] }).clipExtent([[0, 0], [W, H]]);
 const path = d3.geoPath(proj);
 
@@ -65,7 +68,7 @@ const path = d3.geoPath(proj);
 const A1 = JSON.parse(fs.readFileSync(ADM1, 'utf8')).features;
 const inBox = ([x, y], [a, b, c, d]) => x >= a && x <= b && y >= c && y <= d;
 const polys = f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-const own = new Map(); // feature -> território
+const own = new Map(), hit = new Set(); // feature -> território; países que acharam divisões
 C.defs.forEach(([n, , ...parts], ti) => {
   const i = m.terr.findIndex(t => t.n === n); if (i < 0) throw new Error('território não está no mapa: ' + n);
   for (const p of parts.map(p => typeof p === 'string' ? { c: [p] } : p)) {
@@ -73,12 +76,26 @@ C.defs.forEach(([n, , ...parts], ti) => {
     for (const f of A1) {
       if (own.has(f) || !cs.includes(f.properties.admin)) continue;
       const ctr = [f.properties.longitude, f.properties.latitude];
-      if (!inBox(ctr, [lon0, lon1, lat0, lat1])) continue;
+      const q = proj(ctr); if (!q || q[0] < 0 || q[0] > W || q[1] < 0 || q[1] > H) continue; // centro dentro do desenho do mapa
       if (p.b && !p.b.some(b => inBox(ctr, b))) continue;
-      own.set(f, i);
+      own.set(f, i); hit.add(f.properties.admin);
     }
   }
 });
+// divisões de um país do mapa que nenhuma caixa pegou (ex.: Rondônia entre duas caixas) vão para o território
+// desse país cuja caixa está mais perto do centro delas
+{
+  const boxD = ([x, y], [a, b, c, d]) => Math.hypot(Math.max(a - x, 0, x - b), Math.max(c - y, 0, y - d));
+  const opts = []; C.defs.forEach(([n, , ...parts]) => { const i = m.terr.findIndex(t => t.n === n); parts.map(p => typeof p === 'string' ? { c: [p] } : p).forEach(p => p.c.forEach(c => opts.push({ c: ALIAS[c] || c, i, b: p.b }))); });
+  for (const f of A1) {
+    if (own.has(f)) continue;
+    const ctr = [f.properties.longitude, f.properties.latitude], q = proj(ctr); if (!q || q[0] < 0 || q[0] > W || q[1] < 0 || q[1] > H) continue;
+    let best = null, bd = 1.5; // até 1,5° da caixa
+    for (const o of opts) if (o.c === f.properties.admin) { const d = o.b ? Math.min(...o.b.map(b => boxD(ctr, b))) : 0; if (d < bd) { bd = d; best = o.i; } }
+    if (best != null) own.set(f, best);
+  }
+}
+C.defs.forEach(([n, , ...parts]) => parts.forEach(p => (typeof p === 'string' ? [p] : p.c).forEach(c => { if (!hit.has(ALIAS[c] || c)) console.log('aviso: sem divisões para', c, 'em', n); })));
 // grade: vizinhos que dividem a divisa caem nos mesmos pontos (sem frestas)
 const thin = r => { const o = []; for (const p of r) { const s = [Math.round(p[0] / C.g) * C.g, Math.round(p[1] / C.g) * C.g], q = o[o.length - 1]; if (!q || q[0] !== s[0] || q[1] !== s[1]) o.push(s); } return o; };
 function ringsOf(geo) { const rings = []; let cur = null; path.context({ moveTo(x, y) { cur = [[x, y]]; rings.push(cur); }, lineTo(x, y) { cur.push([x, y]); }, closePath() { }, arc() { } })(geo); return rings.filter(r => r.length > 2); }
@@ -133,7 +150,7 @@ const adj = adjacency(all, 1.5);
 for (const [a, b] of m.sea) if (!adj.some(([x, y]) => (x === a && y === b) || (x === b && y === a))) adj.push([a, b]);
 m.adj = adj;
 // terra de fundo: divisões fora do jogo perto do quadro, unidas por país
-const near = f => inBox([f.properties.longitude, f.properties.latitude], [lon0 - 25, lon1 + 25, lat0 - 15, lat1 + 12]);
+const near = f => { const ctr = [f.properties.longitude, f.properties.latitude], q = inBox(ctr, [lon0 - 40, lon1 + 40, lat0 - 25, lat1 + 20]) && proj(ctr); return q && q[0] > -W * .3 && q[0] < W * 1.3 && q[1] > -H * .3 && q[1] < H * 1.3; };
 const rest = A1.filter(f => !own.has(f) && near(f)), byC = {};
 rest.forEach(f => (byC[f.properties.admin] = byC[f.properties.admin] || []).push(f));
 m.bg = topoSimplify(Object.values(byC).map(fs_ => unite(fs_).flatMap(p => p.map(fixRing))), (C.e || .3) * 2).map(dstr).join('');
