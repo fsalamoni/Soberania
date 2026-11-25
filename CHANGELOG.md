@@ -1,5 +1,34 @@
 # Histórico de versões
 
+## v37 — 25/11/2026 · Conselho de papéis
+
+Parte v29 do plano de aprimoramento. O levantamento está no documento "Soberania: levantamento do Conselho de papéis".
+
+- **Opção ao criar a partida:** "Conselho de papéis", desligada por padrão.
+- **A rodada:** com o Conselho ligado, cada rodada começa com as facções escolhendo um papel.
+  - A ordem vai do maior prestígio ao menor. O desempate é pelo legado.
+  - Cada papel só pode ser escolhido uma vez por rodada. Quem escolhe depois vê o que já foi tomado, mas não por quem.
+- **Os 8 papéis**, que valem só naquela rodada:
+
+  | Papel | Efeito |
+  | --- | --- |
+  | ⚔ General | +3 tropas de reforço |
+  | 💰 Mercador | +3 ouro e +2 por rota comercial ativa |
+  | 🏗 Arquiteto | +2 ⚒ em cada região com obra na fila |
+  | 📜 Erudito | +50% de saber |
+  | 🕊 Diplomata | +4 prestígio e +10 de relação com todos |
+  | 🗝 Espião | anula o papel da facção que ele mirou e ganha uma carta |
+  | 🕯 Sacerdote | +10 de estabilidade |
+  | 🧺 Coletor | +1 ouro por região povoada |
+
+- **Painel e registro:** o painel mostra o seu papel da rodada. O registro mostra o conselho inteiro e as anulações do Espião.
+- **IA:** escolhe pelo que precisa.
+  - Guerra ou ameaça pesam para o General.
+  - Estabilidade baixa pesa para o Sacerdote.
+  - Uma pesquisa quase pronta pesa para o Erudito.
+  - Um rival à frente no legado pesa para o Espião.
+- **Correção:** o meio-porte (v25) não era salvo. Agora é.
+- Teste novo: papéis únicos por rodada e o efeito do Coletor. Simulação com o Conselho ligado em três cenários, sem erros.
 ## v36 — 25/11/2026 · Árvore de tecnologias revelada aos poucos
 
 Parte v28 do plano de aprimoramento (pesquisa por passos), primeira etapa.

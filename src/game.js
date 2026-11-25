@@ -1138,7 +1138,7 @@ function finishWork(i, n) {
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
   for (const i of owned(f)) {
-    let p = prodOf(i) + supNet(i, 'prod');
+    let p = prodOf(i) + supNet(i, 'prod') + (roleOf(f) === 'arq' && G.q[i].length ? 2 : 0);
     while (p > 0 && G.q[i].length) {
       const x = G.q[i][0], use = Math.min(p, pCost(f, x.k, i) - x.p);
       x.p += use; p -= use;
@@ -1486,6 +1486,52 @@ function airStrike(f, j) {
 }
 
 // ---------- turnos ----------
+// ---------- v37 (plano v29): Conselho de papéis ----------
+// No início de cada rodada as facções escolhem, por ordem de prestígio, um papel que só vale naquela rodada.
+// Cada papel é único; quem escolhe depois vê o que já foi tomado, não por quem. O Espião anula o papel da facção que mirou.
+const ROLE = {
+  gen: { n: 'General', ic: '⚔', d: '+3 tropas de reforço' },
+  mer: { n: 'Mercador', ic: '💰', d: '+3 ouro e +2 por rota comercial ativa' },
+  arq: { n: 'Arquiteto', ic: '🏗', d: '+2 ⚒ em cada região com obra na fila' },
+  eru: { n: 'Erudito', ic: '📜', d: '+50% de saber no turno' },
+  dip: { n: 'Diplomata', ic: '🕊', d: '+4 prestígio e +10 de relação com todas as facções' },
+  esp: { n: 'Espião', ic: '🗝', d: 'anula o papel de uma facção e ganha uma carta' },
+  sac: { n: 'Sacerdote', ic: '🕯', d: '+10 de estabilidade' },
+  col: { n: 'Coletor', ic: '🧺', d: '+1 ouro por região povoada' },
+};
+const roleOf = f => (G.council && G.role && G.role[f]) || null;
+function aiRole(f, free) {
+  const F = Fa(f), T = owned(f), lead = G.order.filter(o => o !== f && Fa(o).alive && Fa(o).entered).sort((a, b) => legacy(b) - legacy(a))[0];
+  const sc = { gen: F.camp || T.some(i => threat(f, i) > 2) ? 6 : 1, mer: 1 + 1.5 * myRoutes(f).filter(r => rLive(r) && r.f !== r.o).length, arq: 1.2 * T.filter(i => G.q[i].length).length, eru: F.res && techCost(TK[F.res], f) - F.sci <= 2 * income(f).sci ? 5 : 1.5, dip: 2, sac: F.stab < 45 ? 7 : .5, col: .6 * settled(f).filter(i => G.lv[i]).length, esp: lead != null && legacy(lead) > legacy(f) + 5 ? 4.5 : 0 };
+  const k = free.slice().sort((a, b) => sc[b] - sc[a])[0]; return [k, k === 'esp' ? lead : null];
+}
+async function rolePick(free) {
+  let k = free[0], t = null; const me = G.player;
+  const taken = Object.keys(ROLE).filter(r => !free.includes(r));
+  await modal(`<p class="kick">Rodada ${G.round} · Conselho</p><h2>Escolha o seu papel</h2><p class="hint">O papel vale só nesta rodada. Quem escolhe depois de você não pode pegar o mesmo. ${taken.length ? 'Já tomados: ' + taken.map(r => ROLE[r].ic + ' ' + ROLE[r].n).join(', ') + '.' : 'Você escolhe primeiro.'}</p><div class="techs">${free.map(r => `<div class="tech"><div><b>${ROLE[r].ic} ${ROLE[r].n}</b><p>${esc(ROLE[r].d)}</p></div></div>`).join('')}</div>`, free.map(r => [ROLE[r].n, () => { k = r; }]));
+  if (k === 'esp') { const rv = G.order.filter(o => o !== me && Fa(o).alive && Fa(o).entered); t = rv[0] ?? null; if (rv.length > 1) await modal('<h2>Espião: qual facção vigiar?</h2><p class="hint">O papel dela nesta rodada fica anulado.</p>', rv.map(o => [fname(o), () => { t = o; }])); }
+  return [k, t];
+}
+async function council() {
+  G.role = {}; G.spy = G.spyT = null;
+  const fs = G.order.filter(f => Fa(f).alive && Fa(f).entered).sort((a, b) => Fa(b).pre - Fa(a).pre || legacy(b) - legacy(a));
+  for (const f of fs) {
+    const free = Object.keys(ROLE).filter(k => !Object.values(G.role).includes(k)); if (!free.length) break;
+    const [k, t] = f === G.player && !G.auto ? await rolePick(free) : aiRole(f, free);
+    G.role[f] = k; if (k === 'esp') { G.spy = f; G.spyT = t; }
+  }
+  if (G.spyT != null && G.role[G.spyT]) { log(null, `O Espião de ${fname(G.spy)} anula o papel de ${ROLE[G.role[G.spyT]].n} de ${fname(G.spyT)}.`); if (G.spyT === G.player && !G.auto) toast(`Um espião anulou o seu papel nesta rodada.`); G.role[G.spyT] = null; }
+  log(null, 'Conselho: ' + fs.filter(f => f in G.role).map(f => fname(f) + ' ' + (G.role[f] ? ROLE[G.role[f]].ic + ' ' + ROLE[G.role[f]].n : '(anulado)')).join(' · ') + '.');
+}
+function roleFx(f, inc) {
+  const k = roleOf(f), F = Fa(f); if (!k) return;
+  if (k === 'mer') F.gold += 3 + 2 * myRoutes(f).filter(r => rLive(r) && r.f !== r.o).length;
+  if (k === 'eru' && !anar(f)) F.sci += Math.ceil(inc.sci / 2);
+  if (k === 'dip') { F.pre += 4; G.order.forEach(o => { if (o !== f && Fa(o).alive) remember(f, o, 'Diplomata do conselho', 10); }); }
+  if (k === 'sac') F.stab = Math.min(100, F.stab + 10);
+  if (k === 'col') F.gold += settled(f).filter(i => G.lv[i]).length;
+  if (k === 'esp' && F.cards.length < 5) F.cards.push(drawCard());
+}
 function beginTurn(f) {
   const F = Fa(f);
   // A-49: o cansaço de guerra come a recuperação de estabilidade
@@ -1498,7 +1544,7 @@ function beginTurn(f) {
   F.recQ = {};
   checkRoutes();
   for (const r of myRoutes(f)) if (r.k === 'mar' && rLive(r) && navOf(f) < 2 && rnd() < 1 / 6) { r.cut = G.round; log(f, `Piratas atacam a rota marítima de ${fname(f)} saindo de ${tname(r.a)}: ela não rende nesta rodada.`); } // T-17
-  const inc = income(f); F.gold += inc.gold; F.sci += anar(f) ? 0 : inc.sci; F.pre += inc.pre; govTurn(f); succession(f); figures(f); events(f);
+  const inc = income(f); F.gold += inc.gold; F.sci += anar(f) ? 0 : inc.sci; F.pre += inc.pre; roleFx(f, inc); govTurn(f); succession(f); figures(f); events(f);
   payUpkeep(f); produce(f); grow(f); society(f); diploTurn(f); if (real(f)) era12Turn(f); research(f);
   F.navLeft = navOf(f); F.planes = planesOf(f);
   F.pa = paOf(f); F.camp = F.recOn = F.tradeOn = F.bldOn = false;
@@ -1513,7 +1559,7 @@ function beginTurn(f) {
       if (!owned(f).length) { F.alive = false; if (f === G.player && !G.auto) return endGame(null, 'elim'); }
     }
   }
-  F.reinf = reinfOf(f).r;
+  F.reinf = reinfOf(f).r + (roleOf(f) === 'gen' ? 3 : 0);
   F.hold = objDone(f) ? F.hold + 1 : 0; // D-03
   vicTurn(f); if (G.over) return; // parte 13
   if (G.round < minWin()) return;
@@ -1543,6 +1589,7 @@ function live(g) { if (G !== g || g.over) throw STALE; }
 async function loop() { try { await loop0(); } catch (e) { if (e !== STALE) throw e; } }
 async function loop0() {
   while (!G.over) {
+    if (G.council && G.cur === 0 && G.councilR !== G.round) { G.councilR = G.round; await council(); if (G.over) return; render(); } // v37
     const f = G.order[G.cur], F = Fa(f);
     if (F.alive && F.entered) {
       G.turnF = f; if (f === G.player && !G.auto) save(); beginTurn(f); if (G.over) return; render();
@@ -1628,7 +1675,7 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = Object.fromEntries(Object.entries(X).filter(([k]) => !['tS', 'tN', 'tSet'].includes(k))); });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, hist: G.hist || [], crise: G.crise || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, hist: G.hist || [], crise: G.crise || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, sub: G.sub || null, council: !!G.council, councilR: G.councilR ?? null, role: G.role || {}, spy: G.spy ?? null, spyT: G.spyT ?? null, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -1638,6 +1685,7 @@ function restore(s) {
   startScenario(sc.id, s.player, s.diff, true, s.len);
   Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), hist: s.hist || [], crise: s.crise || null, seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
+  Object.assign(G, { sub: s.sub || G.sub, council: !!s.council, councilR: s.councilR ?? null, role: s.role || {}, spy: s.spy ?? null, spyT: s.spyT ?? null });
   render(); loop(); return true;
 }
 function resume(k) { restore(loadSave(k)); }
@@ -2548,6 +2596,7 @@ function renderSide() {
     <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}${guideHtml()}`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
   $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda (rotas +${routeGold(me)}), −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
+    ${G.council ? `<p class="hint">Papel na rodada: ${roleOf(me) ? `<b>${ROLE[roleOf(me)].ic} ${ROLE[roleOf(me)].n}</b> · ${esc(ROLE[roleOf(me)].d)}` : G.role && me in G.role ? 'anulado por um espião' : 'escolhido no início da próxima rodada'}</p>` : ''}
     <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida. <button class="mini" data-a="techs">Escolher pesquisa</button>'}</p>`;
   const forces = `<p class="forces">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '';
@@ -2668,7 +2717,7 @@ function rules() {
 }
 
 // ---------- tela inicial ----------
-let pickSc = null, pickF = null, pickD = 1, pickL = 'c';
+let pickSc = null, pickF = null, pickD = 1, pickL = 'c', pickC = false;
 function thumb(sc) {
   const m = MAPS[sc.map], own = {};
   sc.f.forEach(f => expand(m, f.t).forEach(n => own[n] = f.c));
@@ -2692,12 +2741,13 @@ function showSetup() {
     $('#pickTech').innerHTML = `<b>${esc(ERA[sc.tech].n)}:</b> ${ERA[sc.tech].tech.map(esc).join(' ')}` + (sc.civ ? civOptsHtml() : '');
     $('#facsPick').innerHTML = sc.f.filter(f => !f.late).map(f => { const F = { ...f, obj: objOf(f, MAPS[sc.map], (sc.relics || []).map(n => idxOf(MAPS[sc.map])[n])) }; return `<button class="fp ${pickF === f.id ? 'on' : ''}" data-a="fp" data-f="${f.id}" style="--fc:${f.c}"><b>${esc(f.n)}</b><span>${esc(f.L)} · ${ABIL[f.ab][0]}</span><em>${esc(ABIL[f.ab][1])}</em><small>${esc(objText(F))}</small><small>${expand(MAPS[sc.map], f.t).length} territórios · estabilidade ${f.st} · frota ${f.nav || 1}${f.team ? ' · aliança' : ''}</small></button>`; }).join('');
     $('#diff').innerHTML = ['Fácil', 'Normal', 'Difícil'].map((t, k) => `<button class="${pickD === k ? 'on' : ''}" data-a="diff" data-d="${k}">${t}</button>`).join('');
+    $('#cons').innerHTML = ['Desligado', 'Ligado'].map((t, k) => `<button class="${+pickC === k ? 'on' : ''}" data-a="cons" data-c="${k}" title="Conselho de papéis: a cada rodada as facções escolhem, por ordem de prestígio, um papel que vale só naquela rodada.">${t}</button>`).join('');
     $('#len').innerHTML = Object.entries(LEN).map(([k, L]) => `<button class="${pickL === k ? 'on' : ''}" data-a="len" data-l="${k}" title="Obras e tecnologias custam ×${L.k}; objetivo mantido por ${L.hold} turnos; ${L.leg} de legado vence.">${L.n} · ${L.r} rodadas</button>`).join('');
   }
 }
 function startScenario(id, fid, diff, quiet, len) {
   const sc = SCEN.find(s => s.id === id);
-  G = newGame(sc, fid, diff, len);
+  G = newGame(sc, fid, diff, len); G.council = pickC && !quiet; // v37: o Conselho é opção da partida
   $('#setup').hidden = true; $('#game').hidden = false; bt().hidden = true; $('#toast').hidden = true;
   $('#scT').textContent = `${sc.n} · ${sc.y}`;
   $('#credit').textContent = MAPS[sc.map].credit;
@@ -2718,6 +2768,7 @@ document.addEventListener('click', e => {
   else if (a === 'fp') { pickF = el.dataset.f; showSetup(); }
   else if (a === 'diff') { pickD = +el.dataset.d; showSetup(); }
   else if (a === 'len') { pickL = el.dataset.l; showSetup(); }
+  else if (a === 'cons') { pickC = !!+el.dataset.c; showSetup(); }
   else if (a === 'civo') { civSetup({ [el.dataset.k]: el.dataset.v }); showSetup(); }
   else if (a === 'civs' || a === 'civr') { const v = a === 'civr' ? Math.floor(Math.random() * 1e6) : Math.abs(parseInt($('#civSeed').value, 10)) || 1; civSetup({ seed: v }); showSetup(); }
   else if (a === 'start') startScenario(pickSc, pickF, pickD, false, pickL);
