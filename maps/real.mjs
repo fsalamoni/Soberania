@@ -6,7 +6,7 @@
 import * as d3 from 'd3-geo';
 import pc from 'polygon-clipping';
 import fs from 'fs';
-import { MED, NOR, AME } from './defs-real.mjs';
+import { MED, NOR, AME, WORLD, USD, BRD } from './defs-real.mjs';
 
 const [, , ID, ADM1, MAPS] = process.argv;
 const B = (a, b, c, d) => [a, b, c, d];
@@ -53,28 +53,38 @@ const EU1914 = [
 // quadro lon/lat de cada mapa (o mesmo do euProj em maps-build.mjs), definições e passo da grade de simplificação
 const CFG = { europa1805: { f: [-11, 43, 33, 63], defs: EU1805, g: .8, e: .5 }, europa1914: { f: [-11, 52, 22, 63], defs: EU1914, g: .8, e: .5 },
   mediterraneo: { f: [-10, 58, 25, 55], defs: MED, g: .8, e: .5 }, nordico: { f: [-25, 45, 45, 70], defs: NOR, g: .8, e: .5 },
-  americas: { f: [-118, -34.5, -44, 33], defs: AME, g: .8, e: .5, merc: 1 } };
-const ALIAS = { 'Czechia': 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', 'Serbia': 'Republic of Serbia', 'N. Cyprus': 'Northern Cyprus', 'Faeroe Is.': 'Faroe Islands', 'Dominican Rep.': 'Dominican Republic', 'Bahamas': 'The Bahamas' };
+  americas: { f: [-118, -34.5, -44, 33], defs: AME, g: .8, e: .5, merc: 1 },
+  mundo: { f: [-180, 180, -60, 85], defs: WORLD, g: 1, e: .8, world: 1 },
+  eua1861: { f: [-125, -66.5, 24.5, 49.5], defs: USD, g: .6, e: .4, alb: 1, pad: 10, c: 'United States of America' },
+  brasil1835: { f: [-74, -34.7, -33.8, 5.3], defs: BRD, g: .6, e: .4, merc: 1, pad: 10, c: 'Brazil' } };
+const ALIAS = { 'Czechia': 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', 'Serbia': 'Republic of Serbia', 'N. Cyprus': 'Northern Cyprus', 'Faeroe Is.': 'Faroe Islands', 'Dominican Rep.': 'Dominican Republic', 'Bahamas': 'The Bahamas',
+  'Falkland Is.': 'Falkland Islands', 'W. Sahara': 'Western Sahara', 'Guinea-Bissau': 'Guinea Bissau', "Côte d'Ivoire": 'Ivory Coast', 'Dem. Rep. Congo': 'Democratic Republic of the Congo',
+  'Congo': 'Republic of the Congo', 'Eq. Guinea': 'Equatorial Guinea', 'Central African Rep.': 'Central African Republic', 'Tanzania': 'United Republic of Tanzania', 'eSwatini': 'Swaziland',
+  'Timor-Leste': 'East Timor', 'Solomon Is.': 'Solomon Islands', 'Palestine': 'West Bank' };
 
 const C = CFG[ID]; if (!C) throw new Error('mapa sem configuração: ' + ID);
 const M = JSON.parse(fs.readFileSync(MAPS, 'utf8')), m = M[ID], W = m.w, H = m.h;
 const [lon0, lon1, lat0, lat1] = C.f;
 function densify(ring) { const o = []; for (let i = 0; i < ring.length - 1; i++) { const A = ring[i], Bp = ring[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(Bp[0] - A[0]), Math.abs(Bp[1] - A[1])))); for (let k = 0; k < n; k++) o.push([A[0] + (Bp[0] - A[0]) * k / n, A[1] + (Bp[1] - A[1]) * k / n]); } o.push(ring[ring.length - 1]); return o; }
-const proj = (C.merc ? d3.geoMercator() : d3.geoConicConformal().rotate([-(lon0 + lon1) / 2, 0]).parallels([40, 60]))
-  .fitExtent([[4, 4], [W - 4, H - 4]], { type: 'Polygon', coordinates: [densify([[lon0, lat0], [lon0, lat1], [lon1, lat1], [lon1, lat0], [lon0, lat0]])] }).clipExtent([[0, 0], [W, H]]);
+const pad = C.pad || 4;
+const proj = C.world ? (() => { const p = d3.geoNaturalEarth1().rotate([-11, 0]).fitExtent([[0, 0], [W, H * 1.18]], { type: 'Sphere' }); return p.translate([p.translate()[0], p.translate()[1] - H * 0.02]).clipExtent([[0, 0], [W, H]]); })() // igual ao maps-build.mjs
+  : (C.merc ? d3.geoMercator() : C.alb ? d3.geoAlbers().rotate([96, 0]).parallels([29.5, 45.5]).center([0, 0]) : d3.geoConicConformal().rotate([-(lon0 + lon1) / 2, 0]).parallels([40, 60]))
+  .fitExtent([[pad, pad], [W - pad, H - pad]], { type: 'Polygon', coordinates: [densify([[lon0, lat0], [lon0, lat1], [lon1, lat1], [lon1, lat0], [lon0, lat0]])] }).clipExtent([[0, 0], [W, H]]);
 const path = d3.geoPath(proj);
 
 // ---- divisões administrativas ----
 const A1 = JSON.parse(fs.readFileSync(ADM1, 'utf8')).features;
 const inBox = ([x, y], [a, b, c, d]) => x >= a && x <= b && y >= c && y <= d;
 const polys = f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+const norm = p => typeof p === 'string' ? { c: [p] } : Array.isArray(p) ? { c: [C.c], n: p } : p;
 const own = new Map(), hit = new Set(); // feature -> território; países que acharam divisões
 C.defs.forEach(([n, , ...parts], ti) => {
   const i = m.terr.findIndex(t => t.n === n); if (i < 0) throw new Error('território não está no mapa: ' + n);
-  for (const p of parts.map(p => typeof p === 'string' ? { c: [p] } : p)) {
+  for (const p of parts.map(norm)) {
     const cs = p.c.map(c => ALIAS[c] || c);
     for (const f of A1) {
       if (own.has(f) || !cs.includes(f.properties.admin)) continue;
+      if (p.n && !p.n.some(s => s === f.properties.name || s.toUpperCase() === f.properties.postal)) continue;
       const ctr = [f.properties.longitude, f.properties.latitude];
       const q = proj(ctr); if (!q || q[0] < 0 || q[0] > W || q[1] < 0 || q[1] > H) continue; // centro dentro do desenho do mapa
       if (p.b && !p.b.some(b => inBox(ctr, b))) continue;
@@ -86,7 +96,7 @@ C.defs.forEach(([n, , ...parts], ti) => {
 // desse país cuja caixa está mais perto do centro delas
 {
   const boxD = ([x, y], [a, b, c, d]) => Math.hypot(Math.max(a - x, 0, x - b), Math.max(c - y, 0, y - d));
-  const opts = []; C.defs.forEach(([n, , ...parts]) => { const i = m.terr.findIndex(t => t.n === n); parts.map(p => typeof p === 'string' ? { c: [p] } : p).forEach(p => p.c.forEach(c => opts.push({ c: ALIAS[c] || c, i, b: p.b }))); });
+  const opts = []; C.defs.forEach(([n, , ...parts]) => { const i = m.terr.findIndex(t => t.n === n); parts.map(norm).filter(p => !p.n).forEach(p => p.c.forEach(c => opts.push({ c: ALIAS[c] || c, i, b: p.b }))); });
   for (const f of A1) {
     if (own.has(f)) continue;
     const ctr = [f.properties.longitude, f.properties.latitude], q = proj(ctr); if (!q || q[0] < 0 || q[0] > W || q[1] < 0 || q[1] > H) continue;
@@ -95,7 +105,7 @@ C.defs.forEach(([n, , ...parts], ti) => {
     if (best != null) own.set(f, best);
   }
 }
-C.defs.forEach(([n, , ...parts]) => parts.forEach(p => (typeof p === 'string' ? [p] : p.c).forEach(c => { if (!hit.has(ALIAS[c] || c)) console.log('aviso: sem divisões para', c, 'em', n); })));
+C.defs.forEach(([n, , ...parts]) => parts.map(norm).forEach(p => p.c.forEach(c => { if (!hit.has(ALIAS[c] || c)) console.log('aviso: sem divisões para', c, 'em', n); })));
 // grade: vizinhos que dividem a divisa caem nos mesmos pontos (sem frestas)
 const thin = r => { const o = []; for (const p of r) { const s = [Math.round(p[0] / C.g) * C.g, Math.round(p[1] / C.g) * C.g], q = o[o.length - 1]; if (!q || q[0] !== s[0] || q[1] !== s[1]) o.push(s); } return o; };
 function ringsOf(geo) { const rings = []; let cur = null; path.context({ moveTo(x, y) { cur = [[x, y]]; rings.push(cur); }, lineTo(x, y) { cur.push([x, y]); }, closePath() { }, arc() { } })(geo); return rings.filter(r => r.length > 2); }

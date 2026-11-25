@@ -1,5 +1,24 @@
 # Histórico de versões
 
+## v33 — 25/11/2026 · Mundo, EUA e Brasil com divisas reais e relevo
+
+Com esta versão, os dez mapas históricos têm divisas reais e relevo. Agora entram o mapa-múndi (Segunda Guerra Mundial e outros cenários globais), os EUA de 1861 e o Brasil regencial.
+
+- **Divisas reais** (Natural Earth admin-1 1:10m), tiradas das divisões atuais:
+  - no mundo, a Sibéria, os Urais e o Extremo Oriente seguem os oblasts russos;
+  - nos EUA, cada território segue a lista dos seus estados;
+  - no Brasil, cada território segue as siglas das suas províncias.
+- **Projeções reais:** Albers nos EUA, Mercator no Brasil e Natural Earth no mundo. É a mesma projeção do relevo, por isso serras e divisas se alinham.
+- **Relevo real**, com estradas que contornam serras:
+  - as Rochosas e os Apalaches;
+  - a Serra do Mar e o Planalto Central;
+  - os Andes, o Himalaia e o Tibete.
+- **Desertos por caixas de longitude e latitude**, e não mais por faixa de latitude:
+  - o Saara, a Arábia, o Irã e o Thar ficam cor de areia;
+  - o interior da Austrália também;
+  - a Índia, a China e o Mediterrâneo continuam verdes.
+- `maps/real.mjs` aceita partes por lista de estados de um país e ganhou mais apelidos de países (RD Congo, Costa do Marfim, Timor-Leste e outros).
+- Vizinhanças recalculadas; as travessias por mar foram mantidas.
 ## v32 — 25/11/2026 · Mediterrâneo, Nórdico e Américas com divisas reais e relevo
 
 A reforma visual chega a mais três mapas: o Mediterrâneo (Guerras Púnicas, Crise do séc. III, Queda de Roma e Cruzadas), o Nórdico (Era Viking) e as Américas antes de Colombo.
