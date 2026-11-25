@@ -92,6 +92,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const a = civScenario({ seed: 5, size: 'p', type: 'pan' }), b = civScenario({ seed: 5, size: 'p', type: 'pan' }); return a.f.length === 4 && a._m.terr.length === 40 && JSON.stringify(a._m) === JSON.stringify(b._m); }), 'modo Civilização: mesma semente, mesmo mundo');
   ok(await p.evaluate(() => /Era da Informação/.test(document.querySelector('#modal').textContent) && !!window.__sob.STRUCT.cpa), 'árvore chega à Era da Informação');
   ok(await p.evaluate(() => /Idade Média/.test(document.querySelector('#modal').textContent) && /libera:/.test(document.querySelector('#modal').textContent) && window.__sob.G.F.fa.tech.includes('agri')), 'árvore por era mostra o que cada tecnologia libera');
+  ok(await p.evaluate(() => { techModal(); const n = document.querySelectorAll('#modal .tech').length, gh = document.querySelectorAll('#modal .ghost').length, r = n < TECH.length && /ainda ocultas/.test(document.querySelector('#modal').textContent) && [...document.querySelectorAll('#modal .ghost')].every(e => !/Pesquisar/.test(e.textContent)); return r && gh >= 0; }), 'árvore mostra só o que está perto e esconde o resto');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 99; }), 'pesquisa escolhida sem gastar ação');
   await p.click('#modal [data-m="0"]');
   await p.click('[data-a=figm]');

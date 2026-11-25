@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v36 — 25/11/2026 · Árvore de tecnologias revelada aos poucos
+
+Parte v28 do plano de aprimoramento (pesquisa por passos), primeira etapa.
+
+- **Revelação gradual:** a árvore mostra inteiro só o que você já sabe e o que pode pesquisar agora.
+  - O passo seguinte aparece como silhueta tracejada: "❔ Por descobrir", com o custo e a tecnologia que falta.
+  - O resto fica oculto. Cada era diz quantas tecnologias ainda estão escondidas.
+- **Progresso à vista:** cada tecnologia que dá para pesquisar mostra quanto o saber acumulado já cobre e quantos turnos faltam.
+- **Trocar de pesquisa não perde nada:** o saber fica guardado e vai para a próxima escolha. O painel agora diz isso.
+- Teste novo: a árvore esconde o que está longe e as silhuetas não podem ser pesquisadas.
 ## v35 — 25/11/2026 · Rotas de abastecimento entre regiões
 
 Parte v27 do plano de aprimoramento: rotas entre regiões.

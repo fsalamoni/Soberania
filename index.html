@@ -174,6 +174,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .tech p{margin:2px 0 0;font-size:12.5px;color:var(--mute)}
 .tech.own{border-color:var(--good)}
 .tech.lock{opacity:.55}
+.tech.ghost{border-style:dashed;opacity:.45}
 .tech .ok{color:var(--good);font-weight:700}
 .mbox ul{padding-left:18px;margin:4px 0}
 .mbox li{margin:3px 0}
@@ -3637,13 +3638,17 @@ function playerAct(a, k) {
 function techModal() {
   const me = G.player, F = Fa(me);
   const si = income(me).sci;
+  // revelação: o que você sabe e o que pode pesquisar aparece inteiro; o passo seguinte aparece como silhueta; o resto fica oculto
+  const near = t => techOk(me, t) || has(me, t.k), vis = t => near(t) ? 2 : (t.req || []).every(r => near(TK[r])) ? 1 : 0;
+  const ghost = t => `<div class="tech lock ghost"><div><b>❔ Por descobrir</b> <span class="hint">${techCost(t, me)} 🔬 · depois de ${esc((t.req || []).filter(r => !has(me, r)).map(tName).join(' e '))}</span></div></div>`;
+  const sec = ts => { const v = ts.filter(vis), n = ts.length - v.length; return v.map(t => vis(t) === 2 ? row(t) : ghost(t)).join('') + (n ? `<p class="hint">+${n} tecnologia(s) ainda ocultas: aparecem quando você chegar perto delas.</p>` : '') || '<p class="hint">Nada aqui.</p>'; };
   const row = t => {
     const own = has(me, t.k), ok = techOk(me, t), on = F.res === t.k, can = ok && !on && G.turnF === me, c = techCost(t, me);
     const req = (t.req || []).map(tName).join(' e '), left = Math.max(0, c - F.sci), eta = left ? Math.ceil(left / si) : 0;
     const lib = [...Object.keys(STRUCT).filter(k => STRUCT[k].tech === t.k).map(sName), ...Object.values(ARMY).filter(a => a.tech === t.k).map(a => a.n)];
-    return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${lib.length ? `<p class="hint">libera: ${esc(lib.join(', '))}</p>` : ''}${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
+    return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${lib.length ? `<p class="hint">libera: ${esc(lib.join(', '))}</p>` : ''}${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ok ? `<p class="hint">${pbar(F.sci, c)} o saber acumulado cobre ${Math.min(100, Math.round(100 * F.sci / c))}%${si ? ` · cerca de ${Math.max(1, Math.ceil(Math.max(0, c - F.sci) / si))} turno(s)` : ''}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
   };
-  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Cada tecnologia nova vale 2 de legado. Tropas: ${esc(armyOf(me).map(k => ARMY[k].n).join(', ') || 'só milícia')}.</p>${[['Antiguidade', t => !t.doc && t.e === 0], ['Idade Média', t => !t.doc && t.e === 1], ['Idade Moderna', t => !t.doc && t.e === 2], ['Revolução Industrial', t => t.e === 3], ['Era Moderna', t => t.e === 4], ['Era Atômica', t => t.e === 5], ['Era da Informação', t => t.e === 6], ['Futuro próximo', t => t.e === 7], ['Doutrinas', t => t.doc]].map(([n, fl]) => `<h3>${n}</h3><div class="techs">${TECH.filter(fl).map(row).join('')}</div>`).join('')}`, [['Fechar']]);
+  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Trocar de pesquisa não perde nada: o saber fica guardado e vai para a próxima escolha. A árvore só mostra o que você já sabe, o que pode pesquisar agora e, como silhueta, o passo seguinte. Cada tecnologia nova vale 2 de legado. Tropas: ${esc(armyOf(me).map(k => ARMY[k].n).join(', ') || 'só milícia')}.</p>${[['Antiguidade', t => !t.doc && t.e === 0], ['Idade Média', t => !t.doc && t.e === 1], ['Idade Moderna', t => !t.doc && t.e === 2], ['Revolução Industrial', t => t.e === 3], ['Era Moderna', t => t.e === 4], ['Era Atômica', t => t.e === 5], ['Era da Informação', t => t.e === 6], ['Futuro próximo', t => t.e === 7], ['Doutrinas', t => t.doc]].map(([n, fl]) => `<h3>${n}</h3><div class="techs">${sec(TECH.filter(fl))}</div>`).join('')}`, [['Fechar']]);
 }
 const pbar = (v, max) => `<span class="bar"><i style="width:${Math.min(100, 100 * v / max)}%;background:var(--brass)"></i></span>`;
 // fila de um território (UI-02 e UI-06)
