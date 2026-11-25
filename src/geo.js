@@ -310,3 +310,14 @@ Object.assign(STRUCT, {
   sp2: { pc: 50, need: 'sp1', tech: 'net', y: { sci: 1 }, lg: 5, vic: 1, ic: '👨‍🚀', fx: 'Pouso tripulado (V-03): 2ª etapa da vitória científica.', n: 'Pouso Tripulado' },
   sp3: { pc: 60, need: 'sp2', tech: 'ren', y: { sci: 1 }, lg: 5, vic: 1, ic: '🪐', fx: 'Colônia espacial (V-03): última etapa; vence pela ciência.', n: 'Colônia Espacial' },
 });
+
+// ---------- parte 15: era 8, futuro próximo (K-120 a K-122) ----------
+TECH.push(
+  T7('ia', 7, 30, ['semi', 'net'], 'Inteligência artificial', 'K-120: +20% de saber.'),
+  T7('fus', 7, 30, ['fis', 'semi'], 'Fusão', 'K-121: usina de fusão, energia limpa e farta.'),
+  T7('cle', 7, 32, ['sat', 'fus'], 'Colonização espacial', 'K-122: libera a colônia espacial, última etapa da vitória científica.'),
+);
+TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
+TECH.forEach(t => { t.t = t.e + 1; TK[t.k] = t; });
+STRUCT.fsn = { pc: 24, need: 'zen', tech: 'fus', mk: 'ene', y: { prod: 3, gold: 1 }, ic: '🔆', fx: 'Usina de fusão (K-121): energia limpa, +3 produção e +1 ouro.', n: 'Usina de Fusão' };
+STRUCT.sp3.tech = 'cle';

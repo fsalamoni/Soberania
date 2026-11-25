@@ -194,6 +194,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
   #top h1{font-size:18px}
   #scT{display:none}
 }
+.news{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--brass);background:#ffffff08;border-radius:4px}.news ul{margin:4px 0 0;padding-left:16px}.hist{width:100%;height:auto;margin:4px 0 8px}.tl{font-size:13px;max-height:12em;overflow:auto;padding-left:18px}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -841,6 +842,17 @@ Object.assign(STRUCT, {
   sp2: { pc: 50, need: 'sp1', tech: 'net', y: { sci: 1 }, lg: 5, vic: 1, ic: '👨‍🚀', fx: 'Pouso tripulado (V-03): 2ª etapa da vitória científica.', n: 'Pouso Tripulado' },
   sp3: { pc: 60, need: 'sp2', tech: 'ren', y: { sci: 1 }, lg: 5, vic: 1, ic: '🪐', fx: 'Colônia espacial (V-03): última etapa; vence pela ciência.', n: 'Colônia Espacial' },
 });
+
+// ---------- parte 15: era 8, futuro próximo (K-120 a K-122) ----------
+TECH.push(
+  T7('ia', 7, 30, ['semi', 'net'], 'Inteligência artificial', 'K-120: +20% de saber.'),
+  T7('fus', 7, 30, ['fis', 'semi'], 'Fusão', 'K-121: usina de fusão, energia limpa e farta.'),
+  T7('cle', 7, 32, ['sat', 'fus'], 'Colonização espacial', 'K-122: libera a colônia espacial, última etapa da vitória científica.'),
+);
+TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
+TECH.forEach(t => { t.t = t.e + 1; TK[t.k] = t; });
+STRUCT.fsn = { pc: 24, need: 'zen', tech: 'fus', mk: 'ene', y: { prod: 3, gold: 1 }, ic: '🔆', fx: 'Usina de fusão (K-121): energia limpa, +3 produção e +1 ouro.', n: 'Usina de Fusão' };
+STRUCT.sp3.tech = 'cle';
 // Cenários, habilidades e cartas. Nomes de territórios precisam bater com maps.json.
 const SCEN = [
   {
@@ -1398,7 +1410,7 @@ function netOf(f) {
   return { core, linked };
 }
 const goodsAt = T => { const s = new Set(); for (const i of T) if (!occupied(i)) { worked(i).forEach(d => s.add(d)); G.bld[i].forEach(k => { if (STRUCT[k].mk && nb(i, k)) s.add(STRUCT[k].mk); }); } return s; };
-const goods = f => { const s = goodsAt(netOf(f).linked); if (real(f)) routeGoods(f).forEach(d => s.add(d)); return s; };
+const goods = f => { const s = goodsAt(netOf(f).linked); if (real(f)) { routeGoods(f).forEach(d => s.add(d)); bought(f).forEach(d => s.add(d)); } return s; }; // T-21
 const goodsAll = f => goodsAt(owned(f));
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
 function yieldOf(i) {
@@ -1446,7 +1458,7 @@ function income(f) {
     s.gold += v.gold * c * lo; s.sci += v.sci * c * lo; s.pre += v.pre; s.stab += v.stab; return s;
   }, { gold: 0, sci: 0, pre: 0, stab: 0 });
   const gv = gov(f), gm = (gv === 'dem' ? 1.25 : 1) * (pol(f, 'amb') ? .9 : 1), sm = (gv === 'dem' ? 1.25 : 1) * (gv === 'teo' ? .9 : 1); // parte 10
-  y.gold = Math.round(y.gold * hm * gm * (Fa(f).finT >= G.round ? .5 : 1) * (hasW(f, 'rmd') ? 1.1 : 1) * (G.polLim >= G.round && polOf(f) * G.order.filter(o => Fa(o).alive).length > worldPol() ? .9 : 1)) + (gv === 'rep' ? countB(f, 'mer') : 0) - (pol(f, 'pao') ? owned(f).filter(i => G.lv[i] >= 3).length : 0); y.sci = Math.round(y.sci * hm * sm * (hasW(f, 'rmd') ? 1.1 : 1) * (gv === 'ppu' ? .85 : 1)); // E-32, C-215, G-09
+  y.gold = Math.round(y.gold * hm * gm * (Fa(f).finT >= G.round ? .5 : 1) * (hasW(f, 'rmd') ? 1.1 : 1) * (G.crise && G.crise.k === 'pet' && G.crise.u >= G.round && !goods(f).has('pet') && !goods(f).has('cmb') ? .85 : 1) * (G.polLim >= G.round && polOf(f) * G.order.filter(o => Fa(o).alive).length > worldPol() ? .9 : 1)) + (gv === 'rep' ? countB(f, 'mer') : 0) - (pol(f, 'pao') ? owned(f).filter(i => G.lv[i] >= 3).length : 0); y.sci = Math.round(y.sci * hm * sm * (hasW(f, 'rmd') ? 1.1 : 1) * (has(f, 'ia') ? 1.2 : 1) * (gv === 'ppu' ? .85 : 1)); // E-32, C-215, G-09
   return {
     gold: Math.max(1, y.gold + diff + routeGold(f)),
     sci: Math.round((1 + y.sci + routeSci(f)) * (hasW(f, 'obi') ? 1.25 : 1) * (has(f, 'cie') ? 1.1 : 1)), stab: y.stab,
@@ -1467,7 +1479,7 @@ function hap(f) {
   const F = Fa(f); if (!F.real) return 0;
   return 2 * luxOf(f) + countB(f, 'tem') + countB(f, 'anf') + countB(f, 'tea') + 2 * countB(f, 'col') + (F.festT >= G.round ? 4 : 0) + (has(f, 'mis') ? 1 : 0)
     - owned(f).filter(i => G.lv[i] >= 3).length - Math.floor(F.ww / (pol(f, 'ppg') ? 8 : 4)) - (F.taxT >= G.round ? 3 : 0) - (gov(f) === 'abs' ? 2 : 0) - (pol(f, 'csc') ? 1 : 0) + (pol(f, 'pao') ? 2 : 0) - (F.refT >= G.round ? 2 : 0)
-    + sumB(f, 'hp') + 2 * monoOf(f).length + (F.gamesT >= G.round ? 3 : 0) - (gov(f) === 'tcn' && !goods(f).has('bcs') ? 3 : 0); // parte 12
+    + sumB(f, 'hp') + 2 * monoOf(f).length + (F.gamesT >= G.round ? 3 : 0) - (gov(f) === 'tcn' && !goods(f).has('bcs') ? 3 : 0) + classHap(f); // parte 12, S-23
 }
 // S-12: saúde do território. Abaixo de 0, chance de epidemia
 const health = i => 2 + (G.riv[i] ? 1 : 0) + (coastal(i) ? 1 : 0) + 2 * ['aqu', 'san', 'hos'].filter(k => nb(i, k)).length - G.lv[i] - (G.bld[i].includes('min') ? 1 : 0) + (pol(G.own[i], 'amb') ? 1 : 0) + (prin(i, 'hos') ? 2 : 0) + hX(i);
@@ -1855,7 +1867,7 @@ function era12Turn(f) {
     else if (enemy.some(o => armyOf(o).includes('sub')) && rnd() < 1 / 3) { r.cut = G.round; log(f, `Submarinos inimigos afundam a carga da rota de ${tname(r.a)}.`); }
   }
   // usina nuclear: pequeno risco de acidente
-  for (const i of owned(f)) if (nb(i, 'nuc') && rnd() < .005) { if (G.lv[i] > 1) G.lv[i]--; F.stab = Math.max(0, F.stab - 10); log(f, `Acidente na usina nuclear de ${tname(i)}!`); }
+  for (const i of owned(f)) if (nb(i, 'nuc') && rnd() < .005) { G.occ[i] = 20; if (G.lv[i] > 1) G.lv[i]--; F.stab = Math.max(0, F.stab - 10); log(f, `Acidente na usina nuclear de ${tname(i)}: o território fica inutilizável por 20 turnos (E-35).`); }
   // filiais (T-22): +2 ouro cada; a filial fecha sem paz ou sem mercado
   G.corp = G.corp.filter(c => real(G.own[c.i]) && G.own[c.i] !== c.f && peace(c.f, G.own[c.i]) && nb(c.i, 'mer'));
   F.gold += corpsOf(f).length * (2 + (gov(f) === 'tcn' ? 1 : 0));
@@ -2082,11 +2094,11 @@ function civTake(f, j, d) {
   F.gp = F.gp || {}; F.gp.exp = (F.gp.exp || 0) + 5; // F-17
 }
 // E-01 a E-07: o mundo muda de era com a tecnologia mais avançada; tribos viram cidades-estado
-const CIV_ERA = ['ant', 'med', 'pol', 'w1', 'w2', 'gf', 'gf'];
+const CIV_ERA = ['ant', 'med', 'pol', 'w1', 'w2', 'gf', 'gf', 'gf'];
 function civRound() {
   const e = Math.max(0, ...G.order.filter(f => Fa(f).alive).flatMap(f => Fa(f).tech.map(k => TK[k] ? TK[k].e : 0)));
   const k = CIV_ERA[Math.max(ERA_LV[G.sc.tech] ?? 0, e)];
-  if (ERA[k] && G.era !== ERA[k]) { G.era = ERA[k]; G.air = airOf({ tech: k }); log(null, `O mundo entra em: ${ERA[k].n}.`); }
+  if (ERA[k] && G.era !== ERA[k]) { G.era = ERA[k]; G.air = airOf({ tech: k }); log(null, `O mundo entra em: ${ERA[k].n}.`); if (G.round > 1) eraCrisis(); }
   for (let i = 0; i < G.N; i++) if (G.own[i] === 'reb' && /^Tribo/.test(G.rl[i] || '') && rnd() < .015) {
     G.own[i] = 'neu'; G.tr[i] = Math.max(4, G.tr[i]); G.cs[i] = { t: Object.keys(CS)[i % 6], inf: {}, mis: Object.keys(MIS)[i % 3] }; log(null, `A tribo de ${tname(i)} se assenta e vira cidade-estado.`);
   }
@@ -2109,6 +2121,83 @@ function civOptsHtml() {
     <p><b>Semente:</b> <input id="civSeed" value="${civOpt.seed}" inputmode="numeric" size="8"> <button class="mini" data-a="civs">Usar</button> <button class="mini" data-a="civr">Sortear</button> <span class="hint">o mesmo código gera o mesmo mundo</span></p>`;
 }
 civSetup({});
+// ---------- parte 15: acabamento (UI-09 a UI-14, E-35, crises de era, S-23, T-21) ----------
+// UI-11: bônus de ataque (o mesmo do combate) e chance de vencer atacando até o fim
+function atkBonus(i, j) {
+  const a = G.own[i], A = Fa(a), aw = armyOf(a), dw = armyOf(G.own[j]), hc = OPEN.includes(G.ter[j]) && (aw.includes('cav') || aw.includes('kni')) && !dw.includes('lin');
+  return armyAtk(aw, j) + (hc ? 1 : 0) + ((G.win[i] || 0) >= (pol(a, 'dis') ? 2 : 3) ? 1 : 0) + (prin(i, 'gue') && G.fai[j] !== G.fai[i] ? 1 : 0) + genBonus(a, i) + (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0);
+}
+function odds(i, j) { // ponytail: 300 simulações com Math.random, sem empates táticos nem canhão
+  const [ad0] = diceFor(i, j), cap = ad0 < Math.min(3, G.tr[i] - 1) ? ad0 : 3, up = atkBonus(i, j), db = defBonus(j, i), d6r = () => 1 + Math.floor(Math.random() * 6);
+  let win = 0;
+  for (let n = 0; n < 300; n++) {
+    let a = G.tr[i], d = G.tr[j];
+    while (a > 1 && d > 0) {
+      const R = Array.from({ length: Math.min(cap, a - 1) }, d6r).sort((x, y) => y - x), D = Array.from({ length: Math.min(3, d) }, d6r).sort((x, y) => y - x);
+      R[0] = Math.min(6, R[0] + up); D[0] = Math.min(6, D[0] + db);
+      for (let k = 0; k < Math.min(R.length, D.length); k++) R[k] > D[k] ? d-- : a--;
+    }
+    if (d <= 0) win++;
+  }
+  return win / 300;
+}
+// UI-14: pontos de cada facção a cada rodada, para o gráfico do fim
+function histPush() { G.hist = G.hist || []; G.hist.push(G.order.reduce((o, f) => (o[f] = Fa(f).alive ? score(f) : null, o), {})); }
+function histChart() {
+  const H = G.hist || []; if (H.length < 2) return '';
+  const vals = H.flatMap(h => Object.values(h).filter(v => v != null)), lo = Math.min(0, ...vals), hi = Math.max(1, ...vals), W = 560, Hh = 160;
+  const x = k => (k / (H.length - 1) * W).toFixed(1), y = v => (Hh - (v - lo) / (hi - lo) * Hh).toFixed(1);
+  const lines = G.order.filter(f => Fa(f).entered).map(f => `<polyline fill="none" stroke="${Fa(f).c}" stroke-width="2" points="${H.map((h, k) => h[f] == null ? '' : x(k) + ',' + y(h[f])).filter(Boolean).join(' ')}"/>`).join('');
+  return `<h4>Pontos ao longo da partida</h4><svg class="hist" viewBox="-4 -4 ${W + 8} ${Hh + 8}" role="img" aria-label="Gráfico de pontos por facção"><line x1="0" y1="${y(0)}" x2="${W}" y2="${y(0)}" stroke="#ffffff22"/>${lines}</svg>`;
+}
+const KEY_EV = /vence|perto da vitória|eliminad|perde a capital|Congresso Mundial:|O mundo entra|maravilha|funda a fé|surge em|Revolta|crise|Crise|Acidente|Era de ouro|era de ouro|sombria|heroica/;
+const timeline = () => G.log.filter(l => KEY_EV.test(l[1])).slice(0, 12).reverse().map(l => `<li><b>${l[2]}</b> ${esc(l[1])}</li>`).join('');
+// UI-09: o que aconteceu desde o seu último turno
+const news = () => { const me = G.player; return G.log.filter(l => l[2] >= G.round - 1 && l[0] !== me && (l[0] == null || KEY_EV.test(l[1]) || /você|sua|seu/i.test(l[1]) || owned(me).some(i => l[1].includes(tname(i))))).slice(0, 5); };
+// UI-12: dica curta na primeira vez que cada sistema abre
+const TIPS = {
+  routes: 'Comércio: rotas rendem ouro e trazem bens para a sua rede. Cada mercado, porto ou banco permite uma rota.',
+  dipl: 'Diplomacia: propostas não gastam ação. Passe o mouse num botão para ver se a facção aceita e por quê.',
+  govm: 'Governo: a cultura compra cívicas; cada cívica libera governos e políticas, e o governo define quantas políticas cabem.',
+  figm: 'Personagens: grandes figuras nascem das construções certas. Use quando quiser; espiões ficam no painel do território inimigo.',
+  vicm: 'Vitórias: acompanhe aqui quem está perto de vencer. Quem passa de 75% vira alvo de todos.',
+  catalog: 'Catálogo: tudo o que existe para construir, com o que cada obra exige. As obras que cabem agora aparecem no painel de ações.',
+  techs: 'Tecnologias: escolher a pesquisa não gasta ação. O saber de cada turno vai para ela sozinho.',
+};
+function tipOnce(k) {
+  if (!TIPS[k] || !G || G.auto) return;
+  try { const s = JSON.parse(localStorage.getItem('sob_tips') || '{}'); if (s[k]) return; s[k] = 1; localStorage.setItem('sob_tips', JSON.stringify(s)); } catch (e) { return; }
+  toast(TIPS[k]);
+}
+// T-21: mercado mundial (modo Civilização). Bem raro custa mais; a compra vale 5 turnos
+const mktPrice = d => { const n = G.order.filter(f => Fa(f).alive && real(f) && goodsAll(f).has(d)).length; return Math.round((DEP[d].mk ? 10 : 6) * (1 + 1.5 / (1 + n))); };
+function buyGood(f, d) {
+  const F = Fa(f), p = mktPrice(d); if (!G.sc.civ) return 'Mercado mundial só no modo Civilização.';
+  if (!G.order.some(o => o !== f && Fa(o).alive && real(o) && goodsAll(o).has(d))) return 'Ninguém produz esse bem para vender.';
+  if (F.gold < p) return 'Ouro insuficiente.';
+  F.gold -= p; F.buy = F.buy || {}; F.buy[d] = G.round + 5; log(f, `${fname(f)} compra ${DEP[d].n.toLowerCase()} no mercado mundial por ${p} ouro.`); return '';
+}
+const bought = f => { const b = Fa(f).buy || {}; return Object.keys(b).filter(d => b[d] >= G.round); };
+// S-23: classes sociais (modo Civilização). Cada classe grande cobra o que precisa
+function classes(f) {
+  const n = { cam: 0, art: 0, mer: 0, eru: 0 }, Z = { agr: 'cam', pec: 'cam', pes: 'cam', flo: 'cam', min: 'art' };
+  owned(f).forEach(i => G.bld[i].forEach(k => { const S = STRUCT[k]; if (S.z && Z[S.z]) n[Z[S.z]]++; else if (['ofi', 'fab', 'fun', 'zin'].includes(k)) n.art++; else if (['mer', 'ban', 'por', 'bol'].includes(k)) n.mer++; else if (['aca', 'uni', 'lab', 'bib'].includes(k)) n.eru++; }));
+  return n;
+}
+function classHap(f) {
+  if (!G.sc.civ || !real(f)) return 0; const c = classes(f);
+  return -(c.eru >= 3 && !countB(f, 'uni') ? 1 : 0) - (c.mer >= 3 && !myRoutes(f).length ? 1 : 0) - (c.art >= 3 && luxOf(f) < 2 ? 1 : 0) - (c.cam >= 6 && !countB(f, 'tem') ? 1 : 0);
+}
+// crises de era (modo Civilização): na virada de era, uma crise de 10 rodadas para todos
+function eraCrisis() {
+  const alive = G.order.filter(f => Fa(f).alive && real(f)), k = ['queda', 'inv', 'pet'][Math.floor(rnd() * (G.era === ERA.w1 || G.era === ERA.w2 || G.era === ERA.gf ? 3 : 2))];
+  G.crise = { k, u: G.round + 10 };
+  if (k === 'queda') { alive.sort((a, b) => owned(b).length - owned(a).length).slice(0, 2).forEach(f => { Fa(f).stab = Math.max(0, Fa(f).stab - 15); }); log(null, 'Crise de era: queda de impérios. Os maiores perdem estabilidade.'); }
+  if (k === 'inv') { const e = G.own.map((o, i) => i).filter(i => G.own[i] === 'neu' && !csOf(i)).sort(() => rnd() - .5).slice(0, 3); e.forEach(i => { G.own[i] = 'reb'; G.tr[i] = 4; G.rl[i] = 'Tribo invasora'; }); log(null, `Crise de era: invasões em ondas${e.length ? ' em ' + e.map(tname).join(', ') : ''}.`); }
+  if (k === 'pet') log(null, 'Crise de era: crise do petróleo. Quem não tem petróleo nem combustível perde 15% do ouro por 10 rodadas.');
+  if (!G.auto) toast(G.log[0][1]);
+}
+const mktHtml = me => { const g = goods(me), L = Object.keys(DEP).filter(d => !g.has(d) && G.order.some(o => o !== me && Fa(o).alive && real(o) && goodsAll(o).has(d))); return `<h4>Mercado mundial</h4><p class="hint">Compre o acesso a um bem por 5 turnos. O preço sobe quando poucos produzem.</p><p>${L.map(d => `<button class="mini" data-a="buy" data-d="${d}" ${Fa(me).gold >= mktPrice(d) ? '' : 'disabled'}>${DEP[d].ic} ${esc(DEP[d].n)} ${mktPrice(d)}💰</button>`).join(' ') || 'Nada à venda agora.'}</p>${bought(me).length ? `<p class="hint">Comprado: ${bought(me).map(d => DEP[d].n).join(', ')}</p>` : ''}`; };
 const coloPair = f =>{ for (const i of owned(f).filter(i => G.lv[i] >= 3).sort((a, b) => G.lv[b] - G.lv[a])) { const j = G.A[i].find(j => G.own[j] === f && G.lv[j] === 1 && !occupied(j)); if (j != null) return [i, j]; } return null; };
 const paOf = f => ECON.pa + agePA(f) + (has(f, 'adm') ? 1 : 0) + ({ rep: 1, abs: 1, dem: 2 }[gov(f)] || 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
 const troopCost = f => Math.max(1, Math.round(((has(f, 'con') ? 1 : ECON.troop) - (gov(f) === 'feu' ? 1 : 0)) * (pol(f, 'csc') ? .75 : 1))); // G-05, G-20
@@ -2347,7 +2436,7 @@ function routesModal() {
   const row = (r, btn) => `<div class="tech"><div><b>${RT[r.k].ic} ${RT[r.k].n}</b> <span class="hint">${esc(tname(r.a))} → ${esc(tname(r.b))}${r.o !== r.f ? ' · ' + esc(fname(r.f === me ? r.o : r.f)) : ''}${r.k === 'dig' ? ' · +2🔬 cada lado' : RT[r.k].g ? ` · +${RT[r.k].g}💰 cada lado` : ' · +1⚒ no destino e os bens dele na rede'}${r.gd.length ? ' · traz ' + r.gd.map(d => DEP[d].ic + ' ' + DEP[d].n).join(', ') : ''}${r.s > G.round ? ' · começa no próximo turno' : ''}</span></div>${btn || ''}</div>`;
   modal(`<h2>Comércio</h2><p class="hint">Rotas abertas por você: ${myRoutes(me).length}/${routeMax(me)} (1 por mercado, porto e banco). Abrir custa 1 ação e ${ECON.route} ouro. Caravana pede caravançará e um mercado alheio a até 4 territórios; rota marítima, porto com armazém alfandegário e um porto alheio; rota interna, mercado nas duas pontas. Depois vêm a rota oceânica (companhia de comércio), o oleoduto (refinaria e ferrovia ou rodovia), a rota aérea (aeroportos) e a rede digital (Internet, entre capitais). Bens recebidos contam como ligados para as obras, e rota com quem sabe mais barateia a pesquisa em 20%.</p>
     <h4>Ativas</h4><div class="techs">${act.length ? act.map(r => row(r)).join('') : '<p class="hint">Nenhuma.</p>'}</div>
-    <h4>Possíveis</h4><div class="techs">${c.length ? c.map(r => row(r, `<button class="mini pri" data-a="route" data-i="${r.a}" data-j="${r.b}" ${my && F.pa > 0 && F.gold >= ECON.route ? '' : 'disabled'}>Abrir</button>`)).join('') : '<p class="hint">Nenhuma agora: construa mercado, caravançará ou porto com armazém, e faça paz com vizinhos.</p>'}</div>`, [['Fechar']]);
+    <h4>Possíveis</h4><div class="techs">${c.length ? c.map(r => row(r, `<button class="mini pri" data-a="route" data-i="${r.a}" data-j="${r.b}" ${my && F.pa > 0 && F.gold >= ECON.route ? '' : 'disabled'}>Abrir</button>`)).join('') : '<p class="hint">Nenhuma agora: construa mercado, caravançará ou porto com armazém, e faça paz com vizinhos.</p>'}</div>${G.sc.civ ? mktHtml(me) : ''}`, [['Fechar']]);
 }
 function tradeRes(f, a, b) {
   const F = Fa(f), [p, q] = has(f, 'com') ? [3, 2] : [2, 1];
@@ -2440,7 +2529,7 @@ function roll(i, j) {
   if (has(a, 'art') && goodOk(a, ['sli']) && G.tr[j] > 1 && d6() >= 5) G.tr[j]--; // K-53: canhão antes do combate
   if (isSea(i, j) && aw.includes('enc') && G.tr[j] > 1 && d6() >= 5) G.tr[j]--; // A-25
   G.dug[i] = 0; G.acted.add(i); // A-45: quem ataca perde o entrincheiramento
-  const up = armyAtk(aw, j) + (hc ? 1 : 0) + ((G.win[i] || 0) >= (pol(a, 'dis') ? 2 : 3) ? 1 : 0) + (prin(i, 'gue') && G.fai[j] !== G.fai[i] ? 1 : 0) + genBonus(a, i) + (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0);
+  const up = atkBonus(i, j);
   if (up) R[0] = Math.min(6, R[0] + up);
   D[0] = Math.min(6, D[0] + defBonus(j, i));
   const ties = !(hc && dw.includes('lan')) && ((op && aw.includes('kni')) || (TERR[G.ter[j]].def !== 'm' && !G.bld[j].some(k => STRUCT[k].tie && nb(j, k)) && (A.ab === 'tatico' || (A.real && A.camp && has(a, 'tat'))))); // A-02, A-04 // M-06: em montanha o atacante sempre perde empates
@@ -2539,7 +2628,7 @@ async function advance() {
   G.cur++;
   if (G.cur >= G.order.length) {
     G.cur = 0; await rebelsAct(); if (G.over) return;
-    G.round++; ageCheck(); plague(); congress(); climate(); vicRound(); if (G.sc.civ) civRound();
+    G.round++; ageCheck(); plague(); congress(); climate(); vicRound(); if (G.sc.civ) civRound(); histPush();
     if (G.round > G.rounds) return endGame(null, 'turns');
     for (const e of G.sc.ev.filter(e => evRound(e) === G.round)) { applyEvent(e); render(); if (G.over) return; const g = G; if (!G.auto) await modal(`<p class="kick">${esc(G.sc.n)} · rodada ${G.round}</p><h2>${esc(e.n)}</h2><p>${esc(e.d)}</p>`, [['Continuar']]); live(g); }
     checkWin();
@@ -2627,7 +2716,7 @@ function endGame(w, why) {
   const rows = rank.map(f => `<tr><td><i class="dot" style="background:${Fa(f).c}"></i>${esc(fname(f))}${f === G.player ? ' (você)' : ''}</td><td>${owned(f).length}</td><td>${capsHeld(f)}</td><td>${score(f)}</td></tr>`).join('');
   const t = why === 'elim' ? 'Derrota' : pw ? (w === G.player ? 'Vitória!' : 'Vitória da aliança!') : 'Derrota';
   const sub = why === 'elim' ? 'Seus últimos territórios caíram.' : why === 'obj' ? `${fname(w)} cumpriu o objetivo: ${objText(Fa(w))}` : why === 'leg' ? `${fname(w)} chegou a ${legWin()} pontos de legado: ciência, obras e cultura.` : why === 'dom' ? `${fname(w)} e aliados dominaram o mapa.` : VIC[why] ? `${fname(w)} vence por ${VIC[why].n.toLowerCase()}: ${VIC[why].fx}.` : `Fim das ${G.rounds} rodadas. Vence quem mais cresceu: territórios ganhos desde o início, +2 por capital e +2 por alvo do objetivo controlado.`;
-  modal(`<p class="kick">${esc(G.sc.n)}</p><h2>${t}</h2><p>${esc(sub)}</p><table class="rank"><tr><th>Facção</th><th>Terr.</th><th>Cap.</th><th>Pontos</th></tr>${rows}</table>`, [['Jogar de novo', () => startScenario(G.sc.id, G.player, G.diff, false, G.lenK)], ['Escolher cenário', showSetup]]);
+  modal(`<p class="kick">${esc(G.sc.n)}</p><h2>${t}</h2><p>${esc(sub)}</p><table class="rank"><tr><th>Facção</th><th>Terr.</th><th>Cap.</th><th>Pontos</th></tr>${rows}</table>${histChart()}${timeline() ? '<h4>Linha do tempo</h4><ul class="tl">' + timeline() + '</ul>' : ''}`, [['Jogar de novo', () => startScenario(G.sc.id, G.player, G.diff, false, G.lenK)], ['Escolher cenário', showSetup]]);
 }
 
 // ---------- salvar ----------
@@ -2635,7 +2724,7 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = Object.fromEntries(Object.entries(X).filter(([k]) => !['tS', 'tN', 'tSet'].includes(k))); });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, hist: G.hist || [], crise: G.crise || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -2643,7 +2732,7 @@ function restore(s) {
   if (s && s.civ) civSetup(s.civ); // MC-08: o mundo volta pela semente
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), hist: s.hist || [], crise: s.crise || null, seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -3239,7 +3328,7 @@ function techModal() {
     const lib = [...Object.keys(STRUCT).filter(k => STRUCT[k].tech === t.k).map(sName), ...Object.values(ARMY).filter(a => a.tech === t.k).map(a => a.n)];
     return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${lib.length ? `<p class="hint">libera: ${esc(lib.join(', '))}</p>` : ''}${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
   };
-  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Cada tecnologia nova vale 2 de legado. Tropas: ${esc(armyOf(me).map(k => ARMY[k].n).join(', ') || 'só milícia')}.</p>${[['Antiguidade', t => !t.doc && t.e === 0], ['Idade Média', t => !t.doc && t.e === 1], ['Idade Moderna', t => !t.doc && t.e === 2], ['Revolução Industrial', t => t.e === 3], ['Era Moderna', t => t.e === 4], ['Era Atômica', t => t.e === 5], ['Era da Informação', t => t.e === 6], ['Doutrinas', t => t.doc]].map(([n, fl]) => `<h3>${n}</h3><div class="techs">${TECH.filter(fl).map(row).join('')}</div>`).join('')}`, [['Fechar']]);
+  modal(`<h2>Tecnologias · ${esc(G.era.n)}</h2><p class="hint">Saber acumulado: ${F.sci} 🔬 (+${si} por turno). Escolher a pesquisa não gasta ação: o saber de cada turno vai para ela e ela fica pronta no início do turno em que o custo for atingido. Cada tecnologia nova vale 2 de legado. Tropas: ${esc(armyOf(me).map(k => ARMY[k].n).join(', ') || 'só milícia')}.</p>${[['Antiguidade', t => !t.doc && t.e === 0], ['Idade Média', t => !t.doc && t.e === 1], ['Idade Moderna', t => !t.doc && t.e === 2], ['Revolução Industrial', t => t.e === 3], ['Era Moderna', t => t.e === 4], ['Era Atômica', t => t.e === 5], ['Era da Informação', t => t.e === 6], ['Futuro próximo', t => t.e === 7], ['Doutrinas', t => t.doc]].map(([n, fl]) => `<h3>${n}</h3><div class="techs">${TECH.filter(fl).map(row).join('')}</div>`).join('')}`, [['Fechar']]);
 }
 const pbar = (v, max) => `<span class="bar"><i style="width:${Math.min(100, 100 * v / max)}%;background:var(--brass)"></i></span>`;
 // fila de um território (UI-02 e UI-06)
@@ -3327,7 +3416,7 @@ function showBattlePanel(last) {
   const notes = [isSea(i, j) ? 'desembarque pelo mar' : '', TERR[G.ter[j]].n.toLowerCase(), defBonus(j) ? `defesa +${defBonus(j)} no maior dado` : '', TERR[G.ter[j]].def === 'w' ? 'pântano: 1 dado a menos' : '', TERR[G.ter[j]].def === 'm' ? 'montanha: empate é da defesa' : '', me.ofs ? 'ofensiva +1' : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="bh"><b style="color:${me.c}">${esc(tname(i))}</b> <span>${G.tr[i]}</span> ⚔ <b style="color:${Fa(d).c}">${esc(tname(j))}</b> <span>${G.tr[j]}</span></div>
   ${last ? diceRows(last) : `<div class="dice"><div>${'<span class="die att ghost">?</span>'.repeat(ad)}</div><div>${'<span class="die def ghost">?</span>'.repeat(dd)}</div></div>`}
-  <p class="bm">${last ? `Você perde ${last.al}, defesa perde ${last.dl}. ` : ''}${ad} contra ${dd} dados${notes ? ' · ' + notes : ''}. Empate fica com a defesa${me.ab === 'tatico' ? ', exceto para você (Gênio Tático)' : ''}.</p>
+  <p class="bm">${last ? `Você perde ${last.al}, defesa perde ${last.dl}. ` : ''}${ad} contra ${dd} dados${notes ? ' · ' + notes : ''}. <b>Chance de vencer atacando até o fim: ${Math.round(100 * odds(i, j))}%</b>. Empate fica com a defesa${me.ab === 'tatico' ? ', exceto para você (Gênio Tático)' : ''}.</p>
   <div class="bb"><button class="pri" data-a="roll1" ${G.tr[i] < 2 ? 'disabled' : ''}>Atacar 1x</button><button data-a="blitz" ${G.tr[i] < 2 ? 'disabled' : ''}>Atacar até o fim</button><button data-a="bclose">Recuar</button></div>`;
 }
 async function doRoll(blitz) {
@@ -3380,10 +3469,10 @@ function renderSide() {
     <div class="stab">Estabilidade ${bar(F.stab)}</div>
     <p class="hint">${F.stab < 15 ? 'Crise: reforços pela metade e risco alto de revolta.' : F.stab < 35 ? 'Instável: províncias podem se rebelar no início do turno.' : 'Povo sob controle.'}${F.ww >= 3 ? ` Cansaço de guerra ${F.ww}: −${Math.floor(F.ww / 5)} de estabilidade por turno.` : ''}</p>
     <p class="hint">Governo <b>${esc(GOV[gov(me)].n)}</b>${anar(me) ? ' (anarquia)' : ''} · cultura ${F.cu} 🎭 (+${cultureInc(me)})${facFaith(me) ? ' · fé ' + esc(G.faiths[facFaith(me)].n) : ''} <button class="mini" data-a="govm">Governo e fé</button> <button class="mini" data-a="figm">Personagens${(F.gf || []).length ? ' •' : ''}</button> <button class="mini" data-a="vicm">Vitórias</button></p>
-    <p class="hint" title="Luxos, templos, arenas, teatros e festas sobem; cidades grandes, cansaço de guerra e impostos descem. Abaixo de 0: −10% de ouro e saber; abaixo de −10: perde estabilidade.">Felicidade <b>${hap(me)}</b>${hap(me) < 0 ? ' · povo infeliz: −10% de ouro e saber' : hap(me) >= 6 ? ' · atrai migrantes de vizinhos infelizes' : ''}</p>
-    <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>`;
+    <p class="hint" title="Luxos, templos, arenas, teatros e festas sobem; cidades grandes, cansaço de guerra e impostos descem. Abaixo de 0: −10% de ouro e saber; abaixo de −10: perde estabilidade.">Felicidade <b>${hap(me)}</b>${hap(me) < 0 ? ' · povo infeliz: −10% de ouro e saber' : hap(me) >= 6 ? ' · atrai migrantes de vizinhos infelizes' : ''}${G.sc.civ ? (c => ` · classes: ${c.cam} camponeses, ${c.art} artesãos, ${c.mer} mercadores, ${c.eru} eruditos`)(classes(me)) : ''}</p>
+    <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
-  $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda, −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
+  $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda (rotas +${routeGold(me)}), −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
     <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida: abra a árvore de tecnologias.'}</p>`;
   const forces = `<p class="forces">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '';
@@ -3545,6 +3634,7 @@ function startScenario(id, fid, diff, quiet, len) {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a;
+  if (TIPS[a]) setTimeout(() => tipOnce(a), 0); // UI-12
   if (a === 'tab') { $('#setup').dataset.tab = el.dataset.t; showSetup(); }
   else if (a === 'sc') { pickSc = el.dataset.s; showSetup(); $('#pick').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if (a === 'fp') { pickF = el.dataset.f; showSetup(); }
@@ -3593,6 +3683,7 @@ document.addEventListener('click', e => {
   else if (a === 'doff') { const x = G.offers.splice(+el.dataset.n, 1)[0]; if (x) { if (x.k === 'truce') { G.truce.add(tk(G.player, x.f)); log(G.player, `Você aceita a trégua de ${fname(x.f)}.`); } else sign(G.player, x.f, x.k); } render(); diploModal(); }
   else if (a === 'ddem') { const d = G.dem; if (d && Fa(G.player).gold >= d.g) { Fa(G.player).gold -= d.g; Fa(d.f).gold += d.g; remember(d.f, G.player, 'pagou nosso tributo', 10); remember(G.player, d.f, 'nos cobrou tributo', -15); log(G.player, `Você paga ${d.g} ouro de tributo a ${fname(d.f)}.`); G.dem = null; } render(); diploModal(); }
   else if (a === 'fund' || a === 'post') { if (G.turnF !== G.player) return; toast(civFound(G.player, +el.dataset.i, a === 'post') || (a === 'post' ? 'Posto avançado erguido.' : 'Aldeia fundada.')); render(); }
+  else if (a === 'buy') { toast(buyGood(G.player, el.dataset.d) || 'Bem comprado por 5 turnos.'); render(); routesModal(); }
   else if (a === 'corp') { if (G.turnF !== G.player) return; toast(openCorp(G.player, +el.dataset.i) || 'Filial aberta.'); render(); }
   else if (a === 'msl') { if (G.turnF !== G.player) return; toast(missile(G.player, +el.dataset.i) || 'Mísseis lançados.'); render(); }
   else if (a === 'vote') { G.cong.pv[el.dataset.k] = el.dataset.v === '1'; diploModal(); }

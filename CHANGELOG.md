@@ -1,5 +1,21 @@
 # Histórico de versões
 
+## v18 — 25/11/2026 · Acabamento (parte 15 do roteiro)
+
+**Parte 15** (UI-09 a UI-12, UI-14, E-35, crises de era, S-23, T-21, K-120 a K-122)
+
+- UI-11: o painel de batalha mostra a chance de vencer atacando até o fim, com os mesmos bônus de dado do combate.
+- UI-09: o painel lateral traz as notícias desde o seu último turno (eventos do mundo e o que aconteceu com você).
+- UI-14: no fim da partida, gráfico de pontos de cada facção ao longo das rodadas e linha do tempo dos marcos (eras, maravilhas, revoltas, capitais perdidas, vitórias à vista).
+- UI-12: na primeira vez que você abre comércio, diplomacia, governo, personagens, vitórias, catálogo ou tecnologias, uma dica curta explica o sistema.
+- UI-10: a dica do ouro separa a renda das rotas.
+- T-21 (modo Civilização): mercado mundial na tela de comércio. Compre o acesso a um bem por 5 turnos; o preço sobe quando poucos produzem.
+- S-23 (modo Civilização): classes sociais. Muitos eruditos sem universidade, mercadores sem rota, artesãos sem luxo ou camponeses sem templo custam felicidade. A dica da felicidade mostra as classes.
+- Crises de era (modo Civilização): a cada virada de era, 10 rodadas de queda de impérios, invasões em ondas ou, da era industrial em diante, crise do petróleo.
+- E-35: o acidente nuclear deixa o território inutilizável por 20 turnos.
+- Era 8, Futuro próximo (K-120 a K-122): inteligência artificial (+20% de saber), fusão (usina de fusão) e colonização espacial, que agora é a tecnologia da colônia espacial.
+- Fora desta versão: UI-12 em camadas por cenário (a dica de primeira vez cobre o essencial) e UI-13 em gaveta (o painel já se ajusta ao celular).
+
 ## v17 — 25/11/2026 · Modo Civilização (parte 14 do roteiro)
 
 **Parte 14** (MC-01 a MC-08, MC-10 a MC-16, MC-20 a MC-24, S-26, F-17, E-01 a E-07, IA-09, IA-10)
