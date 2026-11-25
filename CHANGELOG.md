@@ -1,5 +1,27 @@
 # Histórico de versões
 
+## v15 — 25/11/2026 · Eras industrial a informação (parte 12 do roteiro)
+
+**Parte 12** (K-60 a K-117, C-13, C-14, C-27 a C-30, C-45 a C-53, C-66, C-74 a C-76, C-86 a C-89, C-95, C-96, C-107 a C-114, C-123 a C-125, C-128, C-129, C-210 a C-215, A-08 a A-12, A-25 a A-29, L-06, L-09, L-10, T-04 a T-07, T-19 a T-22, S-15, G-09 a G-11, DP-40 a DP-42)
+
+- K-60 a K-117: **38 tecnologias novas** em quatro eras (Revolução Industrial, Era Moderna, Era Atômica e Era da Informação), cada uma com seu grupo no painel de tecnologias. Os cenários da Grande Guerra, da Segunda Guerra e da Guerra Fria começam sabendo as eras anteriores à sua.
+- **Bens manufaturados**: aço, máquinas, químicos, combustível, tecidos, energia, eletrônicos, bens de consumo e borracha saem de construções, não de jazidas, e entram na rede como qualquer bem. As cadeias são reais: a siderúrgica pede ferro e carvão, a metalúrgica pede aço e energia, a montadora pede máquinas, borracha e combustível.
+- Z-12 a Z-17: zonas cultural, industrial, energética, turística, tecnológica e aeroespacial.
+- **Construções novas**: aquicultura, agroindústria, seringal, reserva florestal, mina profunda, poço de petróleo, plataforma marítima e salina; tecelagem, siderúrgica, metalúrgica (+25% de produção), indústria química, refinaria, montadora, fábrica de bens de consumo, farmacêutica e fábrica de chips; shopping, escola pública, laboratório, centro de pesquisa, museu, rádio e TV, estádio, parque nacional, polícia e bairro residencial; base aérea, antiaéreo e silo de mísseis; termelétricas, hidrelétrica, usina nuclear e parque solar; ferrovia, rodovia, trem de alta velocidade, canal e aeroporto.
+- C-210 a C-215: Grande Canal Marítimo, Exposição Universal (tecnologias industriais 20% mais baratas), Estátua Monumental, Sede das Nações (+2 votos), Programa Espacial e Rede Mundial de Dados (+10% de saber e ouro).
+- C-123 a C-125 e L-06: pela ferrovia as tropas andam até 4 territórios, pelo trem de alta velocidade até 6; entre aeroportos seus há ponte aérea.
+- A-08 a A-12 e A-25 a A-29: infantaria de linha (anula a cavalaria), motorizada (anda 1 a mais), blindados (+2 fora de terreno fechado), mecanizada (+2 no ataque e na defesa), forças especiais (ignoram as defesas construídas), encouraçados, submarinos, porta-aviões e mísseis. K-89: com trincheiras, quem fica parado ganha +2.
+- L-09 e L-10: exército de 6+ em terra ocupada come da capital e, sem comida, perde tropa; frota inimiga maior ao lado corta suas rotas marítimas.
+- T-04 a T-07: rota oceânica (+5 ouro), oleoduto, rota aérea de carga (não sofre bloqueio) e rede digital entre capitais (+2 saber de cada lado).
+- T-19 a T-22: política de tarifas, monopólio de luxo (60% do mundo: +2 felicidade e +1 ouro por rota) e filiais de corporações pela bolsa de valores (+2 ouro cada).
+- S-15 e E-25: **poluição** de indústrias e termelétricas tira saúde; reservas e renováveis limpam. Com muita poluição no mundo, o mar sobe e vêm secas.
+- G-09 a G-11: regime de partido único, planejamento central e tecnocracia corporativa, com as cívicas Nacionalismo, Ideologias de massa e Globalização.
+- DP-40 a DP-42: o **Congresso Mundial** nasce quando metade do mundo conhece a diplomacia moderna. A cada 15 rodadas vota duas resoluções (embargo ao líder, proibir mísseis, jogos mundiais, ajuda ao mais fraco, limite de poluição); você vota no painel de diplomacia.
+- Usina nuclear tem pequeno risco de acidente. Armas nucleares ficam fora do jogo.
+- A IA abre filiais e lança mísseis.
+- Conserto: um comentário da parte 11 apagava sem querer o bônus de ouro da república e o ajuste de saber dos governos.
+- Desempenho: tecnologias e tropas de cada facção ficam guardadas por turno, para a IA não recalcular tudo a cada obra que avalia.
+
 ## v14 — 25/11/2026 · Personagens e eventos (parte 11 do roteiro)
 
 **Parte 11** (F-01 a F-03, F-10 a F-16, F-30 a F-38, E-10 a E-13, E-20 a E-34)
