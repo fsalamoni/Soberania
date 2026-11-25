@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v20 — 25/11/2026 · Guia da primeira partida e exportação no link online
+
+Continuação das pendências da revisão (UI-12 completo).
+
+- UI-12: guia em camadas no painel lateral. A etapa 1 acompanha o turno básico (reforços, campanha, ataque, obra, pesquisa, fim do turno); a etapa 2 apresenta comércio, diplomacia, governo e vitórias. Cada passo se marca sozinho quando você o faz, e o guia pode ser ocultado. O progresso fica guardado no navegador.
+- Mapa: os nomes de territórios que se sobreporiam são escondidos, mostrando primeiro os seus e as capitais. Ao aproximar, os demais aparecem.
+- Exportar arquivo agora funciona dentro do link online (pede confirmação antes de salvar). Fora dele, continua baixando direto.
+
 ## v19 — 25/11/2026 · Revisão geral de usabilidade
 
 Revisão depois do roteiro completo, olhando o jogo no computador e no celular.

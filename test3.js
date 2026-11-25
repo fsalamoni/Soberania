@@ -97,6 +97,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('[data-a=figm]');
   ok(await p.evaluate(() => /Grandes figuras/.test(document.querySelector('#modal').textContent) && /Governadores/.test(document.querySelector('#modal').textContent)), 'painel de personagens');
   await p.click('#modal [data-m="0"]');
+  ok(await p.evaluate(() => /Guia/.test(document.querySelector('.guide')?.textContent || '')), 'guia da primeira partida aparece');
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');

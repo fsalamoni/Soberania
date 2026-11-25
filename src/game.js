@@ -982,6 +982,24 @@ function eraCrisis() {
   if (k === 'pet') log(null, 'Crise de era: crise do petróleo. Quem não tem petróleo nem combustível perde 15% do ouro por 10 rodadas.');
   if (!G.auto) toast(G.log[0][1]);
 }
+// UI-12: guia em camadas. Primeiro o turno básico; depois comércio, diplomacia, governo e vitórias
+const GUIDE = [
+  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Em Ações, declare campanha para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
+  [['routes', 'Abra Comércio e veja onde cabem rotas'], ['dipl', 'Abra Diplomacia e veja o que cada facção aceita'], ['govm', 'Abra Governo e fé'], ['vicm', 'Abra Vitórias e veja quem está perto de vencer']],
+];
+let guideLv = (() => { try { return +(localStorage.getItem('sob_guia') || 0); } catch (e) { return 9; } })();
+const guideSet = v => { guideLv = v; try { localStorage.setItem('sob_guia', String(v)); } catch (e) { } };
+function guideDone(k) {
+  const me = G.player, F = Fa(me), g = G.guide || (G.guide = {}); if (g[k]) return true;
+  const ok = k === 'ref' ? G.turnF === me && G.phase !== 'ref' : k === 'camp' ? !!F.camp : k === 'obra' ? owned(me).some(i => G.q[i].length) : k === 'res' ? !!F.res : k === 'end' ? G.round > 1 : false;
+  if (ok) g[k] = 1; return ok;
+}
+function guideHtml() {
+  if (!G || G.auto || G.over || !G.player || guideLv >= GUIDE.length) return '';
+  const st = GUIDE[guideLv].map(([k, t]) => [guideDone(k), t]);
+  if (st.every(s => s[0])) { guideSet(guideLv + 1); toast(guideLv < GUIDE.length ? 'Guia: próxima etapa liberada.' : 'Guia concluído. Bom jogo!'); return guideHtml(); }
+  return `<div class="guide"><b>Guia · etapa ${guideLv + 1} de ${GUIDE.length}</b> <button class="mini" data-a="guidex">Ocultar guia</button><ul>${st.map(([ok, t]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${t}</li>`).join('')}</ul></div>`;
+}
 const mktHtml = me => { const g = goods(me), L = Object.keys(DEP).filter(d => !g.has(d) && G.order.some(o => o !== me && Fa(o).alive && real(o) && goodsAll(o).has(d))); return `<h4>Mercado mundial</h4><p class="hint">Compre o acesso a um bem por 5 turnos. O preço sobe quando poucos produzem.</p><p>${L.map(d => `<button class="mini" data-a="buy" data-d="${d}" ${Fa(me).gold >= mktPrice(d) ? '' : 'disabled'}>${DEP[d].ic} ${esc(DEP[d].n)} ${mktPrice(d)}💰</button>`).join(' ') || 'Nada à venda agora.'}</p>${bought(me).length ? `<p class="hint">Comprado: ${bought(me).map(d => DEP[d].n).join(', ')}</p>` : ''}`; };
 const coloPair = f =>{ for (const i of owned(f).filter(i => G.lv[i] >= 3).sort((a, b) => G.lv[b] - G.lv[a])) { const j = G.A[i].find(j => G.own[j] === f && G.lv[j] === 1 && !occupied(j)); if (j != null) return [i, j]; } return null; };
 const paOf = f => ECON.pa + agePA(f) + (has(f, 'adm') ? 1 : 0) + ({ rep: 1, abs: 1, dem: 2 }[gov(f)] || 0) + Math.min(2, Math.floor(owned(f).filter(i => G.lv[i] >= 3).length / 3)); // S-04
@@ -1309,6 +1327,7 @@ function diceFor(i, j) {
 }
 function roll(i, j) {
   const a = G.own[i], A = Fa(a), [ad, dd] = diceFor(i, j);
+  if (a === G.player) (G.guide = G.guide || {}).atk = 1;
   const R = Array.from({ length: ad }, d6).sort((x, y) => y - x), D = Array.from({ length: dd }, d6).sort((x, y) => y - x);
   const aw = armyOf(a), dw = armyOf(G.own[j]), op = OPEN.includes(G.ter[j]), hc = op && (aw.includes('cav') || aw.includes('kni')) && !dw.includes('lin');
   if (has(a, 'art') && goodOk(a, ['sli']) && G.tr[j] > 1 && d6() >= 5) G.tr[j]--; // K-53: canhão antes do combate
@@ -1526,10 +1545,14 @@ function saveModal() {
   const row = n => { const s = loadSave(SLOT(n)), sc = s && SCEN.find(x => x.id === s.sc); return `<div class="tech"><div><b>Espaço ${n}</b> <span class="hint">${sc ? esc(sc.n) + ' · rodada ' + s.round + ' · ' + new Date(s.at).toLocaleString('pt-BR') : 'vazio'}</span></div><button class="mini pri" data-a="slot" data-n="${n}">Salvar aqui</button></div>`; };
   modal(`<h2>Salvar partida</h2><p class="hint">Guarda o início do seu turno atual (rodada ${G.round}).</p><div class="techs">${[1, 2, 3].map(row).join('')}</div><div class="row"><button class="mini" data-a="export">Exportar arquivo</button></div>`, [['Fechar']]);
 }
+let DL = null; // capacidade de downloads do visualizador (null fora dele)
+try { window.claude?.use?.('downloads')?.then(d => { DL = d; }, () => {}); } catch (e) { }
 function exportSave() {
-  const s = G.snap || snapshot(), a = document.createElement('a');
+  const s = G.snap || snapshot(), name = `soberania-${G.sc.id}-rodada${G.round}.json`;
+  if (DL) { DL.save({ filename: name, data: s }).then(() => toast('Arquivo da partida salvo.'), e => toast(e && e.code === 'declined' ? 'Exportação cancelada.' : 'Este aparelho não deixou salvar o arquivo. Use os espaços de salvamento.')); return; }
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([s], { type: 'application/json' }));
-  a.download = `soberania-${G.sc.id}-rodada${G.round}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function importSave(file) {
   file.text().then(t => { let s; try { s = JSON.parse(t); } catch (e) { } if (!restore(s)) $('#resume').insertAdjacentHTML('beforeend', '<p class="hint">Arquivo de partida inválido ou de uma versão antiga.</p>'); });
@@ -1941,6 +1964,17 @@ function setVB() {
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
   B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); });
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
+  if (svg.classList.contains('names')) declutter(k);
+}
+let NM = null;
+function declutter(k) { // ponytail: caixas aproximadas pelo número de letras, O(n²) com n até 160
+  if (!NM || NM.length !== B.length || !NM[0].isConnected) NM = B.map(g => g.querySelector('.nm'));
+  const me = G.player, pr = i => G.own[i] === me ? 0 : real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 2, box = [];
+  G.m.terr.map((t, i) => i).sort((a, b) => pr(a) - pr(b)).forEach(i => {
+    const t = G.m.terr[i], w = t.n.length * 3.1 * k, x = t.x, y = t.y + 23 * k;
+    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 13 * k);
+    NM[i].style.visibility = hit ? 'hidden' : ''; if (!hit) box.push([x, y, w]);
+  });
 }
 function clampVB() {
   const m = G.m; vb.w = Math.max(m.w / 10, Math.min(m.w, vb.w)); vb.h = vb.w * m.h / m.w;
@@ -2255,7 +2289,7 @@ function renderSide() {
     <p class="hint">${F.stab < 15 ? 'Crise: reforços pela metade e risco alto de revolta.' : F.stab < 35 ? 'Instável: províncias podem se rebelar no início do turno.' : 'Povo sob controle.'}${F.ww >= 3 ? ` Cansaço de guerra ${F.ww}: −${Math.floor(F.ww / 5)} de estabilidade por turno.` : ''}</p>
     <p class="hint">Governo <b>${esc(GOV[gov(me)].n)}</b>${anar(me) ? ' (anarquia)' : ''} · cultura ${F.cu} 🎭 (+${cultureInc(me)})${facFaith(me) ? ' · fé ' + esc(G.faiths[facFaith(me)].n) : ''} <button class="mini" data-a="govm">Governo e fé</button> <button class="mini" data-a="figm">Personagens${(F.gf || []).length ? ' •' : ''}</button> <button class="mini" data-a="vicm">Vitórias</button></p>
     <p class="hint" title="Luxos, templos, arenas, teatros e festas sobem; cidades grandes, cansaço de guerra e impostos descem. Abaixo de 0: −10% de ouro e saber; abaixo de −10: perde estabilidade.">Felicidade <b>${hap(me)}</b>${hap(me) < 0 ? ' · povo infeliz: −10% de ouro e saber' : hap(me) >= 6 ? ' · atrai migrantes de vizinhos infelizes' : ''}${G.sc.civ ? (c => ` · classes: ${c.cam} camponeses, ${c.art} artesãos, ${c.mer} mercadores, ${c.eru} eruditos`)(classes(me)) : ''}</p>
-    <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}`;
+    <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}${guideHtml()}`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
   $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda (rotas +${routeGold(me)}), −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
     <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida. <button class="mini" data-a="techs">Escolher pesquisa</button>'}</p>`;
@@ -2420,6 +2454,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a;
   if (TIPS[a]) setTimeout(() => tipOnce(a), 0); // UI-12
+  if (G && GUIDE[1].some(s => s[0] === a)) (G.guide = G.guide || {})[a] = 1;
   if (a === 'tab') { $('#setup').dataset.tab = el.dataset.t; showSetup(); }
   else if (a === 'sc') { pickSc = el.dataset.s; showSetup(); $('#pick').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if (a === 'fp') { pickF = el.dataset.f; showSetup(); }
@@ -2468,6 +2503,7 @@ document.addEventListener('click', e => {
   else if (a === 'doff') { const x = G.offers.splice(+el.dataset.n, 1)[0]; if (x) { if (x.k === 'truce') { G.truce.add(tk(G.player, x.f)); log(G.player, `Você aceita a trégua de ${fname(x.f)}.`); } else sign(G.player, x.f, x.k); } render(); diploModal(); }
   else if (a === 'ddem') { const d = G.dem; if (d && Fa(G.player).gold >= d.g) { Fa(G.player).gold -= d.g; Fa(d.f).gold += d.g; remember(d.f, G.player, 'pagou nosso tributo', 10); remember(G.player, d.f, 'nos cobrou tributo', -15); log(G.player, `Você paga ${d.g} ouro de tributo a ${fname(d.f)}.`); G.dem = null; } render(); diploModal(); }
   else if (a === 'fund' || a === 'post') { if (G.turnF !== G.player) return; toast(civFound(G.player, +el.dataset.i, a === 'post') || (a === 'post' ? 'Posto avançado erguido.' : 'Aldeia fundada.')); render(); }
+  else if (a === 'guidex') { guideSet(GUIDE.length); render(); }
   else if (a === 'buy') { toast(buyGood(G.player, el.dataset.d) || 'Bem comprado por 5 turnos.'); render(); routesModal(); }
   else if (a === 'corp') { if (G.turnF !== G.player) return; toast(openCorp(G.player, +el.dataset.i) || 'Filial aberta.'); render(); }
   else if (a === 'msl') { if (G.turnF !== G.player) return; toast(missile(G.player, +el.dataset.i) || 'Mísseis lançados.'); render(); }
