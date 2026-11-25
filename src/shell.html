@@ -107,6 +107,10 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 #roads line{stroke:#d8c28a;stroke-linecap:round;pointer-events:none}
 #roads .rd1{stroke-width:2.2;stroke-dasharray:5 3;opacity:.85}
 #roads .rd2{stroke-width:3.2;opacity:.95}
+#roads .rt{stroke:#5fb3a8;stroke-width:1.6;stroke-dasharray:2 6;opacity:.55;animation:flow 1.6s linear infinite}
+#roads .rt.me{stroke:#7fe0d0;stroke-width:2.4;opacity:.9}
+@keyframes flow{to{stroke-dashoffset:-16}}
+@media (prefers-reduced-motion:reduce){#roads .rt{animation:none}}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#000c;border:1px solid var(--brass);padding:7px 14px;border-radius:8px;font-size:13px;max-width:90%;text-align:center}
 #battle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}

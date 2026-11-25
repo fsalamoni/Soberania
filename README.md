@@ -95,7 +95,7 @@ O plano completo está em [docs/levantamento-sistemas.md](docs/levantamento-sist
 | 3 | Recursos e zonas de especialização: terreno, jazidas, povoamento e lentes do mapa (feita na v6) |
 | 4 | Catálogo de construções, eras 1 a 3, e maravilhas do mundo (feita na v7) |
 | 5 | Estradas, portos e rede de bens (feita na v8) |
-| 6 | Comércio e rotas |
+| 6 | Comércio e rotas (feita na v9) |
 | 7 | Tecnologias e tropas por era |
 | 8 | População e sociedade |
 | 9 | Diplomacia |

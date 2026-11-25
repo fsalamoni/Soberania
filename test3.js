@@ -71,6 +71,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('#modal [data-m="0"]');
   // parte 5: estrada nos dois lados liga a rede e aparece no mapa; remanejamento anda 2 pela estrada
   ok(await p.evaluate(() => { const G = window.__sob.G, a = G.ix['Rio Grande do Sul'], b = G.ix['Santa Catarina']; if (G.own[b] !== 'fa') return 'skip'; G.bld[a].push('est'); G.bld[b].push('est'); window.__sob.render(); const n = document.querySelectorAll('#roads line').length; G.bld[a].pop(); G.bld[b].pop(); window.__sob.render(); return n === 1; }), 'estrada entre dois territórios aparece no mapa');
+  // parte 6: painel de comércio abre e lista rotas
+  await p.click('[data-a=routes]');
+  ok(await p.evaluate(() => /Comércio/.test(document.querySelector('#modal').textContent)), 'painel de comércio abre');
+  await p.click('#modal [data-m="0"]');
   await p.click('[data-a=lens][data-l=net]');
   await p.screenshot({ path: shot('lente-rede') });
   await p.click('[data-a=lens][data-l=ter]');

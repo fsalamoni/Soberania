@@ -107,6 +107,10 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 #roads line{stroke:#d8c28a;stroke-linecap:round;pointer-events:none}
 #roads .rd1{stroke-width:2.2;stroke-dasharray:5 3;opacity:.85}
 #roads .rd2{stroke-width:3.2;opacity:.95}
+#roads .rt{stroke:#5fb3a8;stroke-width:1.6;stroke-dasharray:2 6;opacity:.55;animation:flow 1.6s linear infinite}
+#roads .rt.me{stroke:#7fe0d0;stroke-width:2.4;opacity:.9}
+@keyframes flow{to{stroke-dashoffset:-16}}
+@media (prefers-reduced-motion:reduce){#roads .rt{animation:none}}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#000c;border:1px solid var(--brass);padding:7px 14px;border-radius:8px;font-size:13px;max-width:90%;text-align:center}
 #battle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}
@@ -268,7 +272,7 @@ const NG = { ant: 'ant', pre: 'ant', med: 'med', jap: 'med', xix: 'pol', xx: 'mo
 const RES = { gold: ['💰', 'Ouro'], sci: ['🔬', 'Saber'], pre: ['⭐', 'Prestígio'] };
 // freeT/perT: tropas acima de freeT por território custam 1 ouro a cada perT (A-44); occ: turnos de ocupação (D-05);
 // sup: distância máxima de uma base de suprimento sem perder dado (D-07); cq: conquistas por turno.
-const ECON = { pa: 3, troop: 2, fest: 2, agit: 3, rush: 2, rushW: 3, freeT: 3, perT: 3, occ: 3, sup: 3, cq: 1 };
+const ECON = { pa: 3, troop: 2, fest: 2, agit: 3, rush: 2, rushW: 3, freeT: 3, perT: 3, occ: 3, sup: 3, cq: 1, route: 4 };
 // v5, parte 1 (D-01, D-03, D-04): duração da partida. r = rodadas, k = fator de custo de obras e tecnologias,
 // hold = turnos seguidos com o objetivo cumprido, leg = legado para vencer. Nenhuma vitória, exceto dominação, antes de 1/3 das rodadas.
 const LEN = {
@@ -956,6 +960,7 @@ function newGame(sc, player, diff, len) {
   g.ter = []; g.riv = []; g.dep = [];
   m.terr.forEach((t, i) => { const [a, b] = (geo[t.n] || 'p').split(' '); g.ter[i] = a[0]; g.riv[i] = a.includes('r'); g.dep[i] = (b || '').split(',').filter(d => d && (DEP[d].era || 0) <= elv); });
   g.lv = Array(N).fill(1); g.food = Array(N).fill(0);
+  g.routes = []; g.emb = new Set(); // parte 6
   for (const d of sc.f) {
     const F = { ...d, real: true, stab: d.st, cards: [], alive: true, entered: !d.late, capI: need(d.cap), passive: !!d.passive, reinf: 0, conq: false, ofs: false, airX: 0, planes: 0, navLeft: 0, nav: d.nav || 1, gold: 3, sci: 0, pre: 2, tech: [], pa: 0, camp: false, recOn: false, tradeOn: false, bldOn: false, res: null, ww: 0, hold: 0, recQ: {}, upk: 0, nB: 0, cq: 0 };
     F.obj = objOf(d, m, g.relics);
@@ -1091,7 +1096,7 @@ function netOf(f) {
   return { core, linked };
 }
 const goodsAt = T => { const s = new Set(); for (const i of T) if (!occupied(i)) worked(i).forEach(d => s.add(d)); return s; };
-const goods = f => goodsAt(netOf(f).linked);
+const goods = f => { const s = goodsAt(netOf(f).linked); if (real(f)) routeGoods(f).forEach(d => s.add(d)); return s; };
 const goodsAll = f => goodsAt(owned(f));
 const luxOf = f => [...goods(f)].filter(d => DEP[d].lux).length;
 function yieldOf(i) {
@@ -1105,6 +1110,7 @@ function yieldOf(i) {
     if (S.z) { const r = Object.keys(S.y)[0]; y[r] += Math.min(3, G.A[i].filter(j => G.own[j] === f && nb(j, k)).length); } // polo
   }
   for (const d of worked(i)) for (const [r, v] of Object.entries(DEP[d].y)) y[r] += v;
+  y.prod += G.routes.filter(r => r.k === 'int' && r.b === i && rLive(r)).length; // T-01
   if (occupied(i)) for (const r in y) y[r] = Math.floor(y[r] / 2);
   return y;
 }
@@ -1126,8 +1132,8 @@ function income(f) {
   const diff = f !== G.player && !G.auto ? (G.diff === 2 ? 2 : G.diff === 0 ? -1 : 0) : 0;
   const y = T.reduce((s, i) => { const v = yieldOf(i); for (const r in s) s[r] += v[r]; return s; }, { gold: 0, sci: 0, pre: 0, stab: 0 });
   return {
-    gold: Math.max(1, y.gold + diff),
-    sci: Math.round((1 + y.sci) * (hasW(f, 'obi') ? 1.25 : 1)), stab: y.stab,
+    gold: Math.max(1, y.gold + diff + routeGold(f)),
+    sci: Math.round((1 + y.sci + routeSci(f)) * (hasW(f, 'obi') ? 1.25 : 1)), stab: y.stab,
     pre: y.pre + capsHeld(f) + countB(f, 'tem') + 2 * countB(f, 'mar') + (has(f, 'ret') ? 1 : 0) + (F.stab >= 70 ? 1 : 0),
   };
 }
@@ -1226,7 +1232,6 @@ function payUpkeep(f) {
   if (off) log(f, `${fname(f)} sem ouro: ${off} construção(ões) desativada(s) neste turno.`);
   F.upk = u.b + u.t; F.gold = pay;
 }
-const techCost = t => t.cost * 2 * G.len.k;
 const techOk = (f, t) => !has(f, t.k) && (t.req || []).every(r => has(f, r));
 const inflCost = (f, j) => Math.max(1, G.tr[j] + 1 - (has(f, 'ret') ? 1 : 0));
 const canRecruitAt = (f, i) => G.own[i] === f && (i === Fa(f).capI || nb(i, 'qua'));
@@ -1271,6 +1276,8 @@ function act(f, a, x, y) {
   } else if (a === 'tax') {
     spend(f); const g = Math.ceil(owned(f).length / 2); F.gold += g; F.stab = Math.max(0, F.stab - 8);
     log(f, `${fname(f)} cobra impostos extraordinários (+${g} ouro).`);
+  } else if (a === 'rota') {
+    return openRoute(f, x, y);
   } else if (a === 'trade') {
     if (F.tradeOn) return 'O comércio já está aberto neste turno.'; spend(f); F.tradeOn = true;
   } else if (a === 'infl') {
@@ -1293,11 +1300,62 @@ function recruit(f, i) {
 function research(f) {
   const F = Fa(f), t = F.res && TK[F.res];
   if (!t || !techOk(f, t)) { F.res = null; return; }
-  if (F.sci < techCost(t)) return;
-  F.sci -= techCost(t); F.tech.push(t.k); F.res = null;
+  if (F.sci < techCost(t, f)) return;
+  F.sci -= techCost(t, f); F.tech.push(t.k); F.res = null;
   log(f, `${fname(f)} desenvolve ${tName(t.k)}.`);
 }
 // comércio aberto: 2 por 1 (3 por 2 com a tecnologia de comércio)
+// ---------- parte 6: comércio e rotas (T-01 a T-03, T-10 a T-14, T-16 a T-18) ----------
+// rota = { f: quem abriu, o: parceiro, a: ponta de f, b: ponta do parceiro, k: tipo, gd: bens que f recebe, s: rodada em que começa a render }
+const RT = { int: { n: 'Rota interna', ic: '🛒', g: 0 }, car: { n: 'Caravana', ic: '🐪', g: 2 }, mar: { n: 'Rota marítima', ic: '⛵', g: 3 } };
+const routeMax = f => countB(f, 'mer') + countB(f, 'por') + countB(f, 'ban'); // T-11
+const myRoutes = f => G.routes.filter(r => r.f === f);
+const rLive = r => G.round >= r.s && r.cut !== G.round;
+function landSteps(a, b, max, ok) { // passos por terra de a até b, sem passar de max; ok(i) filtra o caminho
+  let fr = [a]; const seen = new Set([a]);
+  for (let s = 1; s <= max; s++) { fr = fr.flatMap(i => G.A[i].filter(j => !isSea(i, j) && !seen.has(j) && (j === b || ok(j)) && seen.add(j))); if (seen.has(b)) return s; }
+  return 99;
+}
+function routeCands(f) {
+  if (myRoutes(f).length >= routeMax(f)) return [];
+  const out = [], mine = owned(f), core = netOf(f).core, gf = goods(f), has2 = (a, b) => G.routes.some(r => r.a === a && r.b === b);
+  const give = o => [...goods(o)].filter(d => !gf.has(d));
+  for (const a of mine) {
+    if (nb(a, 'mer')) for (const b of mine) if (b !== a && nb(b, 'mer') && !core.has(b) && !has2(a, b) && landSteps(a, b, 6, j => G.own[j] === f) < 99) out.push({ f, o: f, a, b, k: 'int', gd: [] });
+    if (nb(a, 'car')) for (let b = 0; b < G.N; b++) { const o = G.own[b]; if (real(o) && o !== f && peace(f, o) && !G.emb.has(tk(f, o)) && nb(b, 'mer') && !has2(a, b) && landSteps(a, b, 4, () => true) < 99) out.push({ f, o, a, b, k: 'car', gd: give(o).slice(0, 1) }); }
+    if (nb(a, 'por') && nb(a, 'arm')) for (let b = 0; b < G.N; b++) { const o = G.own[b]; if (real(o) && o !== f && peace(f, o) && !G.emb.has(tk(f, o)) && nb(b, 'por') && !has2(a, b)) out.push({ f, o, a, b, k: 'mar', gd: give(o).slice(0, 2) }); }
+  }
+  out.forEach(r => r.v = RT[r.k].g + 1.2 * r.gd.length + (r.k === 'int' ? 1.5 : 0) + (r.o !== f && Fa(r.o).tech.some(t => !has(f, t)) ? .8 : 0));
+  return out.sort((x, y) => y.v - x.v);
+}
+function openRoute(f, a, b) {
+  const r = routeCands(f).find(r => r.a === a && r.b === b); if (!r) return 'Rota indisponível.';
+  if (Fa(f).gold < ECON.route) return 'Ouro insuficiente.';
+  if (!spend(f)) return 'Sem pontos de ação.';
+  Fa(f).gold -= ECON.route; r.s = G.round + 1; delete r.v; G.routes.push(r); // T-10: começa a render no próximo turno
+  log(f, `${fname(f)} abre ${RT[r.k].n.toLowerCase()} de ${tname(a)} a ${tname(b)}${r.o !== f ? ' com ' + fname(r.o) : ''}${r.gd.length ? ', trazendo ' + r.gd.map(d => DEP[d].n.toLowerCase()).join(' e ') : ''}.`);
+  return '';
+}
+// rotas que perderam a ponta, a construção ou a paz se desfazem
+function checkRoutes() {
+  G.routes = G.routes.filter(r => {
+    const ok = G.own[r.a] === r.f && G.own[r.b] === r.o && (r.o === r.f || (peace(r.f, r.o) && !G.emb.has(tk(r.f, r.o)))) && (r.k === 'int' ? nb(r.a, 'mer') && nb(r.b, 'mer') : r.k === 'car' ? nb(r.a, 'car') : nb(r.a, 'por') && nb(r.a, 'arm') && nb(r.b, 'por'));
+    if (!ok) log(r.f, `A ${RT[r.k].n.toLowerCase()} de ${fname(r.f)} entre ${tname(r.a)} e ${tname(r.b)} se desfaz.`);
+    return ok;
+  });
+}
+const routeGold = f => G.routes.reduce((s, r) => s + (rLive(r) && (r.f === f || r.o === f) && r.f !== r.o ? RT[r.k].g : 0), 0);
+const routeSci = f => G.routes.filter(r => rLive(r) && (r.f === f || r.o === f) && r.f !== r.o && r.k === 'car' && Fa(r.f === f ? r.o : r.f).tech.some(t => !has(f, t))).length;
+const routeGoods = f => G.routes.filter(r => r.f === f && rLive(r)).flatMap(r => r.k === 'int' ? worked(r.b) : r.gd); // T-13
+// T-14: rota com quem já tem a tecnologia barateia 20%
+const techCost = (t, f) => Math.round(t.cost * 2 * G.len.k * (f && G.routes.some(r => rLive(r) && r.f !== r.o && (r.f === f || r.o === f) && has(r.f === f ? r.o : r.f, t.k)) ? .8 : 1));
+function routesModal() {
+  const me = G.player, F = Fa(me), my = G.turnF === me, act = G.routes.filter(r => r.f === me || r.o === me), c = routeCands(me).slice(0, 10);
+  const row = (r, btn) => `<div class="tech"><div><b>${RT[r.k].ic} ${RT[r.k].n}</b> <span class="hint">${esc(tname(r.a))} → ${esc(tname(r.b))}${r.o !== r.f ? ' · ' + esc(fname(r.f === me ? r.o : r.f)) : ''}${RT[r.k].g ? ` · +${RT[r.k].g}💰 cada lado` : ' · +1⚒ no destino e os bens dele na rede'}${r.gd.length ? ' · traz ' + r.gd.map(d => DEP[d].ic + ' ' + DEP[d].n).join(', ') : ''}${r.s > G.round ? ' · começa no próximo turno' : ''}</span></div>${btn || ''}</div>`;
+  modal(`<h2>Comércio</h2><p class="hint">Rotas abertas por você: ${myRoutes(me).length}/${routeMax(me)} (1 por mercado, porto e banco). Abrir custa 1 ação e ${ECON.route} ouro. Caravana pede caravançará e um mercado alheio a até 4 territórios; rota marítima, porto com armazém alfandegário e um porto alheio; rota interna, mercado nas duas pontas. Bens recebidos contam como ligados para as obras, e rota com quem sabe mais barateia a pesquisa em 20%.</p>
+    <h4>Ativas</h4><div class="techs">${act.length ? act.map(r => row(r)).join('') : '<p class="hint">Nenhuma.</p>'}</div>
+    <h4>Possíveis</h4><div class="techs">${c.length ? c.map(r => row(r, `<button class="mini pri" data-a="route" data-i="${r.a}" data-j="${r.b}" ${my && F.pa > 0 && F.gold >= ECON.route ? '' : 'disabled'}>Abrir</button>`)).join('') : '<p class="hint">Nenhuma agora: construa mercado, caravançará ou porto com armazém, e faça paz com vizinhos.</p>'}</div>`, [['Fechar']]);
+}
 function tradeRes(f, a, b) {
   const F = Fa(f), [p, q] = has(f, 'com') ? [3, 2] : [2, 1];
   if (!F.tradeOn || a === b || F[a] < p) return false;
@@ -1398,6 +1456,9 @@ function conquer(i, j, n) {
   // P-08: o conquistador fica com metade do progresso das obras; maravilha em andamento se perde
   G.q[j] = real(a) ? G.q[j].filter(x => !STRUCT[x.k].wonder).map(x => ({ ...x, p: Math.floor(x.p / 2) })).slice(0, qMax(a)) : [];
   if (real(a)) { Fa(a).conq = true; Fa(a).cq++; G.occ[j] = ECON.occ; } else G.occ[j] = 0;
+  // T-16: pilhagem. Quem toma a ponta de uma rota alheia leva o ouro de 2 turnos dela
+  if (real(a)) for (const r of G.routes) if ((r.a === j || r.b === j) && r.f !== a && r.o !== a && RT[r.k].g) { Fa(a).gold += 2 * RT[r.k].g; log(a, `${fname(a)} pilha a ${RT[r.k].n.toLowerCase()} em ${tname(j)} (+${2 * RT[r.k].g} ouro).`); }
+  checkRoutes();
   if (real(d)) {
     const D = Fa(d); D.stab = Math.max(0, D.stab - 2); D.ww = Math.min(30, D.ww + 2);
     if (D.capI === j) { D.stab = Math.max(0, D.stab - 20); log(d, `${fname(d)} perde a capital ${tname(j)}!`); }
@@ -1432,6 +1493,8 @@ function beginTurn(f) {
   F.conq = false; F.cq = 0; F.ofs = false; G.phase = 'ref'; G.sel = G.tgt = null; G.card = null; G.mode = null; G.seaUsed = new Set(); G.mv = []; G.arr = [];
   for (const [i, n] of Object.entries(F.recQ)) if (G.own[i] === f) G.tr[i] += n;
   F.recQ = {};
+  checkRoutes();
+  for (const r of myRoutes(f)) if (r.k === 'mar' && rLive(r) && navOf(f) < 2 && rnd() < 1 / 6) { r.cut = G.round; log(f, `Piratas atacam a rota marítima de ${fname(f)} saindo de ${tname(r.a)}: ela não rende nesta rodada.`); } // T-17
   const inc = income(f); F.gold += inc.gold; F.sci += inc.sci; F.pre += inc.pre;
   payUpkeep(f); produce(f); grow(f); research(f);
   F.navLeft = navOf(f); F.planes = planesOf(f);
@@ -1559,14 +1622,14 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = { stab: X.stab, cards: X.cards, alive: X.alive, entered: X.entered, team: X.team, passive: X.passive, L: X.L, ab: X.ab, airX: X.airX, gold: X.gold, sci: X.sci, pre: X.pre, tech: X.tech, res: X.res, ww: X.ww, hold: X.hold, recQ: X.recQ }; });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, routes: G.routes, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 function restore(s) {
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   render(); loop(); return true;
 }
@@ -1656,7 +1719,8 @@ function aiOptions(f) {
   if (F.pre >= ECON.agit + 2) { const j = border.flatMap(i => G.A[i]).find(j => real(G.own[j]) && hostile(f, j) && Fa(G.own[j]).stab < 45); if (j != null) o.push([1.8, 'agit', j]); }
   if (F.stab > 65) o.push([1.3, 'tax']);
   const next = F.res && TK[F.res];
-  if (!F.tradeOn && next && F.gold >= 8 && (techCost(next) - F.sci) * 2 <= F.gold - 3) o.push([2.6, 'trade']);
+  if (F.gold >= ECON.route + 2) { const r = routeCands(f)[0]; if (r) o.push([2.6 + r.v * .45, 'rota', r.a, r.b]); } // parte 6
+  if (!F.tradeOn && next && F.gold >= 8 && (techCost(next, f) - F.sci) * 2 <= F.gold - 3) o.push([2.6, 'trade']);
   return o;
 }
 // IA de obras: valor de cada construção num território; manutenção só se o ouro aguentar
@@ -1737,7 +1801,7 @@ function aiGovern(f) {
     }
     if (a === 'trade') {
       const next = F.res && TK[F.res];
-      while (next && F.sci < techCost(next) && F.gold > 6 && tradeRes(f, 'gold', 'sci'));
+      while (next && F.sci < techCost(next, f) && F.gold > 6 && tradeRes(f, 'gold', 'sci'));
     }
     if (a === 'obras') aiWorks(f);
   }
@@ -1891,6 +1955,7 @@ function renderMap() {
   // parte 5: estradas como linhas entre vizinhos que têm estrada (do mesmo dono)
   const T = G.m.terr, rl = [];
   for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) rl.push(`<line x1="${T[i].x}" y1="${T[i].y}" x2="${T[j].x}" y2="${T[j].y}" class="rd${Math.min(road(i), road(j))}"/>`);
+  for (const r of G.routes) rl.push(`<line x1="${T[r.a].x}" y1="${T[r.a].y}" x2="${T[r.b].x}" y2="${T[r.b].y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}"/>`); // parte 6
   $('#roads').innerHTML = rl.join('');
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;
@@ -2002,7 +2067,7 @@ function techModal() {
   const me = G.player, F = Fa(me);
   const si = income(me).sci;
   const row = t => {
-    const own = has(me, t.k), ok = techOk(me, t), on = F.res === t.k, can = ok && !on && G.turnF === me, c = techCost(t);
+    const own = has(me, t.k), ok = techOk(me, t), on = F.res === t.k, can = ok && !on && G.turnF === me, c = techCost(t, me);
     const req = (t.req || []).map(tName).join(' e '), left = Math.max(0, c - F.sci), eta = left ? Math.ceil(left / si) : 0;
     return `<div class="tech ${own ? 'own' : ok ? '' : 'lock'}"><div><b>${esc(tName(t.k))}</b> <span class="hint">nível ${t.t} · ${c} 🔬${req ? ' · exige ' + esc(req) : ''}</span><p>${esc(t.fx)}</p>${on ? `<p class="hint">${pbar(F.sci, c)} ${eta ? `pronta em ${eta} turno(s)` : 'pronta no início do próximo turno'}</p>` : ''}</div>${own ? '<span class="ok">✓</span>' : on ? '<span class="ok">em pesquisa</span>' : `<button class="mini ${can ? 'pri' : ''}" data-a="tech" data-k="${t.k}" ${can ? '' : 'disabled'}>Pesquisar</button>`}</div>`;
   };
@@ -2149,7 +2214,7 @@ function renderSide() {
     <div class="obj"><b>Objetivo</b> ${esc(objText(F))}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>`;
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res];
   $('#me').innerHTML += `<div class="res"><span title="Ouro: tropas, apressar obras e manutenção. Por turno: +${inc.gold} de renda, −${u.b} de construções, −${u.t} de soldo.">💰 <b>${F.gold}</b> <i>${net >= 0 ? '+' : ''}${net}</i></span><span title="Saber: vai para a pesquisa em andamento${rt ? ' (' + esc(tName(rt.k)) + ', ' + techCost(rt) + ')' : ''}">🔬 <b>${F.sci}</b> <i>+${inc.sci}</i></span><span title="Prestígio: influência política">⭐ <b>${F.pre}</b> <i>+${inc.pre}</i></span><span title="Legado: 2 por tecnologia, 1 por construção, 5 pela Maravilha. ${legWin()} vence a partir da rodada ${minWin()}.">🏛 <b>${legacy(me)}</b>/${legWin()}</span></div>
-    <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt))} ${F.sci}/${techCost(rt)}` : 'Nenhuma pesquisa escolhida: abra a árvore de tecnologias.'}</p>`;
+    <p class="hint">${rt ? `Pesquisando ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : 'Nenhuma pesquisa escolhida: abra a árvore de tecnologias.'}</p>`;
   const forces = `<p class="forces">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '';
   if (G.over) ph = `<p>Partida encerrada.</p><button class="pri" data-a="menu">Novo jogo</button>`;
@@ -2183,7 +2248,7 @@ function renderSide() {
         ${Bt('act', 'agit', `Agitadores <small>${ECON.agit}⭐</small>`, 'Uma facção rival perde 15 de estabilidade.', noPA || F.pre < ECON.agit, G.mode === 'agit')}</div></div>
       <div class="grp"><b>💰 Economia</b><div class="row">
         ${Bt('act', 'tax', 'Impostos', `+${Math.ceil(owned(me).length / 2)} de ouro agora, −8 de estabilidade.`, noPA, false)}
-        ${Bt('act', 'trade', F.tradeOn ? 'Mercado aberto' : 'Comércio', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', !F.tradeOn && noPA, F.tradeOn)}</div></div>
+        ${Bt('act', 'trade', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', !F.tradeOn && noPA, F.tradeOn)}<button class="ab2" data-a="routes">Rotas ${myRoutes(me).length}/${routeMax(me)}</button></div></div>
       ${forces}<button class="pri wide" data-a="toMov">Remanejar →</button><button class="wide ghost" data-a="end">Encerrar turno</button>`;
   } else {
     const left = G.mv.reduce((s, v) => s + (v || 0), 0);
@@ -2212,7 +2277,7 @@ function renderSide() {
     const rel = f === me ? 'você' : !X.entered ? 'ainda neutro' : !alive ? 'eliminado' : allied(me, f) ? 'aliado' : peace(me, f) ? 'trégua' : 'guerra';
     let act = '';
     if (my && alive && f !== me && !allied(me, f)) {
-      if (G.truce.has(tk(me, f))) act = G.confirmBrk === f ? `<button class="mini bad" data-a="dok" data-f="${f}">Confirmar (−15)</button><button class="mini" data-a="dno">Não</button>` : `<button class="mini" data-a="dbrk" data-f="${f}">Romper</button>`;
+      if (G.truce.has(tk(me, f))) act = G.confirmBrk === f ? `<button class="mini bad" data-a="dok" data-f="${f}">Confirmar (−15)</button><button class="mini" data-a="dno">Não</button>` : `<button class="mini" data-a="dbrk" data-f="${f}">Romper</button><button class="mini" data-a="demb" data-f="${f}" title="T-18: corta e proíbe as rotas comerciais com esta facção">${G.emb.has(tk(me, f)) ? 'Suspender embargo' : 'Embargo'}</button>`;
       else act = (G.cool[f] || 0) > G.round ? '<span class="hint">aguarde</span>' : `<button class="mini" data-a="dpro" data-f="${f}">Propor trégua</button>`;
     }
     return `<div class="fr ${alive ? '' : 'dead'}"><i class="dot" style="background:${X.c}"></i><div class="fn"><b>${esc(X.n)}</b><span>${esc(X.L)} · ${owned(f).length} terr. · ${power(f)} tropas · ${X.cards.length} cartas · estab. ${Math.round(X.stab)}</span></div><span class="rel ${rel}">${rel}</span>${act}</div>`;
@@ -2238,6 +2303,7 @@ function rules() {
   <p><b>Terra e povo.</b> Cada território tem terreno (lente Terreno), talvez rio e litoral, e jazidas (lente Recursos). A comida que sobra enche o estoque e faz o território crescer: aldeia, vila (exige estoque), cidade (exige também aqueduto) e metrópole (exige saneamento). Cada nível consome mais comida; com fome, o território encolhe. Conquistado, perde um nível. O nível dá ouro, saber, reforços (+1 ação a cada 3 cidades) e vagas de zona: aldeia 1, vila 2, cidade 3, metrópole 4. Zonas de recurso (agrícola, pecuária, pesqueira, florestal, mineração) exigem o terreno certo e exploram as jazidas do território; vizinhos seus com a mesma zona formam polo (+1 cada, até +3). Cada tipo de luxo explorado dá +1 de estabilidade por turno (até +4); pedra e madeira barateiam obras.</p>
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
+  <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>2. Ações.</b> Você tem 3 pontos de ação por turno (4 com a primeira tecnologia de administração). Cada ação gasta 1 ponto e pode ser repetida:</p>
@@ -2310,6 +2376,9 @@ document.addEventListener('click', e => {
   else if (a === 'menu') { if (G && !G.over) modal('<h2>Sair da partida?</h2><p>A partida fica salva do início do seu último turno.</p>', [['Sair', showSetup], ['Continuar jogando']]); else showSetup(); }
   else if (!G) return;
   else if (a === 'catalog') catalogModal();
+  else if (a === 'routes') routesModal();
+  else if (a === 'route') { const e = act(G.player, 'rota', +el.dataset.i, +el.dataset.j); toast(e || 'Rota aberta: começa a render no próximo turno.'); render(); routesModal(); }
+  else if (a === 'demb') { const o = el.dataset.f, k = tk(G.player, o); if (G.emb.has(k)) G.emb.delete(k); else { G.emb.add(k); checkRoutes(); log(G.player, `Você declara embargo a ${fname(o)}.`); } render(); }
   else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }
   else if (a === 'zin') zoomBtn(1 / 1.4); else if (a === 'zout') zoomBtn(1.4); else if (a === 'zfit') { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); }
   else if (a === 'toAtk') toPhase('atk'); else if (a === 'toMov') toPhase('mov'); else if (a === 'end') playerEnd();

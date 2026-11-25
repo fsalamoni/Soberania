@@ -1,5 +1,21 @@
 # Histórico de versões
 
+## v9 — 25/11/2026 · Comércio e rotas (parte 6 do roteiro)
+
+**Parte 6** (T-01 a T-03, T-10 a T-14, T-16 a T-18)
+
+- T-01 a T-03: três tipos de rota. **Rota interna** (mercado nas duas pontas, caminho por terra seu): +1 produção no destino e os bens dele contam na rede. **Caravana** (caravançará até um mercado de outra facção em paz, a até 4 territórios): +2 ouro para cada lado e 1 bem que lhe falta. **Rota marítima** (porto com armazém alfandegário até um porto de outra facção em paz): +3 ouro para cada lado e 2 bens.
+- T-10: abrir custa 1 ação e 4 ouro, e a rota rende a partir do turno seguinte. T-11: 1 rota por mercado, porto e banco.
+- T-12: a outra facção aceita sempre que está em paz e sem embargo (o ouro é dos dois lados).
+- T-13: bens recebidos por rota contam como ligados para os requisitos das obras.
+- T-14: rota com quem já tem uma tecnologia barateia essa pesquisa em 20%; caravana com facção mais adiantada dá +1 saber.
+- T-16: quem conquista a ponta de uma rota alheia pilha o ouro de 2 turnos dela. Guerra, perda da ponta ou da construção desfazem a rota.
+- T-17: rota marítima de quem tem menos de 2 travessias tem 1 chance em 6 por turno de ser atacada por piratas e não render.
+- T-18: **embargo** no painel de facções corta e proíbe as rotas com aquela facção.
+- Painel **Rotas** (em Economia) com as rotas ativas e as possíveis, e rotas no mapa como linhas animadas. A troca de recursos 2 por 1 virou **Câmbio**.
+- IA abre rotas quando sobra ouro. Duração curta medida: média de 47 rodadas.
+- Fora desta parte: T-15 (nós comerciais marcados no mapa).
+
 ## v8 — 24/11/2026 · Estradas, portos e rede de bens (parte 5 do roteiro)
 
 **Parte 5** (C-120 a C-122, C-126, C-127, L-01 a L-05, L-07, L-08, L-11, UI-03)
