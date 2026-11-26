@@ -40,7 +40,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
     console.log(k.padEnd(8), 'rodadas', Math.min(...rounds) + '-' + Math.max(...rounds), 'méd', avg(2), JSON.stringify(why), 'venc', JSON.stringify(win), '| por jogo: obras', avg(5), 'tec', avg(6), 'influ', avg(7), 'campanhas', avg(8), 'cartas', avg(9), 'ar', avg(10), 'maxTec', avg(11));
   }
   // interface: Regências, jogador = Farrapos
-  const clickT = async n => p.evaluate(n => { const G = window.__sob.G, i = G.ix[n]; const el = document.querySelector(`g.b[data-i="${i}"] .bc`); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, n).then(([x, y]) => p.mouse.click(x, y));
+  const clickT = async n => p.evaluate(n => { const G = window.__sob.G, i = G.ix[n]; const el = document.querySelector(`g.b[data-i="${i}"] .bc`); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, n).then(([x, y]) => p.mouse.click(x, y)).then(() => p.evaluate(() => { window.__sob.G.tab = "imp"; window.__sob.render(); }));
   await p.evaluate(() => window.__sob.startScenario('reg', 'fa', 1));
   await p.screenshot({ path: shot('intro') });
   await p.click('#modal [data-m="0"]');
@@ -235,6 +235,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, o = G.order.find(x => x !== G.player), O = G.F[o], s0 = O.stab; O.stab = 80; O.agR = 0; agitHit(o, 15); const a = O.stab; agitHit(o, 15); const b = O.stab; O.stab = s0; return a === 65 && b === 60; }), 'segunda agitação na mesma rodada vale 1/3');
   ok(await p.evaluate(() => { const G = window.__sob.G, o = G.order.find(x => x !== G.player), h0 = G.F[o].hold; G.F[o].hold = 1; window.__sob.render(); const t = threatOf(o) && /segurando o objetivo/.test(document.querySelector('#facs').textContent); G.F[o].hold = h0; window.__sob.render(); return t; }), 'quem segura o objetivo aparece como ameaça no painel de facções');
   ok(await p.evaluate(() => document.querySelectorAll('#facs .pbar').length > 0 && !!document.querySelector('#facs .op')), 'painel de facções tem barra de poder e opinião');
+  // v49: abas Império e Região, fronteiras com ações e motivo da recusa de influência
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player; onTerr(G.F[me].capI); const reg = document.querySelector('#side').classList.contains('t-reg') && document.querySelectorAll('#info .nbl li').length === G.A[G.sel].filter(j => G.own[j] !== 'off').length; document.querySelector('#ptabs [data-k=imp]').click(); return reg && document.querySelector('#side').classList.contains('t-imp'); }), 'clicar no mapa abre a aba Região com todas as fronteiras; a aba Império volta');
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, far = [...Array(G.N).keys()].find(j => G.own[j] === 'neu' && !G.A[j].some(i => G.own[i] === me)); return far == null || /fronteira/.test(inflWhy(me, far)); }), 'influência recusada diz que falta fronteira');
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, F = G.F[me], nb = owned(me).flatMap(i => G.A[i]).find(j => (G.own[j] === 'neu' || G.own[j] === 'reb') && !capOwner(j) && !csOf(j)); if (nb == null) return true; const p0 = F.pre; F.pre = 99; const ok = canInfl(me, nb); F.pre = 0; const w = inflWhy(me, nb); F.pre = p0; return ok && /Prestígio/.test(w); }), 'influência vale para qualquer neutro na fronteira e avisa quando falta prestígio');
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

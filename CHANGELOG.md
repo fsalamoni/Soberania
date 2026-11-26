@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v49 — 26/11/2026 · Abas Império e Região, fronteiras com ações (UI-15, UI-16)
+
+- **Diagnóstico das fronteiras.** Conferi as divisas dos 11 mapas contra a geometria: toda divisa desenhada está na lista de vizinhos. O que falhava era a influência, que recusava com uma frase genérica. No caso relatado (Uesugi no Sengoku), Aizu e Dewa é cidade-estado e os outros vizinhos custavam mais prestígio do que havia.
+- **Recusa com motivo.** A influência agora diz por que não vale: sem fronteira, capital, cidade-estado (só o suserano anexa) ou prestígio insuficiente, com o custo e o saldo. O ataque também: campanha não declarada, trégua, poucas tropas, sem frota, capital protegida na 1ª rodada.
+- **Painel em duas abas (UI-15).**
+  - **Império:** indicadores, alertas, pesquisa, objetivo, ações do império (campanha, festas, impostos, agitadores, câmbio, rotas, obras do império), cartas, tecnologia, facções e crônica.
+  - **Região:** o território selecionado. Clicar no mapa abre esta aba; Esc ou a tecla I voltam para Império.
+- **Fronteiras com ações (UI-16).** A aba Região lista todos os vizinhos, por terra e por mar, com dono, tropas e relação. Cada linha traz os botões que cabem: Atacar, Influenciar (com o custo) e Mover. Botão desligado explica o motivo na dica. Num território alheio, os vizinhos seus trazem "Atacar daqui". O nome do vizinho seleciona o território.
+- **Ações dentro da região.** Reforçar (+1 ou todas), recrutar e construir direto no território, com a fila logo abaixo. Recrutamento e obras abrem sozinhos; não é mais preciso "Ordenar obras" antes.
+- **Mapa.** As fronteiras do território selecionado ficam marcadas com contorno pontilhado. A seleção continua ao trocar de fase.
+- O clique no mapa (território seu, depois o vizinho) continua funcionando como antes.
+
 ## v48 — 26/11/2026 · Painel de facções (UI-13)
 
 - Cada facção mostra uma barra de poder (a fatia dela nos territórios das facções), tropas, estabilidade e cartas.

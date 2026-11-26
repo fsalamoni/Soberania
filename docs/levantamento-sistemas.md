@@ -1029,6 +1029,8 @@ Com muito mais sistemas, o risco é o jogador se perder. A interface tem que res
 | UI-12 | Tutorial por camadas | O primeiro cenário liga só combate e obras; os seguintes ligam comércio, depois diplomacia. Cada sistema novo vem com uma tela curta |
 | UI-13 | Celular | Painéis em gaveta de baixo, mapa com zoom por pinça (já existe), botões grandes; o jogo atual já roda no celular e isso tem que continuar |
 | UI-14 | Histórico | Linha do tempo da partida com eventos e um gráfico de pontos por facção no fim |
+| UI-15 | Abas Império e Região (v49) | O painel lateral tem duas abas. Império: indicadores, alertas, pesquisa, objetivo, ações gerais (campanha, festas, impostos, agitadores, câmbio, obras do império), cartas, facções e crônica. Região: o território selecionado, com suas ações (reforçar, recrutar, construir, fila) e suas fronteiras. Clicar no mapa abre a aba Região; Esc ou a tecla I voltam |
+| UI-16 | Fronteiras com ações (v49) | A aba Região lista todos os vizinhos do território (por terra e por mar), com dono, tropas e relação. Em cada linha: Atacar, Influenciar (neutros e rebeldes, com o custo) e Mover. Botão desligado explica o motivo na dica. Num território alheio, os vizinhos seus trazem "Atacar daqui". O mapa marca as fronteiras do território selecionado |
 
 ## Roteiro de implementação por partes
 

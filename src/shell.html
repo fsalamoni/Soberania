@@ -197,6 +197,18 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .fn b{font-size:13px}
 .fn span{font-size:11.5px;color:var(--mute)}
 .fa{flex-basis:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:16px}.fa:empty{display:none}
+/* v49 (UI-15): abas Império e Região */
+#ptabs{order:0;position:sticky;top:-12px;z-index:3;display:flex;gap:4px;background:var(--deck);padding:6px 0 0;margin:-6px 0 -4px;border-bottom:1px solid var(--line)}
+#ptabs button{flex:1;min-width:0;min-height:36px;padding:6px 8px;font-size:13px;font-weight:600;border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;background:none;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ptabs button.on{color:var(--text);background:#1b2633;border-color:var(--line);box-shadow:inset 0 2px 0 var(--brass)}
+#side.t-reg>section:not(#info),#side.t-reg>#credit,#side.t-imp>#info{display:none}
+.rbox{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#161f2a}
+.rbox h5{margin:0 0 6px;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--brass)}.rbox h5 .hint{text-transform:none;letter-spacing:0}
+.nbl{list-style:none;margin:0;padding:0}.nbl li{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 0;border-top:1px solid #2c3a4b80}.nbl li:first-child{border-top:0}
+.nbl .bt{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.lnk{background:none;border:0;padding:2px 0;color:var(--text);font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;min-height:28px}
+details.bq,details.rdet{margin:6px 0}details.bq>summary,details.rdet>summary{cursor:pointer;font-size:13px;padding:4px 0}
+#hl .hn{stroke:#ffd166;stroke-width:1.4;stroke-dasharray:2 4;opacity:.75}
 .fn .thr{font-size:12px;color:#f0a39e;font-weight:600}
 .pbar{display:block;height:4px;margin-top:3px;background:#2c3a4b;border-radius:2px;overflow:hidden}.pbar i{display:block;height:100%}
 .op{font-size:12px;min-width:30px;text-align:center;padding:1px 4px;border:1px solid #2c3a4b;border-radius:4px;color:var(--mute)}.op.ok{border-color:var(--good);color:#9ed9b0}.op.bad{border-color:var(--bad);color:#f0a39e}
@@ -298,7 +310,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
     <div id="lgd" hidden></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
-  <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
+  <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
 <script>
