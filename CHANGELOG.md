@@ -1,5 +1,29 @@
 # Histórico de versões
 
+## v45 — 26/11/2026 · Equilíbrio de três cenários e última resistência (D-14)
+
+- **Última resistência (D-14).** A capital de quem tem até 2 territórios defende com +1. Facções de uma só província não caem mais no primeiro ataque.
+- **Queda do Ocidente.** As duas Romas não começam mais em trégua, então não formam aliança automática para vencer juntas. Roma Ocidental começa com 4 tropas na capital (era 6). Hunos, visigodos, vândalos e francos ganham 2 tropas cada.
+- **Regências.** O Império começa com 4 tropas por província (era 3) e estabilidade 50 (era 40). Farrapos começam com 5 tropas (eram 7). Cabanos, balaios e sabinos com 6 (eram 8, 7 e 8).
+- **Secessão.** União começa com 5 tropas por estado e Confederação com 6 (eram 3 e 4).
+- **Simulações no modo Médio** (6 partidas por cenário). A rodada em que cada partida acabou e quem venceu:
+
+  | Cenário | v43 | v45 |
+  |---|---|---|
+  | Queda do Ocidente | Ocidente vence 6 de 7 | 46 a 96; Ocidente 4, Oriente 2 |
+  | Regências | 9 a 83; Farrapos 4 de 5 | 8, 9, 11, 27, 72, 121; Farrapos 4, Império 1, Balaios 1 |
+  | Secessão | 8, 8, 10, 11, 43, 104 | 17, 21, 36, 38, 43, 121 |
+
+- **Ainda em aberto:** os Farrapos ainda vencem a maioria nas Regências, e duas partidas de Regências terminaram antes da rodada 12.
+
+## v44 — 26/11/2026 · Quadro de informações (UI-10, UI-13)
+
+- **Quadro do império.** Cabeçalho com líder, traço e governo. Seis indicadores em blocos: ouro líquido, saber, prestígio, estabilidade (com cansaço), felicidade (com cultura) e legado (com a meta). Cada um tem dica com a explicação.
+- **Alertas em destaque:** crise, instabilidade, cansaço de guerra, povo infeliz e ouro negativo aparecem num bloco próprio, com o que acontece.
+- **Pesquisa e atalhos:** linha da pesquisa atual com botão "Escolher pesquisa"; botões de tecnologias, governo, diplomacia, vitórias, personagens, obras e rotas, com o atalho de teclado na dica. Os poderes do líder ficam num bloco recolhível.
+- **Cartão do território.** Dono e relação com você em destaque; seis indicadores (tropas, porte, comida líquida com o consumo, produção, ouro, saber); fichas para capital, fortificação, ocupação, suprimento, movimento e recrutas; construções inativas marcadas.
+- **Ordem do painel:** império, território, fase, cartas, tecnologia, facções e crônica. A tecnologia virou um resumo com link para a árvore e as regras da era.
+
 ## v43 — 26/11/2026 · Freios da conquista: desgaste da blitz e guerra defensiva (D-12, D-13)
 
 Segunda entrega da revisão. Nas simulações da v41, várias partidas acabavam por dominação antes da rodada 10, mesmo no modo Médio de 120 rodadas.

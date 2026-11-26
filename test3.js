@@ -227,6 +227,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => lc('#1c2a8a') !== '#1c2a8a' && /^rgb/.test(lc('#1c2a8a'))), 'cor de facção escura é clareada para contraste');
   // v43: desgaste da blitz e guerra defensiva
   ok(await p.evaluate(() => { const G = window.__sob.G, f = G.player, F = G.F[f], c0 = F.cq; F.cq = 2; const a = blitzCost(f); F.cq = 3; const b = blitzCost(f); F.cq = 5; const c = blitzCost(f); F.cq = c0; return a === 0 && b === ECON.blitzS && c === 3 * ECON.blitzS; }), 'desgaste da blitz começa na 4ª conquista e cresce');
+  // v44: quadro do império e cartão do território; v45: última resistência
+  ok(await p.evaluate(() => { window.__sob.render(); return document.querySelectorAll('#me .kpis .kp').length === 6; }), 'quadro do império mostra 6 indicadores');
+  ok(await p.evaluate(() => { const G = window.__sob.G; G.sel = G.F[G.player].capI; window.__sob.render(); return !!document.querySelector('#info .kpis .kp') && /Comida/.test(document.querySelector('#info').textContent); }), 'cartão do território mostra rendimentos');
+  ok(await p.evaluate(() => { const G = window.__sob.G, f = G.order.find(o => G.F[o].alive && G.F[o].capI != null && owned(o).length > 2); return !f || lastStand(G.F[f].capI) === 0; }), 'última resistência só vale para quem tem até 2 territórios');
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

@@ -58,6 +58,7 @@ Hoje as partidas acabam entre a 5ª e a 10ª rodada porque o objetivo pede pouco
 | D-11 | Salvar e continuar | Partida longa sem medo | Já existe (salvar no navegador). Acrescentar vários espaços de salvamento e exportar arquivo |
 | D-12 | Desgaste da blitz (v43) | Ataques seguem ilimitados, mas avançar rápido custa | As 3 primeiras conquistas do turno são livres; a 4ª custa 4 de estabilidade e 1 tropa, a 5ª custa 8, a 6ª custa 12, e assim por diante. A IA para quando a estabilidade cairia abaixo de 45, salvo para tomar uma capital |
 | D-13 | Guerra defensiva (v43) | Quem é invadido reage em vez de se encolher | Facção que perdeu território na rodada anterior ignora o cansaço de guerra ao decidir campanha e tende a contra-atacar |
+| D-14 | Última resistência (v45) | Facções pequenas não somem num único ataque | A capital de quem tem até 2 territórios soma +1 à defesa |
 
 **Sugestão de alvo:** cenários históricos com 30 a 40 rodadas na velocidade Normal, cerca de 2 a 3 horas de jogo. O Modo Civilização fica com 200 a 300 rodadas, jogável em várias sessões.
 

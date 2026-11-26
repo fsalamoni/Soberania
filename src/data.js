@@ -55,8 +55,8 @@ const SCEN = [
     d: 'União contra Confederação, com Kentucky e Missouri divididos e o Oeste em disputa. Uma guerra civil: o conflito interno é o próprio jogo.',
     neu: 1, neuT: { Kentucky: 4, Missouri: 4, 'Território Indígena': 2, 'Novo México': 2 },
     f: [
-      { id: 'un', nav: 2, n: 'União', c: '#3f6fd1', L: 'Abraham Lincoln', ab: 'recrutador', cap: 'Maryland', tr: 3, st: 65, t: ['Nova Inglaterra', 'Nova York', 'Pensilvânia', 'Maryland', 'Virgínia Ocidental', 'Ohio', 'Indiana', 'Illinois', 'Michigan', 'Wisconsin', 'Minnesota', 'Iowa', 'Kansas', 'Califórnia', 'Oregon'], obj: { hold: ['Virgínia', 'Geórgia', 'Luisiana', 'Tennessee'] } },
-      { id: 'cs', n: 'Confederação', c: '#9a9a9a', L: 'Robert E. Lee', ab: 'tatico', cap: 'Virgínia', tr: 4, st: 70, t: ['Virgínia', 'Carolina do Norte', 'Carolina do Sul', 'Geórgia', 'Flórida', 'Tennessee', 'Alabama', 'Mississippi', 'Luisiana', 'Arkansas', 'Texas'], obj: { hold: ['Maryland', 'Kentucky', 'Missouri'] } },
+      { id: 'un', nav: 2, n: 'União', c: '#3f6fd1', L: 'Abraham Lincoln', ab: 'recrutador', cap: 'Maryland', tr: 5, st: 65, t: ['Nova Inglaterra', 'Nova York', 'Pensilvânia', 'Maryland', 'Virgínia Ocidental', 'Ohio', 'Indiana', 'Illinois', 'Michigan', 'Wisconsin', 'Minnesota', 'Iowa', 'Kansas', 'Califórnia', 'Oregon'], obj: { hold: ['Virgínia', 'Geórgia', 'Luisiana', 'Tennessee'] } },
+      { id: 'cs', n: 'Confederação', c: '#9a9a9a', L: 'Robert E. Lee', ab: 'tatico', cap: 'Virgínia', tr: 6, st: 70, t: ['Virgínia', 'Carolina do Norte', 'Carolina do Sul', 'Geórgia', 'Flórida', 'Tennessee', 'Alabama', 'Mississippi', 'Luisiana', 'Arkansas', 'Texas'], obj: { hold: ['Maryland', 'Kentucky', 'Missouri'] } },
     ],
     ev: [
       { t: 2, n: '1861 — Bull Run', d: 'A primeira grande batalha termina em vitória confederada. O Norte percebe que a guerra será longa.', fx: [['stab', 'cs', 10], ['stab', 'un', -5]] },
@@ -71,11 +71,11 @@ const SCEN = [
     d: 'Sem imperador no trono, o Império enfrenta ao mesmo tempo Farroupilha, Cabanagem, Balaiada e Sabinada. Mantenha o país unido ou proclame sua república.',
     neu: 2,
     f: [
-      { id: 'im', n: 'Império (Regência)', c: '#3f9a6b', L: 'Regente Feijó', ab: 'recrutador', cap: 'Corte (Rio de Janeiro)', tr: 3, ctr: 7, st: 40, trT: { 'Santa Catarina': 5, Curitiba: 5, Piauí: 3, Ceará: 3, 'Alto Amazonas': 3, Sergipe: 3, Alagoas: 3 }, t: ['Corte (Rio de Janeiro)', 'Minas Gerais', 'São Paulo', 'Espírito Santo', 'Goiás', 'Mato Grosso', 'Curitiba', 'Santa Catarina', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte', 'Ceará', 'Piauí', 'Alagoas', 'Sergipe', 'Alto Amazonas'], obj: { n: 20, txt: 'Mantenha a unidade: controle as 20 províncias.' } },
-      { id: 'fa', n: 'Farrapos', c: '#c8443a', L: 'Bento Gonçalves', ab: 'tatico', cap: 'Rio Grande do Sul', tr: 7, st: 75, t: ['Rio Grande do Sul'], obj: { hold: ['Santa Catarina', 'Curitiba', 'São Paulo'] } },
-      { id: 'ca', n: 'Cabanos', c: '#d6b33a', L: 'Eduardo Angelim', ab: 'carisma', cap: 'Grão-Pará', tr: 8, st: 70, t: ['Grão-Pará'], obj: { hold: ['Alto Amazonas', 'Maranhão'] } },
-      { id: 'ba', n: 'Balaios', c: '#8a6bbf', L: 'Negro Cosme', ab: 'recrutador', cap: 'Maranhão', tr: 7, st: 65, t: ['Maranhão'], obj: { hold: ['Piauí', 'Ceará'] } },
-      { id: 'sa', n: 'Sabinos', c: '#3f6fd1', L: 'Francisco Sabino', ab: 'tenaz', cap: 'Bahia', tr: 8, st: 65, t: ['Bahia'], obj: { hold: ['Sergipe', 'Alagoas', 'Pernambuco'] } },
+      { id: 'im', n: 'Império (Regência)', c: '#3f9a6b', L: 'Regente Feijó', ab: 'recrutador', cap: 'Corte (Rio de Janeiro)', tr: 4, ctr: 7, st: 50, trT: { 'Santa Catarina': 5, Curitiba: 5, Piauí: 3, Ceará: 3, 'Alto Amazonas': 3, Sergipe: 3, Alagoas: 3 }, t: ['Corte (Rio de Janeiro)', 'Minas Gerais', 'São Paulo', 'Espírito Santo', 'Goiás', 'Mato Grosso', 'Curitiba', 'Santa Catarina', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte', 'Ceará', 'Piauí', 'Alagoas', 'Sergipe', 'Alto Amazonas'], obj: { n: 20, txt: 'Mantenha a unidade: controle as 20 províncias.' } },
+      { id: 'fa', n: 'Farrapos', c: '#c8443a', L: 'Bento Gonçalves', ab: 'tatico', cap: 'Rio Grande do Sul', tr: 5, st: 75, t: ['Rio Grande do Sul'], obj: { hold: ['Santa Catarina', 'Curitiba', 'São Paulo'] } },
+      { id: 'ca', n: 'Cabanos', c: '#d6b33a', L: 'Eduardo Angelim', ab: 'carisma', cap: 'Grão-Pará', tr: 6, st: 70, t: ['Grão-Pará'], obj: { hold: ['Alto Amazonas', 'Maranhão'] } },
+      { id: 'ba', n: 'Balaios', c: '#8a6bbf', L: 'Negro Cosme', ab: 'recrutador', cap: 'Maranhão', tr: 6, st: 65, t: ['Maranhão'], obj: { hold: ['Piauí', 'Ceará'] } },
+      { id: 'sa', n: 'Sabinos', c: '#3f6fd1', L: 'Francisco Sabino', ab: 'tenaz', cap: 'Bahia', tr: 6, st: 65, t: ['Bahia'], obj: { hold: ['Sergipe', 'Alagoas', 'Pernambuco'] } },
     ],
     truces: [['ca', 'ba']],
     ev: [
