@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v50 — 26/11/2026 · Painel por seções, fichas de construção, relevo e mar (UI-17 a UI-20, D-17, T-19)
+
+- **Correção: facção sem território continuava viva.** No caso relatado (Sengoku, Clã Miyoshi com 0 territórios e em guerra), a eliminação só era marcada em conquista direta. Quem perdia o último território por revolta, influência ou evento ficava "vivo" e impedia a vitória. Agora a checagem é geral e roda a cada turno.
+- **Motivo dos dados (UI-19).** Quando o ataque rola 2 ou 1 dado, o painel de batalha diz por quê e o que resolve: poucas tropas (1 fica de guarnição), desembarque pelo mar, longe do suprimento, pântano. A ofensiva contínua para sozinha quando os dados caem, e você decide se segue.
+- **Painel por seções (UI-17).** Império ganhou quatro sub-abas: Ações, Objetivo, Facções e Era e crônica. Região ganhou três: Fronteiras, Obras e Detalhes (terreno, jazidas, saúde e rendimento). Reforçar e recrutar ficam sempre acima das sub-abas.
+- **Fichas de construção (UI-20, C-300).** Na sub-aba Obras, as opções vêm agrupadas pela finalidade (zonas, comida, produção, ouro, saber, estabilidade, guerra, estradas e mar, cidade, maravilhas). Cada grupo explica quando vale a pena; cada ficha mostra custo, prazo neste território, manutenção, efeito e o que ela abre na cadeia. O que já existe no território aparece listado com o efeito. O catálogo completo segue os mesmos grupos.
+- **Rotas (T-19).** A tela de comércio mostra as vagas, o rendimento de cada rota ativa e um botão Fechar: fechar é grátis e libera a vaga na hora, para trocar por outra melhor. Lista até 30 rotas possíveis e explica o que cada tipo pede e rende.
+- **Guerra pelo mar (D-17).** Supremacia naval: com a frota pelo menos 2 travessias acima da do defensor, o desembarque rola 3 dados mesmo sem porto. Se a frota do defensor for maior que a sua, ele ganha +1 na defesa contra o desembarque. As fronteiras por mar e a linha da frota explicam travessias e regras na dica.
+- **Mapa em relevo (UI-18).** Cidades e construções deixaram o medalhão escuro: são desenhos com contorno, volume e sombra sobre o terreno, e a cidade cresce com o porte, de aldeia a metrópole.
+
 ## v49 — 26/11/2026 · Abas Império e Região, fronteiras com ações (UI-15, UI-16)
 
 - **Diagnóstico das fronteiras.** Conferi as divisas dos 11 mapas contra a geometria: toda divisa desenhada está na lista de vizinhos. O que falhava era a influência, que recusava com uma frase genérica. No caso relatado (Uesugi no Sengoku), Aizu e Dewa é cidade-estado e os outros vizinhos custavam mais prestígio do que havia.

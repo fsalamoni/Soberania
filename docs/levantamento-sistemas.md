@@ -61,6 +61,7 @@ Hoje as partidas acabam entre a 5ª e a 10ª rodada porque o objetivo pede pouco
 | D-14 | Última resistência (v45) | Facções pequenas não somem num único ataque | A capital de quem tem até 2 territórios soma +1 à defesa |
 | D-15 | Cansaço do invadido limitado (v46) | Império atacado em várias frentes não desmorona em 2 rodadas | Perder territórios soma cansaço de guerra só uma vez por rodada (antes, +2 por território) |
 | D-16 | Agitação saturada (v46) | Rivais somados não zeram a estabilidade de uma vez | Na mesma rodada, só a primeira agitação (ação ou carta) contra uma facção vale inteira; as seguintes valem 1/3 |
+| D-17 | Supremacia naval (v50) | Frota = travessias por turno. Desembarque rola no máximo 2 dados, salvo porto na origem, navegação, almirante ou frota pelo menos 2 acima da do defensor. Se a frota do defensor for maior que a do atacante, ele ganha +1 no maior dado contra desembarques | Dá peso à marinha dos dois lados |
 
 **Sugestão de alvo:** cenários históricos com 30 a 40 rodadas na velocidade Normal, cerca de 2 a 3 horas de jogo. O Modo Civilização fica com 200 a 300 rodadas, jogável em várias sessões.
 
@@ -482,6 +483,7 @@ O comércio é o jeito de conseguir bens que o seu território não tem sem conq
 | T-16 | Pilhagem | Atacar um território de passagem corta a rota e rende o ouro de 2 turnos dela | Incentivo para guerra econômica |
 | T-17 | Piratas e escolta | Rotas marítimas têm 1 chance em 6 por turno de serem atacadas por piratas, se não houver frota própria no mar | Frotas têm uso em paz |
 | T-18 | Embargo | Ação diplomática: corta todas as rotas com uma facção; aliados podem aderir | Arma sem guerra |
+| T-19 | Fechar rota (v50) | O dono fecha uma rota sua de graça, a qualquer momento do seu turno; a vaga fica livre na hora para abrir outra melhor. A tela de rotas mostra vagas, rendimento de cada rota e o que cada tipo pede | Permite trocar rotas |
 | T-19 | Tarifas | Política: +ouro por rota estrangeira, mas −1 relação com os parceiros | Escolha entre caixa e amizade |
 | T-20 | Monopólio | Quem controla 60% de um luxo no mundo ganha +1 ouro por rota daquele luxo e +2 felicidade | Corrida por recursos raros |
 | T-21 | Mercado mundial (opcional) | Preço de cada bem sobe quando falta e cai quando sobra; compra e venda direta por ouro | Para o modo Civilização; nos cenários curtos fica desligado |
@@ -1031,6 +1033,10 @@ Com muito mais sistemas, o risco é o jogador se perder. A interface tem que res
 | UI-14 | Histórico | Linha do tempo da partida com eventos e um gráfico de pontos por facção no fim |
 | UI-15 | Abas Império e Região (v49) | O painel lateral tem duas abas. Império: indicadores, alertas, pesquisa, objetivo, ações gerais (campanha, festas, impostos, agitadores, câmbio, obras do império), cartas, facções e crônica. Região: o território selecionado, com suas ações (reforçar, recrutar, construir, fila) e suas fronteiras. Clicar no mapa abre a aba Região; Esc ou a tecla I voltam |
 | UI-16 | Fronteiras com ações (v49) | A aba Região lista todos os vizinhos do território (por terra e por mar), com dono, tropas e relação. Em cada linha: Atacar, Influenciar (neutros e rebeldes, com o custo) e Mover. Botão desligado explica o motivo na dica. Num território alheio, os vizinhos seus trazem "Atacar daqui". O mapa marca as fronteiras do território selecionado |
+| UI-17 | Sub-abas do painel (v50) | Império se divide em Ações, Objetivo, Facções e Era e crônica; Região se divide em Fronteiras, Obras e Detalhes. Uma função por seção; as ações rápidas de tropa (reforçar, recrutar) ficam acima das sub-abas |
+| UI-18 | Cidades e construções em relevo (v50) | No mapa, cada classe de construção é um desenho com contorno, volume e sombra de chão, sem medalhão. A cidade cresce com o porte (aldeia a metrópole) |
+| UI-19 | Motivo dos dados (v50) | Quando o ataque rola menos de 3 dados, o painel de batalha lista cada causa (poucas tropas, desembarque, suprimento, pântano) e o que resolve. A ofensiva contínua para sozinha se os dados caírem no meio |
+| UI-20 | Fichas de construção por finalidade (v50, C-300) | Sub-aba Obras e catálogo agrupam as obras em zonas, comida, produção, ouro, saber, estabilidade, guerra, estradas e mar, cidade e maravilhas. Cada grupo traz o conselho de quando vale a pena; cada ficha, custo, prazo, manutenção, efeito e o que ela abre |
 
 ## Roteiro de implementação por partes
 
