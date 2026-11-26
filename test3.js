@@ -51,13 +51,13 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('[data-a=toAtk]');
   // governo (v5): abre as obras (1 ação), põe mercado e oficina na fila, escolhe pesquisa (sem ação) e declara campanha
   await p.evaluate(() => { window.__sob.G.F.fa.gold = 60; window.__sob.G.F.fa.sci = 5; window.__sob.render(); });
-  await p.click('[data-a=act][data-k=obras]');
+  await p.click('#ptabs [data-k=obr]');
+  const bldVia = k => p.evaluate(k => { const G = window.__sob.G; G.osub = 'con'; bcat = sCat(k); render(); document.querySelector(`#works [data-a=bldAt][data-k=${k}][data-i="${G.ix['Rio Grande do Sul']}"]`).click(); }, k);
+  await bldVia('mer');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.bldOn && F.pa === 99; }), 'abrir obras não gasta ação (v24: sem limite)');
-  await p.click('[data-a=bld][data-k=mer]');
   await p.screenshot({ path: shot('construir') });
-  await clickT('Rio Grande do Sul');
-  await p.click('[data-a=bld][data-k=ofi]');
-  await clickT('Rio Grande do Sul');
+  await bldVia('ofi');
+  await p.evaluate(() => { window.__sob.G.tab = 'imp'; render(); });
   ok(await p.evaluate(() => { const G = window.__sob.G, q = G.q[G.ix['Rio Grande do Sul']]; return q.length === 2 && q[0].k === 'mer' && G.F.fa.pa === 99; }), 'duas obras na fila sem gastar mais ações');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.ix['Rio Grande do Sul']; return window.__sob.act('fa', 'rush', i, 0) !== ''; }), 'não apressa no turno em que a obra começou');
   // parte 3: zonas pedem terreno ou jazida e cabem no nível do território
@@ -65,7 +65,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.own.findIndex((o, j) => o === 'fa' && G.lv[j] === 1 && j !== G.F.fa.capI && !G.q[j].length); if (i < 0) return 'skip'; const z = Object.keys(S.STRUCT).filter(k => S.STRUCT[k].z && S.act('fa', 'bld', k, i) === ''); return z.length === 1; }), 'aldeia aceita só uma zona');
   // parte 4: cadeia (banco exige mercado pronto) e catálogo
   ok(await p.evaluate(() => { const G = window.__sob.G, S = window.__sob, i = G.ix['Rio Grande do Sul']; G.F.fa.tech.push('com'); const r = S.act('fa', 'bld', 'ban', i) !== ''; G.F.fa.tech.pop(); return r; }), 'banco recusado sem mercado pronto');
-  await p.click('[data-a=catalog]');
+  await p.evaluate(() => catalogModal());
   ok(await p.evaluate(() => document.querySelectorAll('#modal .tech').length > 40), 'catálogo lista as construções');
   await p.screenshot({ path: shot('catalogo') });
   await p.click('#modal [data-m="0"]');
@@ -84,9 +84,9 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.evaluate(() => { window.__sob.G.rsub = 'det'; window.__sob.render(); }); // v50: jazidas e saúde ficam na sub-aba Detalhes
   ok(await p.evaluate(() => /Jazidas/.test(document.querySelector('#info').textContent)), 'painel mostra jazidas do território');
   ok(await p.evaluate(() => /Saúde/.test(document.querySelector('#info').textContent) && /Felicidade/.test(document.querySelector('#me').textContent)), 'painel mostra saúde, estabilidade local e felicidade');
-  await p.click('[data-a=works]');
+  await p.click('#ptabs [data-k=obr]');
   await p.screenshot({ path: shot('obras-imperio') });
-  await p.click('#modal [data-m="0"]');
+  ok(await p.evaluate(() => { const G = window.__sob.G, vis = s => { const e = document.querySelector(s); return !!e && e.offsetParent !== null; }; G.osub = 'fil'; render(); const a = vis('#works') && !vis('#phase') && document.querySelectorAll('#works .rbox').length === owned(G.player).length; G.osub = 'cad'; render(); const b = document.querySelectorAll('#works ul.chain li').length > 20; G.osub = 'con'; render(); const c = document.querySelectorAll('#works .fic').length > 0 && !document.querySelector('#phase [data-k=obras]'); G.osub = 'fil'; G.tab = 'imp'; render(); return a && b && c; }), 'aba Obras: filas, construir e cadeias, fora das ações do império');
   await p.click('[data-a=techs]');
   await p.click('[data-a=tech][data-k=adm]');
   await p.screenshot({ path: shot('tecnologias') });
@@ -248,6 +248,9 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, s = G.m.sea && G.m.sea[0]; if (!s) return true; const [i, j] = s, t0 = G.tr[i]; G.tr[i] = 9; const cap = landCap(i, j), d = diceFor(i, j)[0]; G.tr[i] = t0; return (cap ? d <= 2 : true) && typeof seaSup(i, j) === 'number' && !isNaN(seaSup(i, j)); }), 'desembarque respeita a supremacia naval');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.F[G.player].capI; return /svs/.test(svHtml(i)) && !!document.querySelector('#sv-cid1-d'); }), 'cidades e construções desenhadas em relevo');
   ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, f = G.order.find(x => x !== me && G.F[x].alive && G.F[x].entered && owned(x).length); if (!f) return true; const T = owned(f), o0 = T.map(i => G.own[i]); T.forEach(i => G.own[i] = 'reb'); checkWin(); const dead = !G.F[f].alive; T.forEach((i, n) => G.own[i] = o0[n]); G.F[f].alive = true; return dead; }), 'facção sem território é eliminada');
+  // v51: governo em abas com motivo do bloqueio, governadores nomeados em Personagens, criação em passos
+  ok(await p.evaluate(() => { gsub = 'gov'; govModal(); const m = document.querySelector('#modal'), a = m.querySelectorAll('.stabs [data-a=gtab]').length === 4 && /Exige a cívica/.test(m.textContent); m.querySelector('[data-a=gtab][data-k=pol]').click(); const b = /Vagas/.test(m.textContent); m.querySelector('[data-a=gtab][data-k=civ]').click(); const c = /Libera:/.test(m.textContent); gsub = 'gov'; m.hidden = true; return a && b && c; }), 'governo, políticas, cívicas e crenças em abas');
+  ok(await p.evaluate(() => { const G = window.__sob.G; fsub = 'gvr'; figModal(); const m = document.querySelector('#modal'), n = m.querySelectorAll('[data-a=gvr]').length; fsub = 'lid'; m.hidden = true; return n === 3 * owned(G.player).length; }), 'governadores nomeados na tela de personagens');
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

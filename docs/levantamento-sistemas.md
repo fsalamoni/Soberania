@@ -1037,6 +1037,10 @@ Com muito mais sistemas, o risco é o jogador se perder. A interface tem que res
 | UI-18 | Cidades e construções em relevo (v50) | No mapa, cada classe de construção é um desenho com contorno, volume e sombra de chão, sem medalhão. A cidade cresce com o porte (aldeia a metrópole) |
 | UI-19 | Motivo dos dados (v50) | Quando o ataque rola menos de 3 dados, o painel de batalha lista cada causa (poucas tropas, desembarque, suprimento, pântano) e o que resolve. A ofensiva contínua para sozinha se os dados caírem no meio |
 | UI-20 | Fichas de construção por finalidade (v50, C-300) | Sub-aba Obras e catálogo agrupam as obras em zonas, comida, produção, ouro, saber, estabilidade, guerra, estradas e mar, cidade e maravilhas. Cada grupo traz o conselho de quando vale a pena; cada ficha, custo, prazo, manutenção, efeito e o que ela abre |
+| UI-21 | Governo em abas (v51) | Governo, Políticas, Cívicas e Crenças em abas. Cada opção mostra efeito, diferença para o atual, requisito e motivo do bloqueio; cívicas mostram o que liberam e o prazo pela cultura por turno |
+| UI-22 | Personagens em abas (v51) | Líder, Grandes figuras (progresso, origem dos pontos, efeito) e Governadores, nomeados na própria tela por território |
+| UI-23 | Aba Obras (v51) | Terceira aba do painel, separada das ações do império. Filas (ociosos em destaque, apressar e retirar), Construir (por finalidade, com botão por território e prazo) e Cadeias (árvore de dependências com tecnologia e estado) |
+| UI-24 | Criação em passos (v51) | Facção, líder e ajustes numerados, com resumo do efeito de dificuldade, duração e líderes rivais |
 
 ## Roteiro de implementação por partes
 

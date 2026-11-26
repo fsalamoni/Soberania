@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## v51 — 26/11/2026 · Aba Obras, governo em abas, personagens e criação em passos (UI-21 a UI-24)
+
+- **Aba Obras (UI-23).** O painel passa a ter três abas: Império, Obras e Região. As obras saíram do meio das ações do império e ganharam espaço próprio, com três seções:
+  - **Filas:** todos os territórios, com os ociosos no topo e em destaque, a fila de cada um, apressar e retirar. Não é mais preciso "Ordenar obras" antes.
+  - **Construir:** as obras por finalidade. Cada ficha mostra custo, manutenção, efeito, de onde ela vem e o que ela abre, e um botão por território onde cabe, já com o prazo em turnos. As bloqueadas dizem o que falta.
+  - **Cadeias:** a árvore de cada obra base até as que dependem dela, com a tecnologia exigida e a marca do que você tem, do que pode construir e do que falta.
+- **Governo, cultura e fé (UI-21).** A tela se divide em Governo, Políticas, Cívicas e Crenças. O governo atual fica no topo; cada outro governo mostra a diferença de vagas em relação ao atual e, se bloqueado, a cívica que falta com o custo. Políticas vêm agrupadas pelo tipo de vaga, com as vagas em uso, e as bloqueadas agora aparecem com o motivo. Cívicas mostram o que liberam, a que levam e em quantos turnos a cultura alcança o custo. Panteões e princípios da fé têm o efeito escrito, não só na dica.
+- **Personagens (UI-22).** Três seções: Líder, Grandes figuras (barra de progresso, de onde vêm os pontos e o que cada uma faz ao ser usada) e Governadores. Os governadores são nomeados ali mesmo, território por território, com a indicação de quando cada tipo vale mais.
+- **Criação da partida (UI-24).** Três passos numerados (facção, líder, ajustes) e um resumo que diz o que a dificuldade, a duração e os líderes rivais mudam.
+- O botão Obras saiu dos atalhos do Império (a aba faz esse papel; a tecla O continua valendo) e as sub-abas do Império cabem numa linha só.
+
 ## v50 — 26/11/2026 · Painel por seções, fichas de construção, relevo e mar (UI-17 a UI-20, D-17, T-19)
 
 - **Correção: facção sem território continuava viva.** No caso relatado (Sengoku, Clã Miyoshi com 0 territórios e em guerra), a eliminação só era marcada em conquista direta. Quem perdia o último território por revolta, influência ou evento ficava "vivo" e impedia a vitória. Agora a checagem é geral e roda a cada turno.
