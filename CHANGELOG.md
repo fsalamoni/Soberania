@@ -1,5 +1,49 @@
 # Histórico de versões
 
+## v43 — 26/11/2026 · Freios da conquista: desgaste da blitz e guerra defensiva (D-12, D-13)
+
+Segunda entrega da revisão. Nas simulações da v41, várias partidas acabavam por dominação antes da rodada 10, mesmo no modo Médio de 120 rodadas.
+
+- **Desgaste da blitz (D-12).** Os ataques continuam ilimitados.
+  - As 3 primeiras conquistas de cada turno são livres.
+  - A partir da 4ª, cada conquista custa estabilidade (4, depois 8, 12…) e deixa 1 tropa para trás.
+  - A barra de ação mostra quantas conquistas você já fez e o custo da próxima. A janela de batalha avisa antes do ataque.
+  - A IA para de avançar quando a estabilidade cairia abaixo de 45, salvo para tomar uma capital.
+- **Guerra defensiva (D-13).** Antes, a facção invadida acumulava cansaço de guerra e parava de atacar. Agora, quem perdeu território na rodada anterior contra-ataca.
+- **Regras e levantamento:** os dois freios entraram em "Freios da guerra" e no levantamento (D-12, D-13).
+- **Simulações no modo Médio** (4 a 6 partidas por cenário). Antes e depois, a rodada em que cada partida acabou:
+
+  | Cenário | v41 | v43 |
+  |---|---|---|
+  | Napoleônicas | 18, 41, 47, 53 | 44, 53, 54, 62 |
+  | Regências | 7, 9, 10, 34 | 9, 20, 23, 58, 67, 83 |
+  | Queda do Ocidente | 14, 26, 71, 105 | 84, 88, 105, 111 |
+  | Sengoku | 28, 60, 74, 82 | 36, 55, 56, 68 |
+  | Secessão | 6, 7, 14, 94 | 8, 8, 10, 11, 43, 104 |
+
+- **Modo Curto, todas as facções:** a Secessão passou da média de 7,5 para 16,5 rodadas.
+- **Ainda em aberto:**
+  - A Secessão continua decidida cedo, porque são só duas facções.
+  - O Império do Ocidente vence 6 de 7 na Queda.
+  - Os Farrapos vencem 4 de 5 nas Regências.
+  - No modo Curto, o objetivo costuma ser cumprido assim que a vitória é liberada, na rodada 20.
+
+## v42 — 26/11/2026 · Revisão de usabilidade: ação do turno sempre à vista
+
+Primeira entrega da revisão completa (UI-10 e UI-13 do levantamento, mais as regras de UX do projeto). A auditoria mediu contraste, alvos de toque, transbordo em 360 px, tempo de carga e erros de console nas telas de criação, abertura e turno.
+
+- **Barra de ação fixa.** A fase atual, o que falta fazer e o botão principal ("Ir para as ações", "Remanejar", "Encerrar turno") ficam sempre visíveis: no rodapé do painel no computador e no rodapé da tela no celular. Antes, o botão ficava abaixo da dobra.
+- **Atalhos de teclado.** Enter faz a ação da fase; Esc fecha janelas; 1 a 6 trocam a lente; + − 0 controlam o zoom; T, G, D, V, P, O, C, S e R abrem os painéis. A tecla ? e o botão ⌨ mostram a lista.
+- **Painéis recolhíveis.** Cartas, Tecnologia, Facções e Crônica abrem e fecham pelo título, com teclado também. No celular, Cartas, Tecnologia e Crônica começam fechados. A escolha fica salva no navegador.
+- **Celular.** O mapa ocupa 58% da tela e começa aproximado na sua capital.
+- **Acessibilidade (WCAG AA).**
+  - Foco do teclado visível em tudo.
+  - Botões com pelo menos 28 px de altura, e 40 px em telas de toque.
+  - Nenhum texto abaixo de 12 px.
+  - Nomes de facção com cor escura são clareados até o contraste 4,5:1, na abertura e nas batalhas.
+- **Tooltips:** na estabilidade, na rodada (quando a vitória é liberada) e nas linhas das facções.
+- **Medições:** a página carrega em cerca de 0,3 s, sem erros no console. A auditoria não achou nenhum texto com contraste abaixo do AA.
+
 ## v41 — 26/11/2026 · Líderes em todos os cenários (L3, L4 e L5)
 
 Partes L3 a L5 do levantamento dos líderes. Agora todas as 112 facções têm de 2 a 3 líderes.

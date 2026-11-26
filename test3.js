@@ -214,6 +214,19 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => document.querySelectorAll('#lds .ldc').length === 3), 'cartões dos líderes na criação');
   await p.click('[data-a=ldp][data-k="2"]'); await p.click('[data-a=start]'); await p.click('#modal [data-m="0"]').catch(() => { });
   ok(await p.evaluate(() => { const G = window.__sob.G, F = G.F.fr; return F.L === 'Lazare Carnot' && F.ab === 'recrutador' && G.F.gb.L === 'William Pitt, o Jovem' && /Lazare Carnot/.test(snapshot()) && /⚜/.test(document.querySelector('#me').textContent); }), 'líder escolhido vale na partida e vai para o salvamento');
+  // v42: barra de ação fixa, atalhos e painéis recolhíveis
+  ok(await p.evaluate(() => { const b = document.querySelector('#actbar'), r = b.getBoundingClientRect(); return !!b.querySelector('button.pri') && r.bottom <= innerHeight + 1 && r.top < innerHeight; }), 'barra de ação visível sem rolar');
+  await p.keyboard.press('?');
+  ok(await p.evaluate(() => /Atalhos de teclado/.test(document.querySelector('#modal').textContent)), 'tecla ? abre os atalhos');
+  await p.keyboard.press('Escape');
+  ok(await p.evaluate(() => document.querySelector('#modal').hidden), 'Esc fecha a janela');
+  await p.keyboard.press('3');
+  ok(await p.evaluate(() => window.__sob.G.lens === 'ter'), 'tecla 3 troca a lente');
+  await p.keyboard.press('1');
+  ok(await p.evaluate(() => { const h = document.querySelector('#tech>h4.fh4'); h.click(); const a = h.parentElement.classList.contains('fold'); h.click(); return a !== h.parentElement.classList.contains('fold'); }), 'painel de tecnologia recolhe e abre');
+  ok(await p.evaluate(() => lc('#1c2a8a') !== '#1c2a8a' && /^rgb/.test(lc('#1c2a8a'))), 'cor de facção escura é clareada para contraste');
+  // v43: desgaste da blitz e guerra defensiva
+  ok(await p.evaluate(() => { const G = window.__sob.G, f = G.player, F = G.F[f], c0 = F.cq; F.cq = 2; const a = blitzCost(f); F.cq = 3; const b = blitzCost(f); F.cq = 5; const c = blitzCost(f); F.cq = c0; return a === 0 && b === ECON.blitzS && c === 3 * ECON.blitzS; }), 'desgaste da blitz começa na 4ª conquista e cresce');
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

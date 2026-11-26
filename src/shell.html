@@ -235,6 +235,27 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .ledger{margin:.4em 0}.ledger summary{cursor:pointer;font-size:.85em}.ledger table,.emp{border-collapse:collapse;font-size:.8em;width:100%}.ledger td,.emp td,.emp th{padding:2px 4px;border-bottom:1px solid #ffffff14;vertical-align:top;text-align:left}.ledger td.n,.ledger td:first-child{white-space:nowrap}.ledger .neg,.emp .neg{color:#e58b7c}.emp .tot td{font-weight:700;border-top:1px solid #ffffff40}.emp a{color:inherit}
 #rib path.rb{fill:none;stroke-width:7;stroke-opacity:.85;vector-effect:non-scaling-stroke;pointer-events:none}
 #relS{mix-blend-mode:multiply;pointer-events:none;opacity:.85}#relc{pointer-events:none}
+/* v42: barra de ação fixa, foco visível, alvos de toque, painéis recolhíveis */
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button.mini{padding:4px 9px;font-size:12.5px;min-height:28px}
+.ab2{min-height:30px}
+.chk{min-height:28px}.chk input{width:18px;height:18px;accent-color:var(--brass)}
+.era,.rel,#log em,.fn span,.res i{font-size:12px}
+#actbar{position:sticky;bottom:-12px;margin:0 -12px -12px;padding:10px 12px;background:var(--deck2);border-top:2px solid var(--brass);display:flex;flex-direction:column;gap:6px;z-index:2;box-shadow:0 -6px 16px #0006}
+#actbar .st{font-size:13px;color:var(--text)}#actbar .st b{color:var(--brass)}
+#actbar .bt{display:flex;gap:6px}#actbar .bt:empty{display:none}#actbar .bt button{flex:1;min-height:40px;font-size:15px}#actbar .bt button.ghost{flex:0 0 auto}#actbar .bt button:disabled{opacity:.7}
+#credit{font-size:12px}.warn{color:var(--warn)}
+#side>section.fold>:not(h4){display:none}
+#side>section>h4.fh4{cursor:pointer;display:flex;align-items:center;gap:6px}
+#side>section>h4.fh4::after{content:"▾";margin-left:auto;color:var(--mute);font-size:13px}
+#side>section.fold>h4.fh4::after{content:"▸"}
+@media (pointer:coarse){button{min-height:40px}button.mini{min-height:34px}#zoom button{width:40px;height:40px}#lens button{min-height:34px}}
+@media (max-width:820px){
+  #game{grid-template-rows:auto 58dvh auto}
+  #side{padding-bottom:120px}
+  #actbar{position:fixed;left:0;right:0;bottom:0;margin:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:5}
+  #lens button{font-size:12px}
+}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -252,13 +273,13 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
   <p class="note">Os cenários de fantasia são mundos originais criados para o jogo, inspirados no gênero da fantasia épica. Fronteiras históricas são aproximadas a partir de mapas atuais.</p>
 </div>
 <div id="game" hidden>
-  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
+  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="keys" title="Atalhos de teclado (?)" aria-label="Atalhos de teclado">⌨</button><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="lgd" hidden></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
     <div id="toast" hidden></div><div id="battle" hidden></div></main>
-  <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>
+  <aside id="side"><section id="me"></section><section id="phase"></section><section id="info"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
 <script>
