@@ -1,5 +1,34 @@
 # Histórico de versões
 
+## v48 — 26/11/2026 · Painel de facções (UI-13)
+
+- Cada facção mostra uma barra de poder (a fatia dela nos territórios das facções), tropas, estabilidade e cartas.
+- A opinião sobre você aparece como número, com os motivos na dica: comércio, fé, fronteira, tratados e agravos.
+- Quem está segurando o objetivo ou passou de 75% de uma vitória ganha o aviso "⚠" em vermelho.
+- Relação, opinião e botões de diplomacia ficam numa segunda linha, e o nome não espreme mais.
+- A IA já usa influência e diplomacia. O contador antigo das simulações lia só as 80 últimas linhas da crônica, por isso marcava quase zero.
+
+## v47 — 26/11/2026 · Corrida ao objetivo (V-11)
+
+- **Antes:** no modo Curto, o objetivo era cumprido antes da rodada 20 e a partida acabava assim que a vitória liberava.
+- **Agora:** os turnos seguidos do objetivo só começam a contar quando a vitória libera. Ao cumprir o objetivo, a facção é anunciada a todos e vira alvo. A IA entra em campanha e mira a capital e os alvos dela.
+- O objetivo pede 60% do legado da duração (eram 50%). No modo Curto, é preciso segurá-lo por 3 turnos (eram 2).
+- **Simulações no modo Curto** (6 partidas por cenário, rodada final):
+
+  | Cenário | v45 | v47 |
+  |---|---|---|
+  | Sengoku | 20 a 30, quase tudo por objetivo | 22, 25, 30, 30, 31, 46 (objetivo, dominação, econômica, legado) |
+  | Vikings | 23 a 28, noruegueses 5 de 6 | 23, 28, 33, 35, 36, 37 (5 vencedores diferentes) |
+  | Queda do Ocidente | Ocidente 6 de 7 | 32 a 58; Ocidente 3, Oriente 3 (na bateria do `npm test`, ainda Ocidente 6 de 7) |
+
+## v46 — 26/11/2026 · Agitação saturada e cansaço do invadido (D-15, D-16)
+
+- **Causa encontrada:** nas Regências, o Império perdia cerca de 40 de estabilidade por rodada. Quatro rivais pagavam agitadores e usavam a carta de agitação na mesma rodada, cada um tirando 15. Além disso, cada província perdida somava 2 de cansaço de guerra.
+- **Agitação saturada (D-16):** na mesma rodada, só a primeira agitação contra uma facção (ação ou carta) vale inteira; as seguintes valem 1/3.
+- **Cansaço do invadido (D-15):** perder territórios soma cansaço só uma vez por rodada.
+- **Regências:** o Império volta a 3 tropas por província, porque com 4 o soldo não fechava e as tropas desertavam. Os Farrapos começam com estabilidade 60 (era 75).
+- **Simulações no modo Médio** (8 partidas): a Queda teve 4 vencedores diferentes, e a Secessão passou a terminar entre as rodadas 8 e 79, com mediana perto de 30. Nas Regências, o Império voltou a vencer algumas partidas (3 de 10), mas os Farrapos ainda levam a maioria. O cenário original tem 14 rodadas, e quem derrota o rival principal cedo leva o mapa.
+
 ## v45 — 26/11/2026 · Equilíbrio de três cenários e última resistência (D-14)
 
 - **Última resistência (D-14).** A capital de quem tem até 2 territórios defende com +1. Facções de uma só província não caem mais no primeiro ataque.

@@ -196,6 +196,10 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .fn{flex:1;min-width:0;display:flex;flex-direction:column}
 .fn b{font-size:13px}
 .fn span{font-size:11.5px;color:var(--mute)}
+.fa{flex-basis:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:16px}.fa:empty{display:none}
+.fn .thr{font-size:12px;color:#f0a39e;font-weight:600}
+.pbar{display:block;height:4px;margin-top:3px;background:#2c3a4b;border-radius:2px;overflow:hidden}.pbar i{display:block;height:100%}
+.op{font-size:12px;min-width:30px;text-align:center;padding:1px 4px;border:1px solid #2c3a4b;border-radius:4px;color:var(--mute)}.op.ok{border-color:var(--good);color:#9ed9b0}.op.bad{border-color:var(--bad);color:#f0a39e}
 .rel{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
 .rel.guerra{color:var(--bad)} .rel.aliado{color:var(--good)} .rel.trégua{color:var(--warn)} .rel.você{color:var(--brass)}
 #log{list-style:none;padding:0;margin:0;font-size:12.5px;max-height:260px;overflow-y:auto}
@@ -357,7 +361,7 @@ const ECON = { pa: 3, troop: 2, fest: 2, agit: 3, rush: 2, rushW: 3, freeT: 3, p
 // v5, parte 1 (D-01, D-03, D-04): duração da partida. r = rodadas, k = fator de custo de obras e tecnologias,
 // hold = turnos seguidos com o objetivo cumprido, leg = legado para vencer. Nenhuma vitória, exceto dominação, antes de 1/3 das rodadas.
 const LEN = {
-  c: { n: 'Curta', r: 60, k: 1, hold: 2, leg: 150 },
+  c: { n: 'Curta', r: 60, k: 1, hold: 3, leg: 150 },
   m: { n: 'Média', r: 120, k: 2, hold: 3, leg: 220 },
   l: { n: 'Longa', r: 250, k: 4, hold: 4, leg: 300 },
 };
@@ -1037,8 +1041,8 @@ const SCEN = [
     d: 'Sem imperador no trono, o Império enfrenta ao mesmo tempo Farroupilha, Cabanagem, Balaiada e Sabinada. Mantenha o país unido ou proclame sua república.',
     neu: 2,
     f: [
-      { id: 'im', n: 'Império (Regência)', c: '#3f9a6b', L: 'Regente Feijó', ab: 'recrutador', cap: 'Corte (Rio de Janeiro)', tr: 4, ctr: 7, st: 50, trT: { 'Santa Catarina': 5, Curitiba: 5, Piauí: 3, Ceará: 3, 'Alto Amazonas': 3, Sergipe: 3, Alagoas: 3 }, t: ['Corte (Rio de Janeiro)', 'Minas Gerais', 'São Paulo', 'Espírito Santo', 'Goiás', 'Mato Grosso', 'Curitiba', 'Santa Catarina', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte', 'Ceará', 'Piauí', 'Alagoas', 'Sergipe', 'Alto Amazonas'], obj: { n: 20, txt: 'Mantenha a unidade: controle as 20 províncias.' } },
-      { id: 'fa', n: 'Farrapos', c: '#c8443a', L: 'Bento Gonçalves', ab: 'tatico', cap: 'Rio Grande do Sul', tr: 5, st: 75, t: ['Rio Grande do Sul'], obj: { hold: ['Santa Catarina', 'Curitiba', 'São Paulo'] } },
+      { id: 'im', n: 'Império (Regência)', c: '#3f9a6b', L: 'Regente Feijó', ab: 'recrutador', cap: 'Corte (Rio de Janeiro)', tr: 3, ctr: 7, st: 50, trT: { 'Santa Catarina': 5, Curitiba: 5, Piauí: 3, Ceará: 3, 'Alto Amazonas': 3, Sergipe: 3, Alagoas: 3 }, t: ['Corte (Rio de Janeiro)', 'Minas Gerais', 'São Paulo', 'Espírito Santo', 'Goiás', 'Mato Grosso', 'Curitiba', 'Santa Catarina', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte', 'Ceará', 'Piauí', 'Alagoas', 'Sergipe', 'Alto Amazonas'], obj: { n: 20, txt: 'Mantenha a unidade: controle as 20 províncias.' } },
+      { id: 'fa', n: 'Farrapos', c: '#c8443a', L: 'Bento Gonçalves', ab: 'tatico', cap: 'Rio Grande do Sul', tr: 5, st: 60, t: ['Rio Grande do Sul'], obj: { hold: ['Santa Catarina', 'Curitiba', 'São Paulo'] } },
       { id: 'ca', n: 'Cabanos', c: '#d6b33a', L: 'Eduardo Angelim', ab: 'carisma', cap: 'Grão-Pará', tr: 6, st: 70, t: ['Grão-Pará'], obj: { hold: ['Alto Amazonas', 'Maranhão'] } },
       { id: 'ba', n: 'Balaios', c: '#8a6bbf', L: 'Negro Cosme', ab: 'recrutador', cap: 'Maranhão', tr: 6, st: 65, t: ['Maranhão'], obj: { hold: ['Piauí', 'Ceará'] } },
       { id: 'sa', n: 'Sabinos', c: '#3f6fd1', L: 'Francisco Sabino', ab: 'tenaz', cap: 'Bahia', tr: 6, st: 65, t: ['Bahia'], obj: { hold: ['Sergipe', 'Alagoas', 'Pernambuco'] } },
@@ -2004,7 +2008,7 @@ function objDone(f) {
   return legacy(f) >= objLeg(); // D-02: a 2ª etapa do objetivo é desenvolver o império
 }
 const legWin = () => Math.round(G.len.leg * Math.min(2, Math.max(1, G.N / 30))); // mapas maiores pedem mais legado
-const objLeg = () => Math.ceil(legWin() / 2);
+const objLeg = () => Math.ceil(legWin() * .6); // v47: 60% do legado (era 50%)
 function objText(F) {
   const o = F.obj, p = [];
   if (o.txt) return o.txt;
@@ -2627,7 +2631,7 @@ function vicTurn(f) {
 function vicRound() {
   const w = worldPol(); G.green = w <= 6 && greenLead() ? (G.green || 0) + 1 : 0;
 }
-const threatOf = f => Object.keys(Fa(f).thr || {}).length > 0;
+const threatOf = f => Fa(f).hold > 0 || Object.keys(Fa(f).thr || {}).length > 0;
 function vicModal() {
   const me = G.player, fs = G.order.filter(f => Fa(f).alive && Fa(f).entered);
   const rows = Object.entries(VIC).filter(([k]) => vicOn(k)).map(([k, V]) => {
@@ -3089,7 +3093,7 @@ function act(f, a, x, y) {
   } else if (a === 'agit') {
     const o = G.own[x]; if (!real(o) || !hostile(f, x)) return 'Escolha um território de uma facção rival.';
     if (F.pre < ECON.agit) return 'Prestígio insuficiente.';
-    if (!spend(f, 'agit' + o)) return 'Já há agitadores contra esta facção neste turno.'; F.pre -= ECON.agit; Fa(o).stab = Math.max(0, Fa(o).stab - (pol(o, 'pol') ? 7 : 15)); // G-31
+    if (!spend(f, 'agit' + o)) return 'Já há agitadores contra esta facção neste turno.'; F.pre -= ECON.agit; agitHit(o, pol(o, 'pol') ? 7 : 15); // G-31
     log(f, `${fname(f)} financia agitadores contra ${fname(o)}.`);
   }
   return '';
@@ -3217,7 +3221,7 @@ function playCard(f, h, target, t2) {
   else if (k === 4) { if (!hostile(f, target)) return false; G.tr[target] = Math.max(1, Math.ceil(G.tr[target] / 2)); }
   else if (k === 5 || k === 8 || k === 10) {
     if (!real(o) || allied(f, o) || (k !== 10 && !hostile(f, target))) return false;
-    if (k === 5) Fa(o).stab = Math.max(0, Fa(o).stab - 15);
+    if (k === 5) agitHit(o, 15);
     if (k === 8) { const C = Fa(o).cards; if (!C.length) return false; F.cards.push(C.splice(Math.floor(rnd() * C.length), 1)[0]); }
     if (k === 10) { if (peace(f, o)) return false; G.truce.add(tk(f, o)); }
   }
@@ -3303,6 +3307,8 @@ function eliminate(d, a) {
   if (d === G.player && !G.auto) endGame(null, 'elim');
 }
 // v43: desgaste da blitz. A 4ª conquista do turno em diante custa estabilidade crescente e 1 tropa (guarnição e deserção)
+// v46 (D-16): agitação saturada. Na mesma rodada, só a primeira agitação contra uma facção pega inteira; as seguintes valem 1/3
+const agitHit = (o, n) => { const O = Fa(o); O.stab = Math.max(0, O.stab - (O.agR === G.round ? Math.ceil(n / 3) : n)); O.agR = G.round; };
 const blitzCost = f => Math.max(0, Fa(f).cq + 1 - ECON.blitz) * ECON.blitzS;
 function conquer(i, j, n) {
   const a = G.own[i], d = G.own[j];
@@ -3321,7 +3327,7 @@ function conquer(i, j, n) {
   if (real(a) && G.sc.civ) civTake(a, j, d);
   if (real(d) && real(a)) { remember(d, a, 'tomou nossa terra', -30); callDefense(a, d); }
   if (real(d)) {
-    const D = Fa(d); D.stab = Math.max(0, D.stab - 2); D.ww = Math.min(30, D.ww + 2); D.hit = G.round; // v43: guerra defensiva
+    const D = Fa(d); D.stab = Math.max(0, D.stab - 2); if (D.hit !== G.round) D.ww = Math.min(30, D.ww + 2); D.hit = G.round; // v43: guerra defensiva; v46 (D-15): o cansaço por perda conta uma vez por rodada
     if (D.capI === j) era(a, 2, `tomou a capital de ${fname(d)}`);
     if (D.capI === j) { D.stab = Math.max(0, D.stab - 20); log(d, `${fname(d)} perde a capital ${tname(j)}!`); }
     if (!owned(d).length) eliminate(d, a);
@@ -3421,7 +3427,9 @@ function beginTurn(f) {
     }
   }
   F.reinf = reinfOf(f).r;
-  F.hold = objDone(f) ? F.hold + 1 : 0; // D-03
+  // D-03; v47 (V-11): a contagem só começa quando a vitória libera, e todos são avisados para reagir
+  F.hold = objDone(f) && G.round >= minWin() ? F.hold + 1 : 0;
+  if (F.hold === 1 && G.len.hold > 1) { log(f, `Alerta: ${fname(f)} cumpriu o objetivo e vence se segurá-lo por mais ${G.len.hold - 1} turno(s).`); if (f !== G.player && !G.auto) toast(`${fname(f)} cumpriu o objetivo! Tome um alvo dela em ${G.len.hold - 1} turno(s) ou ela vence.`); }
   vicTurn(f); if (G.over) return; // parte 13
   if (G.round < minWin()) return;
   if (F.hold >= G.len.hold) endGame(f, 'obj');
@@ -3587,7 +3595,8 @@ function bestAttack(f, minEdge, probe) {
       if (!canAtk(f, i, j, probe)) continue;
       const edge = G.tr[i] - G.tr[j] - defBonus(j) - (isSea(i, j) ? 1 : 0);
       if (edge < minEdge) continue;
-      const s = tval(f, j) * (edge + 1) / (G.tr[j] + 1) + (G.bld[j].length ? 1 : 0);
+      const d = G.own[j], th = real(d) && Fa(d).hold > 0; // v47: quem está segurando o objetivo vira alvo, sobretudo a capital e os alvos dele
+      const s = tval(f, j) * (edge + 1) / (G.tr[j] + 1) + (G.bld[j].length ? 1 : 0) + (th ? 3 + (j === Fa(d).capI || (Fa(d).obj.hold || []).some(n => G.ix[n] === j) ? 4 : 0) : 0);
       if (!best || s > best[2]) best = [i, j, s];
     }
   }
@@ -3625,7 +3634,7 @@ function aiOptions(f) {
   const hot = border.slice().sort((a, b) => (threat(f, b) - G.tr[b]) - (threat(f, a) - G.tr[a]))[0];
   if (!F.camp && !F.passive) {
     let n = 0; for (const i of T) for (const j of G.A[i]) if (canAtk(f, i, j, true) && G.tr[i] - G.tr[j] - defBonus(j) >= 2) n++;
-    const dfs = (F.hit || -9) >= G.round - 1; // v43: invadida, a IA contra-ataca em vez de se encolher pelo cansaço
+    const dfs = (F.hit || -9) >= G.round - 1 || G.order.some(o => o !== f && real(o) && Fa(o).alive && Fa(o).hold > 0 && !allied(f, o)); // v47: alguém segurando o objetivo também mobiliza; v43: invadida, a IA contra-ataca em vez de se encolher pelo cansaço
     if (n) o.push([4 + Math.min(3, n * .5) + (G.round > 2 ? .5 : 0) + (dfs ? 1.5 : -F.ww * .15) - (F.stab < 30 ? 1.5 : 0), 'camp']); // D-10: cansaço e instabilidade seguram a IA
   }
   if (!F.bldOn) {
@@ -4554,6 +4563,7 @@ function renderSide() {
   $('#info').innerHTML = inf || '<p class="hint">Clique num território para ver detalhes. Arraste para mover o mapa, role ou use + e − para zoom.</p>';
   $('#cards').innerHTML = `<h4>Cartas <span class="hint">${F.cards.length}/5 · ganhe uma por turno em que conquistar · usar não gasta ação</span></h4>` + (F.cards.length ? F.cards.map((c, h) => `<button class="card ${G.card && G.card.h === h ? 'on' : ''}" data-a="card" data-h="${h}" ${my ? '' : 'disabled'}><b>${esc(cardName(c))}</b><span>${esc(cardFx(c))}</span></button>`).join('') : '<p class="hint">Nenhuma carta.</p>');
   $('#tech').innerHTML = `<h4>Tecnologia · ${esc(G.era.n)}</h4><p class="hint" title="${esc(F.tech.map(k => tName(k)).join(', '))}">${F.tech.length} tecnologias pesquisadas · <button class="mini" data-a="techs">Abrir a árvore</button></p><p class="hint">Regras da era:</p><ul>${G.era.tech.map(t => `<li>${esc(t)}</li>`).join('')}${G.sc.air ? `<li>${esc(G.sc.air.n)}: alcance ${G.sc.air.r}, acertam com ${G.sc.air.hit}+.</li>` : ''}</ul>`;
+  const tot = Math.max(1, G.own.filter(o => real(o)).length);
   $('#facs').innerHTML = `<h4>Facções <button class="mini" data-a="dipl">Diplomacia${G.offers.length || (G.dem && G.dem.to === me) ? ' •' : ''}</button></h4>` + G.order.filter(f => Fa(f).entered || Fa(f).late).map(f => {
     const X = Fa(f), alive = X.alive && X.entered;
     const rel = f === me ? 'você' : !X.entered ? 'ainda neutro' : !alive ? 'eliminado' : allied(me, f) ? 'aliado' : peace(me, f) ? 'trégua' : 'guerra';
@@ -4562,7 +4572,10 @@ function renderSide() {
       if (G.truce.has(tk(me, f))) act = G.confirmBrk === f ? `<button class="mini bad" data-a="dok" data-f="${f}">Confirmar (−15)</button><button class="mini" data-a="dno">Não</button>` : `<button class="mini" data-a="dbrk" data-f="${f}">Romper</button><button class="mini" data-a="demb" data-f="${f}" title="T-18: corta e proíbe as rotas comerciais com esta facção">${G.emb.has(tk(me, f)) ? 'Suspender embargo' : 'Embargo'}</button>`;
       else act = (G.cool[f] || 0) > G.round ? '<span class="hint">aguarde</span>' : `<button class="mini" data-a="dpro" data-f="${f}">Propor trégua</button>`;
     }
-    return `<div class="fr ${alive ? '' : 'dead'}"><i class="dot" style="background:${X.c}"></i><div class="fn" title="Líder · territórios · tropas no mapa · cartas na mão · estabilidade (0–100)"><b>${esc(X.n)}</b><span>${esc(X.L)} · ${owned(f).length} terr. · ${power(f)} tropas · ${X.cards.length} cartas · estab. ${Math.round(X.stab)}</span></div><span class="rel ${rel}">${rel}</span>${act}</div>`;
+    // v48 (UI-13): barra de poder (fatia dos territórios), ameaça de vitória e opinião sobre você
+    const nT = owned(f).length, sh = Math.round(100 * nT / tot), th = alive && threatOf(f), op = alive && f !== me ? relOf(f, me) : null;
+    const opT = op ? esc(op.why.map(([t, v]) => `${v > 0 ? '+' : ''}${v} ${t}`).join('; ') || 'sem motivos') : '';
+    return `<div class="fr ${alive ? '' : 'dead'}"><i class="dot" style="background:${X.c}"></i><div class="fn"><b>${esc(X.n)}${th ? ` <span class="thr" title="${X.hold ? `Cumpriu o objetivo: vence se segurar por mais ${G.len.hold - X.hold} turno(s)` : 'Passou de 75% de uma vitória'}">⚠ ${X.hold ? 'segurando o objetivo' : 'perto de vencer'}</span>` : ''}</b><span title="Líder · territórios · tropas no mapa · estabilidade (0–100) · cartas na mão">${esc(X.L)} · ${nT} terr. · ⚔ ${power(f)} · ⚖ ${Math.round(X.stab)} · ${X.cards.length} cartas</span>${alive ? `<i class="pbar" title="${sh}% dos territórios das facções"><i style="width:${sh}%;background:${X.c}"></i></i>` : ''}</div><div class="fa"><span class="rel ${rel}">${rel}</span>${op ? `<span class="op ${op.v > 10 ? 'ok' : op.v < -10 ? 'bad' : ''}" title="Opinião sobre você: ${opT}">opinião ${op.v > 0 ? '+' : ''}${op.v}</span>` : ''}${act}</div></div>`;
   }).join('');
   $('#log').innerHTML = G.log.slice(0, 40).map(([f, t, r]) => `<li><i class="dot" style="background:${f ? Fa(f).c : 'var(--brass)'}"></i><span>${esc(t)}</span><em>${r}</em></li>`).join('');
   foldInit();
@@ -4594,7 +4607,7 @@ function modal(html, btns) {
 function rules() {
   modal(`<h2>Como jogar</h2>
   <p><b>Duração.</b> Partida curta (60 rodadas), média (120) ou longa (250). Quanto mais longa, mais caras ficam obras e tecnologias e mais turnos o objetivo precisa ser mantido. Os eventos históricos se espalham pela primeira metade da partida.</p>
-  <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (2, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida; a dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
+  <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (3, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida, e os turnos seguidos do objetivo só começam a contar aí; quem cumpre o objetivo é anunciado a todos e vira alvo. A dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido. Trocar de pesquisa não perde nada. A árvore mostra o que você sabe, o que pode pesquisar e, como silhueta, o passo seguinte; o resto aparece quando você chegar perto.</p>
@@ -4605,7 +4618,7 @@ function rules() {
   <p><b>Catálogo de construções.</b> Cada zona abre a sua cadeia: lavouras → fazenda → celeiro; minas → mina, pedreira, fundição; mercado → banco → bolsa; biblioteca → academia → universidade; templo → mosteiro e grande templo; muralha → castelo. Algumas pedem bens explorados em qualquer território seu (sal, ferro e madeira, pedra). As maravilhas do mundo são únicas: quem termina primeiro fica com ela. O botão Catálogo, nas obras, mostra tudo e o que falta.</p>
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
-  <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
+  <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Perder territórios soma cansaço uma vez por rodada, e só a primeira agitação da rodada contra uma facção pega inteira (as outras valem 1/3).Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>2. Ações.</b> Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>

@@ -231,6 +231,10 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { window.__sob.render(); return document.querySelectorAll('#me .kpis .kp').length === 6; }), 'quadro do império mostra 6 indicadores');
   ok(await p.evaluate(() => { const G = window.__sob.G; G.sel = G.F[G.player].capI; window.__sob.render(); return !!document.querySelector('#info .kpis .kp') && /Comida/.test(document.querySelector('#info').textContent); }), 'cartão do território mostra rendimentos');
   ok(await p.evaluate(() => { const G = window.__sob.G, f = G.order.find(o => G.F[o].alive && G.F[o].capI != null && owned(o).length > 2); return !f || lastStand(G.F[f].capI) === 0; }), 'última resistência só vale para quem tem até 2 territórios');
+  // v46: agitação saturada; v47: objetivo anunciado e alvo; v48: painel de facções
+  ok(await p.evaluate(() => { const G = window.__sob.G, o = G.order.find(x => x !== G.player), O = G.F[o], s0 = O.stab; O.stab = 80; O.agR = 0; agitHit(o, 15); const a = O.stab; agitHit(o, 15); const b = O.stab; O.stab = s0; return a === 65 && b === 60; }), 'segunda agitação na mesma rodada vale 1/3');
+  ok(await p.evaluate(() => { const G = window.__sob.G, o = G.order.find(x => x !== G.player), h0 = G.F[o].hold; G.F[o].hold = 1; window.__sob.render(); const t = threatOf(o) && /segurando o objetivo/.test(document.querySelector('#facs').textContent); G.F[o].hold = h0; window.__sob.render(); return t; }), 'quem segura o objetivo aparece como ameaça no painel de facções');
+  ok(await p.evaluate(() => document.querySelectorAll('#facs .pbar').length > 0 && !!document.querySelector('#facs .op')), 'painel de facções tem barra de poder e opinião');
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

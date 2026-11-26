@@ -54,7 +54,7 @@ const ECON = { pa: 3, troop: 2, fest: 2, agit: 3, rush: 2, rushW: 3, freeT: 3, p
 // v5, parte 1 (D-01, D-03, D-04): duração da partida. r = rodadas, k = fator de custo de obras e tecnologias,
 // hold = turnos seguidos com o objetivo cumprido, leg = legado para vencer. Nenhuma vitória, exceto dominação, antes de 1/3 das rodadas.
 const LEN = {
-  c: { n: 'Curta', r: 60, k: 1, hold: 2, leg: 150 },
+  c: { n: 'Curta', r: 60, k: 1, hold: 3, leg: 150 },
   m: { n: 'Média', r: 120, k: 2, hold: 3, leg: 220 },
   l: { n: 'Longa', r: 250, k: 4, hold: 4, leg: 300 },
 };

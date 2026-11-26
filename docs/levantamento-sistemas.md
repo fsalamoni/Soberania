@@ -59,6 +59,8 @@ Hoje as partidas acabam entre a 5ª e a 10ª rodada porque o objetivo pede pouco
 | D-12 | Desgaste da blitz (v43) | Ataques seguem ilimitados, mas avançar rápido custa | As 3 primeiras conquistas do turno são livres; a 4ª custa 4 de estabilidade e 1 tropa, a 5ª custa 8, a 6ª custa 12, e assim por diante. A IA para quando a estabilidade cairia abaixo de 45, salvo para tomar uma capital |
 | D-13 | Guerra defensiva (v43) | Quem é invadido reage em vez de se encolher | Facção que perdeu território na rodada anterior ignora o cansaço de guerra ao decidir campanha e tende a contra-atacar |
 | D-14 | Última resistência (v45) | Facções pequenas não somem num único ataque | A capital de quem tem até 2 territórios soma +1 à defesa |
+| D-15 | Cansaço do invadido limitado (v46) | Império atacado em várias frentes não desmorona em 2 rodadas | Perder territórios soma cansaço de guerra só uma vez por rodada (antes, +2 por território) |
+| D-16 | Agitação saturada (v46) | Rivais somados não zeram a estabilidade de uma vez | Na mesma rodada, só a primeira agitação (ação ou carta) contra uma facção vale inteira; as seguintes valem 1/3 |
 
 **Sugestão de alvo:** cenários históricos com 30 a 40 rodadas na velocidade Normal, cerca de 2 a 3 horas de jogo. O Modo Civilização fica com 200 a 300 rodadas, jogável em várias sessões.
 
@@ -939,6 +941,7 @@ Várias vitórias ao mesmo tempo fazem cada facção ter um plano diferente, e o
 | V-08 | Legado | Pontos de legado (tecnologias, construções, maravilhas, eras de ouro) acima da meta | Corrida por maravilhas | Sim (30 pontos) |
 | V-09 | Pontos no limite de turnos | Se ninguém vencer, ganha quem tem mais pontos: territórios, população, tecnologias, maravilhas, cultura, crescimento | — | Sim (por crescimento) |
 | V-10 | Ecológica (opcional) | Mundo com poluição abaixo do limite por 20 turnos e você liderando as renováveis | Indústria suja dos rivais | Não |
+| V-11 | Corrida ao objetivo (v47) | Os turnos seguidos do objetivo (3, 3 ou 4) só contam depois que a vitória libera; o objetivo pede 60% do legado da duração; quem cumpre é anunciado a todos | A IA entra em campanha e mira a capital e os alvos de quem está segurando | Sim |
 
 **Regra contra a vitória cedo demais:** nenhuma vitória além de dominação e objetivo pode acontecer antes de uma rodada mínima (ex.: 30 nos cenários, 150 no modo Civilização). Isso resolve o "jogo curto" de hoje sem mudar o combate.
 
