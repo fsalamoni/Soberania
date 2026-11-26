@@ -219,7 +219,7 @@ function yieldOf(i, L) {
   if (subOf(i)) { const n = 'Porte: ' + pName(i).toLowerCase(); A('prod', 1, n); A('gold', 1, n); if (lv >= 4) A('sci', 1, n); }
   if (real(f)) A('gold', -jobless(i), 'Desemprego');
   for (const k of G.bld[i]) {
-    const S = STRUCT[k], n = sName(k); if (!nb(i, k)) continue; if (S.sciLv) A('sci', lv, n + ' (pelo porte)'); if (!S.y) continue;
+    const S = STRUCT[k], n = sName(k); if (!nb(i, k)) continue; if (S.sciLv) A('sci', lv, n + ' (pelo porte)'); if (real(f)) for (const t of TBY[k] || []) if (has(f, t.k)) A(t.by[1], t.by[2], n + ' · ' + tName(t.k)); /* v38: KN-01 a KN-20 */ if (!S.y) continue;
     if ((k === 'ztc' || k === 'zae') && real(f) && has(f, 'sat')) A('sci', 1, n + ' · ' + tName('sat')); // K-113
     for (const [r, v] of Object.entries(S.y)) A(r, v, n);
     if (k === 'mer' && real(f) && has(f, 'com')) A('gold', 1, n + ' · ' + tName('com'));

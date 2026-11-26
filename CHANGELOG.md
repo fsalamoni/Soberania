@@ -1,5 +1,23 @@
 # Histórico de versões
 
+## v38 — 26/11/2026 · Árvore mais funda: 20 tecnologias novas
+
+Parte v28 do plano de aprimoramento (pesquisa por passos), segunda etapa.
+
+- **20 tecnologias novas (KN-01 a KN-20)** nas eras que tinham menos:
+  - Idade Média: de 11 para 16;
+  - Idade Moderna: de 9 para 14;
+  - Era Atômica: de 8 para 11;
+  - Era da Informação: de 8 para 11;
+  - futuro próximo: de 3 para 7.
+- **Cada uma melhora uma construção que já existe:**
+  - Idade Média: Rotação de culturas (+1 comida por fazenda), Heráldica (+1 prestígio por castelo), Cartografia (+1 ouro por porto), Herbalismo (+1 comida por hospital), Rodas d'água (+1 produção por moinho).
+  - Idade Moderna: Anatomia, Contabilidade, Nova agricultura, Urbanismo e Hidrografia.
+  - Era Atômica: Logística moderna, Administração pública e Medicina preventiva.
+  - Era da Informação: Robótica, Genômica e Finanças digitais.
+  - Futuro próximo: Computação quântica, Nanotecnologia, Agricultura vertical e Cidades inteligentes.
+- **Livro-razão:** o bônus aparece em cada região, com o nome da tecnologia.
+- **Árvore:** as tecnologias novas entram na revelação gradual da v36, ligadas às existentes por pré-requisitos.
 ## v37 — 25/11/2026 · Conselho de papéis
 
 Parte v29 do plano de aprimoramento. O levantamento está no documento "Soberania: levantamento do Conselho de papéis".

@@ -321,3 +321,34 @@ TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
 TECH.forEach(t => { t.t = t.e + 1; TK[t.k] = t; });
 STRUCT.fsn = { pc: 24, need: 'zen', tech: 'fus', mk: 'ene', y: { prod: 3, gold: 1 }, ic: '🔆', fx: 'Usina de fusão (K-121): energia limpa, +3 produção e +1 ouro.', n: 'Usina de Fusão' };
 STRUCT.sp3.tech = 'cle';
+
+// ---------- v38 (plano v28): árvore mais funda (KN-01 a KN-20) ----------
+// Ramos novos nas eras com menos tecnologias (Idade Média, Idade Moderna, Era Atômica, da Informação e futuro próximo).
+// Cada uma melhora uma construção que já existe: b = construção, r = recurso, v = quanto a mais por construção ativa.
+const BN = { faz: 'fazenda', cas: 'castelo', por: 'porto', hos: 'hospital', moi: 'moinho', ban: 'banco', cel: 'celeiro', aqu: 'aqueduto', arm: 'armazém alfandegário', apt: 'aeroporto', tri: 'tribunal', mnt: 'montadora', agi: 'agroindústria', bol: 'bolsa de valores', lab: 'laboratório', elc: 'fábrica de chips', brs: 'bairro residencial', ztc: 'polo tecnológico' };
+const TN = (k, e, cost, req, n, b, r, v, id) => ({ ...T7(k, e, cost, req, n, `${id}: +${v} ${{ food: 'comida', prod: 'produção', gold: 'ouro', sci: 'saber', pre: 'prestígio', stab: 'estabilidade' }[r]} em cada ${BN[b]}.`), by: [b, r, v] });
+TECH.push(
+  TN('rot', 1, 8, ['irr', 'feu'], 'Rotação de culturas', 'faz', 'food', 1, 'KN-01'),
+  TN('her', 1, 7, ['feu'], 'Heráldica', 'cas', 'pre', 1, 'KN-02'),
+  TN('crt', 1, 8, ['ast', 'cos'], 'Cartografia', 'por', 'gold', 1, 'KN-03'),
+  TN('hrb', 1, 7, ['teo'], 'Herbalismo', 'hos', 'food', 1, 'KN-04'),
+  TN('rda', 1, 9, ['mec'], "Rodas d'água", 'moi', 'prod', 1, 'KN-05'),
+  TN('ana', 2, 10, ['edu', 'hrb'], 'Anatomia', 'hos', 'sci', 1, 'KN-06'),
+  TN('ctb', 2, 10, ['bnc', 'imp'], 'Contabilidade', 'ban', 'gold', 1, 'KN-07'),
+  TN('agn', 2, 11, ['rot', 'cie'], 'Nova agricultura', 'cel', 'food', 1, 'KN-08'),
+  TN('urb', 2, 11, ['civ', 'eco'], 'Urbanismo', 'aqu', 'stab', 1, 'KN-09'),
+  TN('hdg', 2, 11, ['oce'], 'Hidrografia', 'arm', 'gold', 1, 'KN-10'),
+  TN('lgm', 5, 21, ['avi', 'ref'], 'Logística moderna', 'apt', 'prod', 1, 'KN-11'),
+  TN('adp', 5, 21, ['dipm'], 'Administração pública', 'tri', 'gold', 1, 'KN-12'),
+  TN('mdp', 5, 21, ['atb'], 'Medicina preventiva', 'hos', 'stab', 1, 'KN-13'),
+  TN('rob', 6, 26, ['cmp', 'semi'], 'Robótica', 'mnt', 'prod', 2, 'KN-14'),
+  TN('gnm', 6, 26, ['bio'], 'Genômica', 'agi', 'food', 1, 'KN-15'),
+  TN('fdg', 6, 26, ['net'], 'Finanças digitais', 'bol', 'gold', 2, 'KN-16'),
+  TN('qtc', 7, 31, ['ia'], 'Computação quântica', 'lab', 'sci', 2, 'KN-17'),
+  TN('nan', 7, 31, ['semi', 'fus'], 'Nanotecnologia', 'elc', 'sci', 2, 'KN-18'),
+  TN('agv', 7, 31, ['gnm', 'ren'], 'Agricultura vertical', 'brs', 'food', 2, 'KN-19'),
+  TN('cid', 7, 32, ['ia', 'net'], 'Cidades inteligentes', 'ztc', 'gold', 2, 'KN-20'),
+);
+TECH.sort((a, b) => a.e - b.e || a.cost - b.cost);
+TECH.forEach(t => { t.t = t.e + 1; TK[t.k] = t; });
+const TBY = {}; TECH.filter(t => t.by).forEach(t => (TBY[t.by[0]] = TBY[t.by[0]] || []).push(t));
