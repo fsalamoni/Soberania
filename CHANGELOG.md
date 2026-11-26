@@ -1,5 +1,39 @@
 # Histórico de versões
 
+## v40 — 26/11/2026 · Líderes escolhidos na criação da partida (L1 e L2)
+
+Partes L1 e L2 do levantamento dos líderes. O Conselho de papéis da v37 sai do jogo.
+
+- **Escolha do líder.** Na criação da partida, depois da facção, aparecem os cartões dos líderes. Cada cartão traz:
+  - nome e anos;
+  - retrato histórico;
+  - traço (Gênio Tático, Defesa Tenaz e os outros);
+  - poder próprio.
+
+  O líder vale a partida toda. A sucessão só abre a crise de sucessão; não troca mais o líder nem o traço.
+- **Biblioteca de 18 poderes (LD-ED a LD-CT):**
+  - bônus por construção, terreno e capital;
+  - rotas comerciais e abastecimento;
+  - crescimento e saber, além do ramo militar mais barato;
+  - reforços e dados de ataque ou defesa;
+  - travessias, estabilidade e cansaço de guerra;
+  - prestígio por turno ou por conquista;
+  - maravilhas, obras na fila e governo sem anarquia;
+  - diplomacia, ouro e cartas.
+
+  Os bônus de região aparecem no Rendimento da região com ⚜ e o nome do líder.
+- **Guerras Napoleônicas:** 19 líderes nas 7 facções. Por exemplo, Napoleão, Talleyrand e Carnot; Pitt, Nelson e Wellington; Kutuzov e Speransky; Selim III e Mahmud II. O primeiro líder de cada facção é o de antes.
+- **Antiguidade (L2):** 42 líderes nas 18 facções.
+  - Guerras Púnicas: Cipião, Fábio Máximo e Marcelo; Aníbal, Asdrúbal e Hanão.
+  - Crise do século III: Galieno, Aureliano e Cláudio II; Zenóbia e Odenato.
+  - Queda do Ocidente: Estilicão, Honório e Gala Placídia; Teodósio II, Antêmio e Pulquéria; Rugila e Átila; Alarico, Genserico.
+
+  Os sassânidas, que já venciam muito, ficam com poderes modestos.
+- **Outros cenários:** continuam com o líder de sempre até as partes L3 a L5.
+- **Líderes rivais:** históricos (o primeiro da lista) ou sorteados, à escolha na criação.
+- **Painel e Personagens:** mostram o poder do líder.
+- **Regras:** novo parágrafo "Líderes".
+- **Salvamento:** guarda o líder de cada facção. Salvamentos antigos carregam com o primeiro líder.
 ## v39 — 26/11/2026 · Revisão da interface
 
 Parte v30 do plano de aprimoramento (revisão de interface).
