@@ -1041,6 +1041,8 @@ Com muito mais sistemas, o risco é o jogador se perder. A interface tem que res
 | UI-22 | Personagens em abas (v51) | Líder, Grandes figuras (progresso, origem dos pontos, efeito) e Governadores, nomeados na própria tela por território |
 | UI-23 | Aba Obras (v51) | Terceira aba do painel, separada das ações do império. Filas (ociosos em destaque, apressar e retirar), Construir (por finalidade, com botão por território e prazo) e Cadeias (árvore de dependências com tecnologia e estado) |
 | UI-24 | Criação em passos (v51) | Facção, líder e ajustes numerados, com resumo do efeito de dificuldade, duração e líderes rivais |
+| UI-25 | Conselheiro de turno (v52) | No topo das ações do império e na barra de ação: pesquisa parada, territórios sem obra, cívica ou política disponível, governador sem território, grande figura à espera, vaga de rota, proposta diplomática e territórios em risco. Cada item tem o botão que leva ao lugar certo |
+| UI-26 | Chance e risco nas fronteiras (v52) | Cada botão de ataque mostra a chance de vencer atacando até o fim; cada vizinho inimigo mostra o risco de ele tomar o território; o cartão do território ganha a etiqueta "em risco". O painel de batalha diz quantas tropas sobram em média. A diplomacia descreve por escrito cada proposta e o motivo da recusa |
 
 ## Roteiro de implementação por partes
 

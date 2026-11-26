@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v52 — 26/11/2026 · Conselheiro de turno, chance e risco nas fronteiras (UI-25, UI-26)
+
+- **Conselheiro de turno (UI-25).** No topo das ações do império, uma lista do que está parado ou esquecido neste turno, cada linha com o botão que resolve: pesquisa não escolhida, territórios sem obra, cívica que a cultura já paga, vaga de política livre, panteão disponível, governador sem território, grande figura à espera, vaga de rota comercial, proposta diplomática sem resposta e territórios em risco. A barra de ação mostra o número de pontos de atenção ao lado do botão de encerrar o turno, sem bloquear nada.
+- **Chance antes de atacar (UI-26).** Na aba Região, cada botão Atacar traz a chance de vencer atacando até o fim, já com os bônus de dado dos dois lados, em verde, amarelo ou vermelho. Não é mais preciso abrir a batalha para saber.
+- **Risco de perder.** Cada vizinho inimigo mostra o risco de ele tomar o seu território, e o cartão do território ganha a etiqueta "em risco" quando passa de 50%.
+- **Perdas esperadas.** O painel de batalha diz quantas tropas sobram, em média, quando o ataque vence.
+- **Diplomacia por escrito.** Cada facção tem um detalhe que diz o que cada proposta faz e, quando ela recusaria, o motivo. Antes isso só aparecia ao passar o mouse, o que não existe no celular.
+
 ## v51 — 26/11/2026 · Aba Obras, governo em abas, personagens e criação em passos (UI-21 a UI-24)
 
 - **Aba Obras (UI-23).** O painel passa a ter três abas: Império, Obras e Região. As obras saíram do meio das ações do império e ganharam espaço próprio, com três seções:

@@ -202,6 +202,12 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 #ptabs button{flex:1;min-width:0;min-height:36px;padding:6px 8px;font-size:13px;font-weight:600;border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;background:none;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ptabs button.on{color:var(--text);background:#1b2633;border-color:var(--line);box-shadow:inset 0 2px 0 var(--brass)}
 #side.t-reg>section:not(#info),#side.t-reg>#credit,#side.t-imp>#info,#side.t-obr>section:not(#works),#side.t-obr>#credit,#side:not(.t-obr)>#works{display:none}
+/* v52 (UI-25): conselheiro e chances */
+.pct{line-height:1.3;vertical-align:middle}ul.dn li.ok b{color:#7fd18b}
+.advr{margin:8px 0 10px;padding:9px 10px;border:1px solid var(--brass);border-radius:6px;background:#1c1a12}
+.advr ul{list-style:none;margin:6px 0 0;padding:0}.advr li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #ffffff12;font-size:12.5px;line-height:1.4}.advr li span{flex:1;min-width:0}.advr li .mini{flex:none}
+.pct{display:inline-block;margin-left:4px;padding:2px 6px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid currentColor;white-space:nowrap}.pct.ok{color:#7fd18b}.pct.warn{color:#e8c15a}.pct.bad{color:#f08a7a}
+#actbar .lnk.warn{color:#e8c15a}
 /* v51 (UI-24): passos da criação */
 h3.stp{margin:18px 0 8px;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}h3.stp i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brass);color:#1a1408;font-size:13px;font-weight:700}h3.stp .hint{font-weight:400}
 /* v51 (UI-23): aba Obras e cadeias */
@@ -2919,9 +2925,12 @@ function atkBonus(i, j) {
   const a = G.own[i], A = Fa(a), aw = armyOf(a), dw = armyOf(G.own[j]), hc = OPEN.includes(G.ter[j]) && (aw.includes('cav') || aw.includes('kni')) && !dw.includes('lin');
   return armyAtk(aw, j) + (hc ? 1 : 0) + ((G.win[i] || 0) >= (pol(a, 'dis') ? 2 : 3) ? 1 : 0) + (prin(i, 'gue') && G.fai[j] !== G.fai[i] ? 1 : 0) + genBonus(a, i) + (A.ofs ? 1 : 0) + (G.bld[i].some(k => STRUCT[k].atk && nb(i, k)) ? 1 : 0) + (A.camp && hasW(a, 'csg') ? 1 : 0) + ldCB(a, j, 'atk');
 }
-function odds(i, j) { // ponytail: 300 simulações com Math.random, sem empates táticos nem canhão
+// v52: guarda o resultado por par e tamanho das tropas; oddsLeft diz quantas tropas sobram, em média, quando o ataque vence
+const OC = new Map(); let oddsLeft = 0;
+function odds(i, j) { const key = [i, j, G.tr[i], G.tr[j], G.own[i], G.own[j], G.round, G.turnF, Fa(G.own[i]).ofs ? 1 : 0].join(), c = OC.get(key); if (c) { oddsLeft = c[1]; return c[0]; } if (OC.size > 600) OC.clear(); const r = odds0(i, j); OC.set(key, [r, oddsLeft]); return r; }
+function odds0(i, j) { // ponytail: 300 simulações com Math.random, sem empates táticos nem canhão
   const [ad0] = diceFor(i, j), cap = ad0 < Math.min(3, G.tr[i] - 1) ? ad0 : 3, up = atkBonus(i, j), db = defBonus(j, i), d6r = () => 1 + Math.floor(Math.random() * 6);
-  let win = 0;
+  let win = 0, left = 0;
   for (let n = 0; n < 300; n++) {
     let a = G.tr[i], d = G.tr[j];
     while (a > 1 && d > 0) {
@@ -2929,8 +2938,9 @@ function odds(i, j) { // ponytail: 300 simulações com Math.random, sem empates
       R[0] = Math.min(6, R[0] + up); D[0] = Math.min(6, D[0] + db);
       for (let k = 0; k < Math.min(R.length, D.length); k++) R[k] > D[k] ? d-- : a--;
     }
-    if (d <= 0) win++;
+    if (d <= 0) { win++; left += a; }
   }
+  oddsLeft = win ? left / win : 0;
   return win / 300;
 }
 // UI-14: pontos de cada facção a cada rodada, para o gráfico do fim
@@ -3001,6 +3011,36 @@ function guideDone(k) {
   const me = G.player, F = Fa(me), g = G.guide || (G.guide = {}); if (g[k]) return true;
   const ok = k === 'ref' ? G.turnF === me && G.phase !== 'ref' : k === 'camp' ? !!F.camp : k === 'obra' ? owned(me).some(i => G.q[i].length) : k === 'res' ? !!F.res : k === 'end' ? G.round > 1 : false;
   if (ok) g[k] = 1; return ok;
+}
+// v52 (UI-25): conselheiro de turno. Lista o que está parado, esquecido ou em risco, cada item com o atalho que resolve
+// maior chance de um vizinho inimigo tomar o território i atacando até o fim
+function riskOf(i) {
+  const me = G.own[i]; let p = 0, w = -1;
+  for (const j of G.A[i]) if (real(G.own[j]) && hostile(G.own[j], i) && G.tr[j] > 1 && G.own[j] !== me) { const x = odds(j, i); if (x > p) { p = x; w = j; } }
+  return [p, w];
+}
+function advice() {
+  const me = G.player, F = Fa(me), T = owned(me), L = [];
+  if (G.turnF !== me || G.over) return L;
+  const add = (ic, t, k, lab, i) => L.push({ ic, t, k, lab, i });
+  if (G.offers.length || (G.dem && G.dem.to === me)) add('🤝', 'Há proposta diplomática esperando a sua resposta.', 'dipl', 'Responder');
+  if (!F.res && Object.values(TK).some(t => techOk(me, t))) add('🔬', 'Nenhuma pesquisa em andamento: o saber deste turno se perde.', 'techs', 'Escolher pesquisa');
+  const idle = T.filter(i => !G.q[i].length && Object.keys(STRUCT).some(k => canQueue(me, k, i)));
+  if (idle.length) add('🏗', `${idle.length} território(s) sem obra na fila: ${idle.slice(0, 3).map(tname).join(', ')}${idle.length > 3 ? '…' : ''}.`, 'works', 'Abrir Obras');
+  if ((F.gf || []).length) add('🌟', `${F.gf.map(t => GF[t].n).join(', ')} à sua espera.`, 'fig', 'Usar');
+  const cv = CIVIC.filter(c => civOk(me, c) && F.cu >= civCost(c));
+  if (cv.length && !anar(me)) add('🎭', `Cultura suficiente para adotar ${cv[0].n}${cv.length > 1 ? ' ou outra cívica' : ''}.`, 'civ', 'Ver cívicas');
+  if (Object.keys(slots(me)).some(t => freeSlot(me, t) > 0 && Object.entries(POL).some(([k, p]) => p.t === t && civ(me, p.c) && !pol(me, k)))) add('📜', 'Há vaga de política livre e uma política que cabe nela.', 'pol', 'Ver políticas');
+  if (!F.pan && has(me, 'mis') && F.cu >= 10) add('🙏', 'Você já pode escolher um panteão.', 'fe', 'Ver crenças');
+  if (govrN(me) < govrMax(me) && T.some(i => !govrAt(i))) add('🧑‍💼', `${govrMax(me) - govrN(me)} governador(es) sem território.`, 'gvr', 'Nomear');
+  if (G.phase === 'atk' && myRoutes(me).length < routeMax(me) && F.gold >= ECON.route && routeCands(me).length) add('🚢', 'Há vaga de rota comercial e uma rota possível.', 'routes', 'Ver rotas');
+  const risk = T.map(i => [i, ...riskOf(i)]).filter(x => x[1] >= .5).sort((a, b) => (b[0] === F.capI) - (a[0] === F.capI) || b[1] - a[1]).slice(0, 3);
+  for (const [i, p, w] of risk) add('⚠', `${tname(i)}${i === F.capI ? ' (capital)' : ''} em risco: ${tname(w)} tem ${G.tr[w]} tropas contra as suas ${G.tr[i]} e venceria ${Math.round(100 * p)}% das vezes.`, 'sel', 'Ver', i);
+  return L;
+}
+function advisorHtml(L) {
+  if (G.turnF !== G.player || G.over) return '';
+  return `<div class="advr"><b>Conselheiro</b> <span class="hint">${L.length ? L.length + ' ponto(s) de atenção neste turno' : 'nada pendente'}</span>${L.length ? `<ul>${L.map(x => `<li><span>${x.ic} ${esc(x.t)}</span><button class="mini" data-a="adv" data-k="${x.k}"${x.i != null ? ` data-i="${x.i}"` : ''}>${x.lab}</button></li>`).join('')}</ul>` : '<p class="hint">✓ Pesquisa, obras, governo e fronteiras em ordem.</p>'}</div>`;
 }
 function guideHtml() {
   if (!G || G.auto || G.over || !G.player || guideLv >= GUIDE.length) return '';
@@ -4081,16 +4121,17 @@ function diploModal() {
   const rows = G.order.filter(o => o !== me && Fa(o).entered && Fa(o).alive).map(o => {
     const R = relOf(o, me), st = allied(me, o) ? 'aliança' : G.truce.has(tk(me, o)) ? 'trégua' : 'guerra', ps = pactsOf(me, o).filter(k => k !== 'ali').map(k => PACT[k].n);
     const cool = (G.cool[me + '>' + o] || 0) > G.round;
-    const btn = (k, rep) => { const [ok, why] = accept(o, me, k, rep), lb = k === 'truce' ? (rep ? 'Trégua + 5 ouro' : 'Propor trégua') : k === 'gift' ? 'Presente 5💰' : PACT[k].n; return `<button class="mini ${ok ? 'pri' : ''}" data-a="dprop" data-f="${o}" data-k="${k}" data-r="${rep ? 1 : 0}" title="${esc(ok ? 'Deve aceitar.' : 'Deve recusar: ' + why)}" ${my && !cool ? '' : 'disabled'}>${lb}${ok ? ' ✓' : ''}</button>`; };
+    const notes = [];
+    const btn = (k, rep) => { const [ok, why] = accept(o, me, k, rep), lb = k === 'truce' ? (rep ? 'Trégua + 5 ouro' : 'Propor trégua') : k === 'gift' ? 'Presente 5💰' : PACT[k].n; notes.push(`<li class="${ok ? 'ok' : ''}"><b>${lb}</b>${PACT[k] ? ': ' + esc(PACT[k].fx) : k === 'gift' ? ': melhora a relação' : ': encerra a guerra entre vocês'}. ${ok ? '✓ Deve aceitar.' : '✗ Deve recusar: ' + esc(why)}</li>`); return `<button class="mini ${ok ? 'pri' : ''}" data-a="dprop" data-f="${o}" data-k="${k}" data-r="${rep ? 1 : 0}" title="${esc(ok ? 'Deve aceitar.' : 'Deve recusar: ' + why)}" ${my && !cool ? '' : 'disabled'}>${lb}${ok ? ' ✓' : ''}</button>`; };
     const opts = st === 'guerra' ? [btn('truce'), btn('truce', 1)] : st === 'trégua' ? Object.keys(PACT).filter(k => !pact(me, o, k)).map(k => btn(k)) : [];
     return `<div class="tech"><div><b><i class="dot" style="background:${Fa(o).c}"></i>${esc(fname(o))}</b> <span class="hint">${st} · relação ${R.v}${ps.length ? ' · ' + esc(ps.join(', ')) : ''}</span>
-      <p class="hint">${R.why.map(([t, v]) => `${esc(t)} (${v > 0 ? '+' : ''}${v})`).join(' · ') || 'sem histórico'}</p><p>${opts.join(' ')} ${btn('gift')}${cool ? ' <span class="hint">recusou há pouco: aguarde</span>' : ''}</p></div></div>`;
+      <p class="hint">${R.why.map(([t, v]) => `${esc(t)} (${v > 0 ? '+' : ''}${v})`).join(' · ') || 'sem histórico'}</p><p>${opts.join(' ')} ${btn('gift')}${cool ? ' <span class="hint">recusou há pouco: aguarde</span>' : ''}</p><details class="rdet"><summary>O que cada proposta faz e se ${esc(fname(o))} aceita</summary><ul class="bl dn">${notes.join('')}</ul></details></div></div>`;
   }).join('');
   const off = G.offers.map((x, n) => `<p>${esc(fname(x.f))} propõe <b>${x.k === 'truce' ? 'trégua' : PACT[x.k].n}</b>. <button class="mini pri" data-a="doff" data-n="${n}" ${my ? '' : 'disabled'}>Aceitar</button></p>`).join('');
   const dem = G.dem && G.dem.to === me ? `<p>${esc(fname(G.dem.f))} exige <b>${G.dem.g} ouro</b> de tributo. Recusar dá a ela motivo de guerra. <button class="mini" data-a="ddem" ${my && Fa(me).gold >= G.dem.g ? '' : 'disabled'}>Pagar</button></p>` : '';
   const cs = Object.keys(G.cs).map(Number).filter(csOf).map(i => { const c = G.cs[i], s = suz(i); return `<li>${esc(tname(i))}: ${CS[c.t][0]} (${CS[c.t][1]}) · suserano ${s ? esc(fname(s)) : 'nenhum'} · sua influência ${c.inf[me] || 0} · missão: ${MIS[c.mis]}</li>`; }).join('');
   const C = G.cong, cg = C.on ? `<h3>Congresso Mundial</h3><p class="hint">Seus votos: ${votes(me)} (1, mais cidades-estado que você protege e a Sede das Nações). ${C.res.length ? 'Votação na rodada ' + C.due + ':' : 'Próxima sessão na rodada ' + C.next + '.'}</p>${C.res.map(r => `<p>${esc(CRES[r.k][1](r.x))} <button class="mini ${C.pv[r.k] === true ? 'pri' : ''}" data-a="vote" data-k="${r.k}" data-v="1">Sim</button> <button class="mini ${C.pv[r.k] === false ? 'pri' : ''}" data-a="vote" data-k="${r.k}" data-v="0">Não</button></p>`).join('')}` : '';
-  modal(`<h2>Diplomacia</h2><p class="hint">Propostas não gastam ação. Passe o mouse num botão para ver se a facção aceita; ✓ = deve aceitar. Romper trégua dá agravo com todos, salvo com motivo de guerra.</p>${dem}${off}<div class="techs">${rows || '<p>Nenhuma facção em jogo.</p>'}</div>${cg}${cs ? `<h3>Cidades-estado</h3><p class="hint">Selecione uma no mapa e use “Enviado” (1 ação, 2 ouro; cumprindo a missão vale 3 de influência). Quem tem mais influência (mín. 3) é o suserano e recebe o bônus; só ele pode anexá-la por influência.</p><ul>${cs}</ul>` : ''}`, [['Fechar']]);
+  modal(`<h2>Diplomacia</h2><p class="hint">Propostas não gastam ação. ✓ no botão = a facção deve aceitar; abra o detalhe de cada uma para ver o que a proposta faz e o motivo de uma recusa. Romper trégua dá agravo com todos, salvo com motivo de guerra.</p>${dem}${off}<div class="techs">${rows || '<p>Nenhuma facção em jogo.</p>'}</div>${cg}${cs ? `<h3>Cidades-estado</h3><p class="hint">Selecione uma no mapa e use “Enviado” (1 ação, 2 ouro; cumprindo a missão vale 3 de influência). Quem tem mais influência (mín. 3) é o suserano e recebe o bônus; só ele pode anexá-la por influência.</p><ul>${cs}</ul>` : ''}`, [['Fechar']]);
 }
 
 // ---------- mapa ----------
@@ -4608,7 +4649,7 @@ function showBattlePanel(last) {
   const notes = [isSea(i, j) ? 'desembarque pelo mar' + (seaSup(i, j) < 0 ? ': a frota do defensor é maior (+1 na defesa)' : seaSup(i, j) >= 2 ? ': sua frota domina o mar' : '') : '', TERR[G.ter[j]].n.toLowerCase(), defBonus(j) ? `defesa +${defBonus(j)} no maior dado` : '', TERR[G.ter[j]].def === 'w' ? 'pântano: 1 dado a menos' : '', TERR[G.ter[j]].def === 'm' ? 'montanha: empate é da defesa' : '', me.ofs ? 'ofensiva +1' : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="bh"><b style="color:${lc(me.c)}">${esc(tname(i))}</b> <span>${G.tr[i]}</span> ⚔ <b style="color:${lc(Fa(d).c)}">${esc(tname(j))}</b> <span>${G.tr[j]}</span></div>
   ${last ? diceRows(last) : `<div class="dice"><div>${'<span class="die att ghost">?</span>'.repeat(ad)}</div><div>${'<span class="die def ghost">?</span>'.repeat(dd)}</div></div>`}
-  <p class="bm">${last ? `Você perde ${last.al}, defesa perde ${last.dl}. ` : ''}${ad} contra ${dd} dados${notes ? ' · ' + notes : ''}. <b>Chance de vencer atacando até o fim: ${Math.round(100 * odds(i, j))}%</b>. Empate fica com a defesa${me.ab === 'tatico' ? ', exceto para você (Gênio Tático)' : ''}.${blitzCost(G.player) ? ` <b class="warn">Se vencer: −${blitzCost(G.player)} de estabilidade e 1 tropa (desgaste da blitz).</b>` : ''}</p>
+  <p class="bm">${last ? `Você perde ${last.al}, defesa perde ${last.dl}. ` : ''}${ad} contra ${dd} dados${notes ? ' · ' + notes : ''}. <b>Chance de vencer atacando até o fim: ${Math.round(100 * odds(i, j))}%</b>${oddsLeft ? `; vencendo, sobram em média ${Math.round(oddsLeft)} das suas ${G.tr[i]} tropas` : ''}. Empate fica com a defesa${me.ab === 'tatico' ? ', exceto para você (Gênio Tático)' : ''}.${blitzCost(G.player) ? ` <b class="warn">Se vencer: −${blitzCost(G.player)} de estabilidade e 1 tropa (desgaste da blitz).</b>` : ''}</p>
   ${ad < 3 && G.tr[i] > 1 ? `<div class="dwhy"><b>Você rola ${ad} de 3 dados.</b><ul>${diceWhy(i, j).map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
   <div class="bb"><button class="pri" data-a="roll1" ${G.tr[i] < 2 ? 'disabled' : ''}>Atacar 1x</button><button data-a="blitz" ${G.tr[i] < 2 ? 'disabled' : ''}>Atacar até o fim</button><button data-a="bclose">Recuar</button></div>`;
 }
@@ -4724,7 +4765,7 @@ function bordersHtml(i) {
   const me = G.player, o = G.own[i], my = G.turnF === me && !G.busy && !G.over;
   const nbs = G.A[i].filter(j => G.own[j] !== 'off');
   if (o === 'off' || !nbs.length) return '';
-  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`)}">⚔ ${lab}</button>`; };
+  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`)}">⚔ ${lab}</button>${G.tr[src] > 1 && hostile(me, dst) ? (pc => `<span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim, com os bônus de dado dos dois lados.">${pc}%</span>`)(Math.round(100 * odds(src, dst))) : ''}`; };
   const I = j => { const w = G.phase !== 'atk' ? 'A influência acontece na fase de ações.' : inflWhy(me, j); return `<button class="mini" data-a="inflAt" data-i="${j}" ${w ? 'disabled' : ''} title="${esc(w || 'Anexa sem lutar; fica com metade das tropas.')}">⭐ Influenciar · ${inflCost(me, j)}</button>`; };
   const rows = nbs.map(j => {
     const d = G.own[j], D = Fa(d), rel = d === me ? 'seu' : !real(d) ? (d === 'reb' ? 'rebelde' : 'neutro') : allied(me, d) ? 'aliado' : peace(me, d) ? 'trégua' : 'inimigo';
@@ -4732,6 +4773,7 @@ function bordersHtml(i) {
     if (my) {
       if (o === me && d !== me && (rel === 'inimigo' || rel === 'neutro' || rel === 'rebelde')) b += A(i, j, 'Atacar');
       if (o === me && (d === 'neu' || d === 'reb')) b += I(j);
+      if (o === me && real(d) && hostile(me, j) && G.tr[j] > 1) { const rk = Math.round(100 * odds(j, i)); if (rk >= 30) b += `<span class="pct ${rk >= 50 ? 'bad' : 'warn'}" title="Chance de ${esc(tname(j))} tomar ${esc(tname(i))} se atacar até o fim.">risco ${rk}%</span>`; }
       if (o === me && d === me && G.phase === 'mov') { const ok = (G.mv[i] || 0) > 0 && moveDests(me, i).includes(j) && seaOk(me, i, j); b += `<button class="mini" data-a="mvFrom" data-i="${i}" data-j="${j}" ${ok ? '' : 'disabled'} title="${ok ? 'Mover tropas para lá.' : 'Sem tropas livres ou sem caminho.'}">➜ Mover</button>`; }
       if (o !== me && d === me && hostile(me, i)) b += A(j, i, 'Atacar daqui');
     }
@@ -4751,7 +4793,7 @@ function renderSide() {
   const inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, rt = F.res && TK[F.res], hp = hap(me), sg = v => (v >= 0 ? '+' : '') + v;
   const al = [F.stab < 15 ? 'Crise: reforços pela metade e risco alto de revolta.' : F.stab < 35 ? 'Instável: províncias podem se rebelar no início do turno.' : '', F.ww >= 3 ? `Cansaço de guerra ${F.ww}: −${Math.floor(F.ww / 5)} de estabilidade por turno.` : '', hp < 0 ? 'Povo infeliz: −10% de ouro e saber.' : '', net < 0 && F.gold + net < 0 ? 'O ouro não cobre a manutenção: construções serão desativadas.' : ''].filter(Boolean);
   // v50 (UI-15): sub-abas. Cada função do painel tem o seu lugar, uma de cada vez
-  const isub = ['acoes', 'obj', 'facs', 'cron'].includes(G.isub) ? G.isub : 'acoes';
+  const isub = ['acoes', 'obj', 'facs', 'cron'].includes(G.isub) ? G.isub : 'acoes', adv = advice();
   const stabs = (grp, cur, items) => `<div class="stabs" role="tablist">${items.map(([k, lab]) => `<button role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-a="stab" data-g="${grp}" data-k="${k}">${lab}</button>`).join('')}</div>`;
   const nv = (a, ic, lab, k, dot) => `<button class="mini" data-a="${a}" title="${lab} (atalho ${k})">${ic} ${lab}${dot ? ' •' : ''}</button>`;
   $('#me').innerHTML = `<div class="fh" style="--fc:${F.c}"><div><h3>${esc(F.n)}</h3><p>${esc(F.L)} · <span title="${esc(ABIL[F.ab][1])}">${ABIL[F.ab][0]}</span> · ${esc(GOV[gov(me)].n)}${anar(me) ? ' (anarquia)' : ''}</p></div></div>
@@ -4768,7 +4810,7 @@ function renderSide() {
     <p class="hint rs">${rt ? `🔬 ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : '<b class="warn">Nenhuma pesquisa escolhida.</b> <button class="mini pri" data-a="techs">Escolher pesquisa</button>'}</p>
     <div class="nav">${nv('techs', '🔬', 'Tecnologias', 'T')}${nv('govm', '🏛', 'Governo e fé', 'G')}${nv('dipl', '🤝', 'Diplomacia', 'D', G.offers.length || (G.dem && G.dem.to === me))}${nv('vicm', '🏆', 'Vitórias', 'V')}${nv('figm', '👤', 'Personagens', 'P', (F.gf || []).length)}${nv('routes', '🚢', 'Comércio', 'C')}</div>
     ${stabs('isub', isub, [['acoes', '⚙ Ações'], ['obj', '🎯 Objetivo'], ['facs', '👥 Facções'], ['cron', '📜 Crônica']])}
-    <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${guideHtml()}</div>`;
+    <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${advisorHtml(adv)}${guideHtml()}</div>`;
   const forces = `<p class="forces" title="Cada travessia leva um ataque ou um remanejamento pelo mar neste turno. Ganha-se 1 por ${sName('por')}, mais as de navegação e estaleiros. Frota 2 acima da do defensor: desembarque com 3 dados. Frota menor que a dele: ele defende com +1.">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '', abar = '', st = ''; // UI: a ação da fase fica na barra fixa (#actbar), sempre visível
   const K = ' title="Atalho: Enter"';
@@ -4812,6 +4854,7 @@ function renderSide() {
     abar = `<button class="pri" data-a="end"${K}>Encerrar turno</button>`;
   }
   $('#phase').innerHTML = ph;
+  if (adv.length && my && !G.over) st += ` · <button class="lnk warn" data-a="advgo" title="${esc(adv.map(x => x.t).join(' '))}">⚠ ${adv.length} ponto(s) de atenção</button>`;
   $('#actbar').innerHTML = `<span class="st">${st}</span><span class="bt">${abar}</span>`;
   let inf = '';
   if (G.sel != null) {
@@ -4819,7 +4862,7 @@ function renderSide() {
     const rel = o === 'off' ? 'Fora do mundo conhecido nesta era' : o === me ? 'Seu' : !real(o) ? (o === 'reb' ? (G.rl[i] || 'Rebeldes') : 'Neutro') : allied(me, o) ? 'Aliado' : peace(me, o) ? 'Trégua' : 'Inimigo';
     // v44: cartão do território. Cabeçalho com dono e relação, indicadores, etiquetas de estado e construções como fichas.
     const relC = rel === 'Seu' ? 'ok' : rel === 'Inimigo' ? 'bad' : '', Y = o !== 'off' && real(o) ? yieldOf(i) : null;
-    const tags = [co ? ['👑 capital de ' + fname(co), ''] : null, G.relics.includes(i) ? ['Runa Antiga', ''] : null, G.fort[i] > 0 ? ['🛡 fortificado', 'ok'] : null, occupied(i) ? [`ocupado por ${G.occ[i]} turno(s)`, 'bad', 'Não conta para renda e reforços; produção pela metade.'] : null, o === me && lowSupply(i) ? ['longe do suprimento', 'bad', 'Ataca com 1 dado a menos.'] : null, G.phase === 'mov' && my && o === me ? [`pode mover ${G.mv[i] || 0}`, 'ok'] : null, o === me && F.recQ[i] ? [`+${F.recQ[i]} recruta(s) chegando`, 'ok'] : null].filter(Boolean);
+    const tags = [co ? ['👑 capital de ' + fname(co), ''] : null, G.relics.includes(i) ? ['Runa Antiga', ''] : null, G.fort[i] > 0 ? ['🛡 fortificado', 'ok'] : null, occupied(i) ? [`ocupado por ${G.occ[i]} turno(s)`, 'bad', 'Não conta para renda e reforços; produção pela metade.'] : null, o === me && lowSupply(i) ? ['longe do suprimento', 'bad', 'Ataca com 1 dado a menos.'] : null, o === me && riskOf(i)[0] >= .5 ? [`em risco: ${Math.round(100 * riskOf(i)[0])}%`, 'bad', `Um vizinho inimigo (${tname(riskOf(i)[1])}) venceria um ataque até o fim nessa proporção. Reforce ou fortifique.`] : null, G.phase === 'mov' && my && o === me ? [`pode mover ${G.mv[i] || 0}`, 'ok'] : null, o === me && F.recQ[i] ? [`+${F.recQ[i]} recruta(s) chegando`, 'ok'] : null].filter(Boolean);
     inf = `<div class="th4" style="--fc:${O.c}"><h4>${esc(t.n)}</h4><span class="chip ${relC}">${esc(rel)}</span></div>
       <p class="hint"><i class="dot" style="background:${O.c}"></i>${esc(o === 'reb' ? (G.rl[i] || 'Rebeldes') : O.n)} · ${esc(G.m.regions[t.r])}</p>
       <div class="kpis">${kp('🪖', 'Tropas', G.tr[i], null, 'Tropas no território. Defende com até 3 dados.')}${o !== 'off' ? kp('🏘', 'Porte', esc(pName(i)), real(o) ? `zonas ${zonesAt(i).length}/${G.lv[i]}` : null, 'Porte do território: aldeia, vila, cidade, metrópole. Cada nível abre uma vaga de zona.') : ''}${Y ? kp('🌾', 'Comida', sg(Y.food - foodUse(i)), `${Y.food} − ${foodUse(i)} consumo`, 'Sobra de comida por turno (produção menos consumo): enche o celeiro e faz o território crescer de porte. Detalhes em Rendimento.', Y.food < foodUse(i) ? 'warn' : '') + kp('⚒', 'Produção', '+' + Y.prod, null, 'Produção por turno: avança a obra do topo da fila.') + kp('💰', 'Ouro', '+' + Y.gold, null, 'Ouro que o território rende por turno.') + kp('🔬', 'Saber', '+' + Y.sci, null, 'Saber que o território rende por turno.') : ''}</div>
@@ -5014,6 +5057,8 @@ document.addEventListener('click', e => {
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; render(); }
   else if (a === 'selObr') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'obr'; render(); }
+  else if (a === 'advgo') { G.tab = 'imp'; G.isub = 'acoes'; render(); const e = $('.advr'); if (e) e.scrollIntoView({ block: 'nearest' }); }
+  else if (a === 'adv') { const k = el.dataset.k; if (k === 'sel') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'fro'; render(); } else if (k === 'works') { G.tab = 'obr'; G.osub = 'fil'; render(); } else if (['civ', 'pol', 'fe'].includes(k)) { gsub = k; govModal(); } else if (k === 'gvr' || k === 'fig') { fsub = k; figModal(); } else if (k === 'techs') techModal(); else if (k === 'dipl') diploModal(); else if (k === 'routes') routesModal(); }
   else if (a === 'gtab') { gsub = el.dataset.k; govModal(); }
   else if (a === 'ftab') { fsub = el.dataset.k; figModal(); }
   else if (a === 'rush' || a === 'unq') { const F = Fa(G.player); let e = F.bldOn ? '' : act(G.player, 'obras'); if (!e) e = act(G.player, a, +el.dataset.i, +el.dataset.n); if (e) toast(e); render(); }
