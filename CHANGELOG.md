@@ -1,5 +1,26 @@
 # Histórico de versões
 
+## v41 — 26/11/2026 · Líderes em todos os cenários (L3, L4 e L5)
+
+Partes L3 a L5 do levantamento dos líderes. Agora todas as 112 facções têm de 2 a 3 líderes.
+
+- **Idade Média (L3):** 90 líderes em 40 facções.
+  - Vikings: Haroldo Cabelo Belo, Ragnar, Ivar, Gutrum, Rurik, Olegue, Alfredo, o Grande, Odo de Paris.
+  - Mongóis: Gêngis Khan, Subutai, Yelü Chucai, Jalal al-Din, Razia Sultana.
+  - Cruzadas: Ricardo, Leonor da Aquitânia, Guilherme Marshal, Barbarossa, Saladino, Averróis.
+  - América pré-colombiana: Axayácatl, Tlacaelel, Nezahualcóyotl, Pachacútec, Túpac Yupanqui, Zipa Saguamanchica.
+  - Sengoku: Nobunaga, Hideyoshi, Shingen, Kenshin, Motonari, Kobayakawa.
+- **Séculos XIX e XX (L4):** 78 líderes em 31 facções.
+  - Secessão: Lincoln, Grant, Sherman, Lee, Jackson.
+  - Regências: Feijó, o futuro Caxias, Araújo Lima, Garibaldi, Negro Cosme.
+  - Grande Guerra: Hindenburg, Ludendorff, Mustafa Kemal, Clemenceau, Foch, Brusilov, Putnik.
+  - Segunda Guerra: Churchill, Montgomery, de Gaulle, Jukov, Roosevelt, Eisenhower, Nimitz.
+  - Guerra Fria: Kennedy, McNamara, Adenauer, Kruschev, Castro, Zhou Enlai.
+- **Fantasia (L5):** 20 líderes originais nos dois mundos (O Trono de Cinzas e Crônicas das Runas).
+- **Mundo gerado (L5):** cada facção recebe três líderes, tirados do nome dela. A mesma facção sempre dá os mesmos líderes.
+- **Equilíbrio:**
+  - Takeda Shingen ficou só com o crescimento mais rápido. Em 60 partidas simuladas do Sengoku, as vitórias dos Takeda caíram de 27 para 19.
+  - Shimazu e os sassânidas ficam com poderes modestos.
 ## v40 — 26/11/2026 · Líderes escolhidos na criação da partida (L1 e L2)
 
 Partes L1 e L2 do levantamento dos líderes. O Conselho de papéis da v37 sai do jogo.

@@ -1487,7 +1487,7 @@ function airStrike(f, j) {
 
 // ---------- turnos ----------
 // ---------- v40 (L1): líderes da partida inteira, com poderes da biblioteca LD (src/leaders.js) ----------
-const leadersOf = (sid, d) => (LEAD[sid] && LEAD[sid][d.id]) || [{ n: d.L, ab: d.ab, y: '', d: '', fx: [] }];
+const leadersOf = (sid, d) => (sid === 'civ' && civLeaders(d)) || (LEAD[sid] && LEAD[sid][d.id]) || [{ n: d.L, ab: d.ab, y: '', d: '', fx: [] }];
 const lfx = (f, c) => { const F = Fa(f); return F && F.fx ? F.fx.filter(x => x[0] === c) : []; };
 const ldv = (f, c, m) => lfx(f, c).reduce((s, x) => s + (m == null || x[1] === m ? x[x.length - 1] : 0), 0);
 const ldCB = (f, j, m) => lfx(f, 'CB').reduce((s, x) => s + (x[1] === m && (!x[2] || (x[2] === 'hm' ? ['h', 'm'].includes(TERR[G.ter[j]].def) : G.cul[j] === f)) ? x[3] : 0), 0);
