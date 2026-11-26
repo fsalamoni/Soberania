@@ -203,7 +203,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .rank td,.rank th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
 .rank td:first-child,.rank th:first-child{text-align:left}
 @media (max-width:820px){
-  #game{grid-template-columns:1fr;grid-template-rows:auto 56vh auto;height:auto;min-height:100dvh}
+  #game{grid-template-columns:1fr;grid-template-rows:auto min(60vh,calc(100vw * .8 + 40px)) auto;height:auto;min-height:100dvh}
   #side{border-left:0;border-top:1px solid var(--line);overflow:visible}
   #top{gap:8px}
   #top h1{font-size:18px}
@@ -212,7 +212,12 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
   #top .sp{display:none}
   #top button{padding:5px 10px;font-size:13px}
   #tabs{flex-wrap:wrap}
-  #lens{max-width:calc(100% - 64px)}
+  #lens{max-width:calc(100% - 64px);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  #lens button{flex:none;padding:3px 8px;font-size:11.5px}
+  #lgd{font-size:10.5px;max-width:72%;bottom:6px;left:6px;padding:4px 7px}
+  #top button{padding:4px 8px;font-size:12px}
+  #top .chk,#turn{font-size:12px}
+  #top h1{font-size:16px}
 }
 .news{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--brass);background:#ffffff08;border-radius:4px}.news ul{margin:4px 0 0;padding-left:16px}.hist{width:100%;height:auto;margin:4px 0 8px}.tl{font-size:13px;max-height:12em;overflow:auto;padding-left:18px}
 .guide{font-size:13px;margin-top:8px;padding:6px 9px;border-left:3px solid var(--good);background:#ffffff08;border-radius:4px}.guide ul{list-style:none;margin:4px 0 0;padding:0}.guide li{margin:2px 0;color:var(--mute)}.guide li.ok{color:var(--good)}

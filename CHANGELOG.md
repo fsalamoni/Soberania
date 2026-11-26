@@ -1,5 +1,24 @@
 # Histórico de versões
 
+## v39 — 26/11/2026 · Revisão da interface
+
+Parte v30 do plano de aprimoramento (revisão de interface).
+
+- **Celular:**
+  - o mapa ocupa a largura da tela, sem a faixa vazia embaixo;
+  - as lentes ficam numa linha só, que rola de lado;
+  - a legenda, os botões do topo e o título ficam menores.
+- **Guia da primeira partida, terceira etapa:**
+  - lentes e legenda;
+  - Rendimento da região e Resumo do império;
+  - Árvore de tecnologias;
+  - Abastecimento.
+
+  Os passos de qualquer etapa agora contam quando você clica no botão certo.
+- **Regras:**
+  - parágrafo novo "Regiões", sobre rendimento, os 8 portes, moradia, empregos e abastecimento;
+  - a árvore explica a revelação gradual;
+  - "No mapa" descreve os 8 portes e as construções desenhadas.
 ## v38 — 26/11/2026 · Árvore mais funda: 20 tecnologias novas
 
 Parte v28 do plano de aprimoramento (pesquisa por passos), segunda etapa.
