@@ -99,7 +99,8 @@ function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; 
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
 const cqMax = f => Infinity; // v24: ataques ilimitados enquanto houver tropas (escolha do Flavio)
 const openR = () => Math.min(8, Math.ceil(G.rounds / 15)); // D-18
-const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round <= openR() && real(G.own[j]) && Fa(G.own[j]).capI === j); // D-18: capitais protegidas na abertura
+const warOn = f => { const F = Fa(f); if (!F.camp) { F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} entra em campanha militar.`); } }; // D-19: campanha automática no primeiro ataque do turno
+const canAtk = (f, i, j, probe) => (probe || Fa(f).camp || f === G.player) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round <= openR() && real(G.own[j]) && Fa(G.own[j]).capI === j); // D-18: capitais protegidas na abertura
 // conjunto refeito quando a lista de tecnologias muda (push ou troca); a lista fica longa nos cenários modernos
 const has = (f, k) => { const F = Fa(f), t = F && F.tech; if (!t) return false; if (F.tS !== t || F.tN !== t.length) { F.tS = t; F.tN = t.length; F.tSet = new Set(t); } return F.tSet.has(k); };
 // nb: construção ativa (desativada por falta de ouro não conta); built: existe no território
@@ -1108,7 +1109,7 @@ function eraCrisis() {
 }
 // UI-12: guia em camadas. Primeiro o turno básico; depois comércio, diplomacia, governo e vitórias
 const GUIDE = [
-  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Na barra sob o mapa, abra Militar e declare campanha (não custa nada) para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
+  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['atk', 'Para atacar, clique num território seu e depois num vizinho inimigo (é opcional)'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
   [['routes', 'Abra Comércio e veja onde cabem rotas'], ['dipl', 'Abra Diplomacia e veja o que cada facção aceita'], ['govm', 'Abra Governo e fé'], ['vicm', 'Abra Vitórias e veja quem está perto de vencer']],
   [['lens', 'Troque a lente do mapa (Relevo, Terreno, Recursos…) e leia a legenda'], ['empire', 'Numa região sua, abra o Rendimento da região e depois o Resumo do império'], ['techs', 'Abra a Árvore de tecnologias e veja o que está por descobrir'], ['sup', 'Numa região sua, abra Abastecimento e mande comida ou produção a outra']],
 ];
@@ -1140,7 +1141,7 @@ function advice() {
   if (Object.keys(slots(me)).some(t => freeSlot(me, t) > 0 && Object.entries(POL).some(([k, p]) => p.t === t && civ(me, p.c) && !pol(me, k)))) add('📜', 'Há vaga de política livre e uma política que cabe nela.', 'pol', 'Ver políticas');
   if (!F.pan && has(me, 'mis') && F.cu >= 10) add('🙏', 'Você já pode escolher um panteão.', 'fe', 'Ver crenças');
   if (govrN(me) < govrMax(me) && T.some(i => !govrAt(i))) add('🧑‍💼', `${govrMax(me) - govrN(me)} governador(es) sem território.`, 'gvr', 'Nomear');
-  if (G.phase === 'atk' && myRoutes(me).length < routeMax(me) && F.gold >= ECON.route && routeCands(me).length) add('🚢', 'Há vaga de rota comercial e uma rota possível.', 'routes', 'Ver rotas');
+  if (myRoutes(me).length < routeMax(me) && F.gold >= ECON.route && routeCands(me).length) add('🚢', 'Há vaga de rota comercial e uma rota possível.', 'routes', 'Ver rotas');
   const risk = T.map(i => [i, ...riskOf(i)]).filter(x => x[1] >= .5).sort((a, b) => (b[0] === F.capI) - (a[0] === F.capI) || b[1] - a[1]).slice(0, 3);
   for (const [i, p, w] of risk) add('⚠', `${tname(i)}${i === F.capI ? ' (capital)' : ''} em risco: ${tname(w)} tem ${G.tr[w]} tropas contra as suas ${G.tr[i]} e venceria ${Math.round(100 * p)}% das vezes.`, 'sel', 'Ver', i);
   return L;
@@ -1296,17 +1297,49 @@ function inflWhy(f, j) {
 }
 const canInfl = (f, j) => !inflWhy(f, j);
 // v49: por que não dá para atacar j a partir de i ('' = pode)
+// v62 (D-19): atacar quem está em trégua ou aliança é possível, mas rompe o tratado; brk diz qual ('' = nenhum ou aliado de equipe)
+const brk = (f, d) => real(d) && d !== f && peace(f, d) && !(Fa(f).team && Fa(f).team === Fa(d).team) ? (G.ally && G.ally.has(tk(f, d)) ? 'aliança' : 'trégua') : '';
 function atkWhy(f, i, j) {
   if (G.own[i] !== f || !G.A[i].includes(j)) return 'Sem fronteira com um território seu.';
-  const d = G.own[j];
+  const d = G.own[j], F = Fa(f);
   if (d === f) return 'O território já é seu.';
-  if (!hostile(f, j)) return real(d) && allied(f, d) ? 'Aliado.' : 'Em trégua: rompa a trégua no painel de facções para atacar.';
-  if (G.phase !== 'atk') return 'Ataques acontecem na fase de ações.';
-  if (!Fa(f).camp) return 'Declare campanha para atacar.';
-  if (G.tr[i] < 2) return `${tname(i)} precisa de 2 ou mais tropas para atacar.`;
-  if (!seaOk(f, i, j)) return 'Sem frota disponível para atravessar o mar neste turno.';
+  if (d === 'off') return 'Território fora deste cenário.';
+  if (!hostile(f, j) && !brk(f, d)) return 'Aliado de equipe: não pode ser atacado.';
+  if (f === G.player && F.reinf > 0) return `Distribua os reforços antes de atacar (faltam ${F.reinf}).`;
+  if (G.phase === 'mov') return 'O remanejamento já começou: os ataques deste turno terminaram.';
+  if (G.phase !== 'atk') return 'Distribua os reforços antes de atacar.';
+  if (G.tr[i] < 2) return `${tname(i)} precisa de 2 ou mais tropas para atacar: uma sempre fica guardando o lugar.`;
+  if (real(f) && F.cq >= cqMax(f)) return `Limite de ${cqMax(f)} conquista(s) por turno atingido: as tropas precisam consolidar o terreno.`;
+  if (!seaOk(f, i, j)) return 'Travessia por mar: a frota não tem mais travessias neste turno. Portos e navegação dão mais.';
   if (G.round <= openR() && real(d) && Fa(d).capI === j) return `Abertura: capitais ficam protegidas até o fim da rodada ${openR()}.`;
-  return canAtk(f, i, j) ? '' : 'Ataque indisponível agora.';
+  return brk(f, d) || canAtk(f, i, j) ? '' : 'Ataque indisponível agora.';
+}
+// tenta atacar j a partir de i: explica a recusa, avisa das consequências de romper tratado ou abre a batalha
+function tryAttack(i, j) {
+  const me = G.player, w = atkWhy(me, i, j);
+  if (w) { toast(w); return false; }
+  const b = brk(me, G.own[j]);
+  if (b) { warModal(i, j, b); return true; }
+  G.sel = i; G.tgt = j; render(); showBattlePanel(); return true;
+}
+function warModal(i, j, b) {
+  const me = G.player, d = G.own[j], F = Fa(me), cb = G.cb.has(me + '>' + d);
+  const lost = G.pacts.filter(p => tk(p.a, p.b) === tk(me, d) && (!p.u || p.u >= G.round)).map(p => PACT[p.k].n.toLowerCase());
+  const help = G.order.filter(x => x !== me && x !== d && Fa(x).alive && (pact(x, d, 'def') || pact(x, d, 'ali')) && G.truce.has(tk(x, me)));
+  const others = G.order.filter(x => x !== me && x !== d && Fa(x).alive).length;
+  const L = [
+    `Sua estabilidade cai 15: de ${Math.round(F.stab)} para ${Math.max(0, Math.round(F.stab) - 15)}.`,
+    b === 'aliança' ? `A aliança e a trégua com ${fname(d)} acabam: vocês passam a ser inimigos.` : `A trégua com ${fname(d)} acaba: os dois lados passam a poder se atacar.`,
+    lost.length ? `Acabam junto: ${lost.join(', ')}.` : '',
+    cb ? `Você tem motivo de guerra contra ${fname(d)}: as outras facções não tratam isto como traição.` : `${fname(d)} passa a ver você como traidor (opinião −40)${others ? ` e as outras ${others} facções perdem confiança em você (−10 cada)` : ''}. Novos acordos ficam mais difíceis pelo resto da partida.`,
+    help.length ? `Entram na guerra contra você, por defesa mútua: ${help.map(fname).join(', ')}.` : 'Nenhuma outra facção entra na guerra por causa deste ataque.',
+    'O ataque põe o império em campanha neste turno, o que soma cansaço de guerra.',
+  ].filter(Boolean);
+  modal(`<h2>Atacar ${esc(tname(j))} rompe a ${b} com ${esc(fname(d))}</h2><p>O que acontece se você confirmar:</p><ul>${L.map(t => `<li>${esc(t)}</li>`).join('')}</ul><p class="hint">Chance de vencer esta batalha atacando até o fim: ${Math.round(100 * odds(i, j))}%.</p>`,
+    [[`Romper a ${b} e atacar`, () => {
+      G.truce.delete(tk(me, d)); F.stab = Math.max(0, F.stab - 15); betray(me, d); log(me, `Você rompe a ${b} com ${fname(d)} ao atacar ${tname(j)} (−15 de estabilidade).`);
+      if (canAtk(me, i, j)) { G.sel = i; G.tgt = j; render(); showBattlePanel(); } else render();
+    }], ['Não atacar', () => { G.sel = j; G.tab = 'reg'; render(); }]]);
 }
 // v24: sem pontos de ação. Com chave, a ação só vale 1 vez por turno (festas, impostos, agitadores, espião, enviado)
 const spend = (f, k) => { if (!k) return true; const U = Fa(f).used || (Fa(f).used = {}); if (U[k] === G.round) return false; U[k] = G.round; return true; };
@@ -1500,7 +1533,7 @@ function playCard(f, h, target, t2) {
   const F = Fa(f), c = F.cards[h]; if (!c || c.k == null) return false;
   const k = c.k, o = target != null ? G.own[target] : null;
   const adjOwn = j => G.A[j].some(i => G.own[i] === f);
-  if (k === 0) { if (G.phase !== 'ref') return false; F.reinf += 4; }
+  if (k === 0) { if (G.phase === 'mov') return false; F.reinf += 4; }
   else if (k === 1) { if (o !== f) return false; G.fort[target] = 2; }
   else if (k === 2) { if (G.phase === 'mov') return false; F.ofs = true; }
   else if (k === 3) F.stab = Math.min(100, F.stab + 20);
@@ -1640,9 +1673,10 @@ function airRange(f) {
   for (let h = 0; h < q.length; h++) { const i = q[h]; for (const j of G.A[i]) if (dist[j] > dist[i] + 1) { dist[j] = dist[i] + 1; q.push(j); } }
   return dist;
 }
-const airTargets = f => { if (!Fa(f).planes || !Fa(f).camp) return []; const d = airRange(f); return d.map((v, j) => j).filter(j => d[j] <= G.air.r && d[j] > 0 && hostile(f, j) && G.tr[j] >= 2); };
+const airTargets = f => { if (!Fa(f).planes || !(Fa(f).camp || f === G.player)) return []; const d = airRange(f); return d.map((v, j) => j).filter(j => d[j] <= G.air.r && d[j] > 0 && hostile(f, j) && G.tr[j] >= 2); };
 function airStrike(f, j) {
-  const F = Fa(f); if (!F.planes || !F.camp || G.tr[j] < 2 || !hostile(f, j)) return null;
+  const F = Fa(f); if (!F.planes || !(F.camp || f === G.player) || G.tr[j] < 2 || !hostile(f, j)) return null;
+  warOn(f);
   F.planes--;
   const aa = d6(), down = aa >= G.air.aa, hit = down ? 0 : d6(), kill = !down && hit >= G.air.hit;
   if (kill) G.tr[j]--;
@@ -1772,6 +1806,7 @@ async function loop0() {
 async function playerEnd() {
   if (G.turnF !== G.player || G.busy || G.over) return;
   if (G.pend) return toast('Ocupe o território conquistado primeiro.');
+  if (Fa(G.player).reinf > 0) return toast(`Distribua os reforços antes de encerrar o turno (faltam ${Fa(G.player).reinf}).`);
   repMark(); finishTurn(G.player); hideBattle(); await advance(); render(); loop();
 }
 
@@ -2622,29 +2657,35 @@ function onTerr(i) {
     G.sel = i; return render();
   }
   if (!myTurn) { G.sel = i; return render(); }
-  if (G.phase === 'ref') {
-    G.sel = i;
-    if (G.own[i] === me && Fa(me).reinf > 0) { G.tr[i]++; Fa(me).reinf--; }
-  } else if (G.phase === 'atk') {
-    if (G.tgt != null) return;
-    if (G.sel != null && canAtk(me, G.sel, i)) { G.tgt = i; showBattlePanel(); }
-    else if (!Fa(me).camp && G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i)) toast('Para atacar, declare uma Campanha (botão em Militar, não custa nada; acumula cansaço de guerra).');
-    else if (Fa(me).cq >= cqMax(me) && G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i)) toast(`Limite de ${cqMax(me)} conquistas por turno atingido: as tropas precisam consolidar o terreno.`);
-    else if (G.sel != null && G.own[G.sel] === me && G.A[G.sel].includes(i) && hostile(me, i) && !seaOk(me, G.sel, i)) toast('Sem frota disponível para atravessar o mar neste turno.');
-    else G.sel = i;
-  } else if (G.phase === 'mov') {
-    if (G.tgt != null) return;
-    if (G.sel != null && G.own[G.sel] === me && (G.mv[G.sel] || 0) > 0 && moveDests(me, G.sel).includes(i)) {
-      if (!seaOk(me, G.sel, i)) return toast('Sem frota disponível para atravessar o mar.');
+  if (G.tgt != null) return;
+  const s = G.sel, mine = G.own[i] === me;
+  if (mine && Fa(me).reinf > 0 && G.phase !== 'mov') { G.sel = i; G.tr[i]++; Fa(me).reinf--; } // reforços por distribuir: cada clique num território seu põe 1 tropa
+  else if (G.phase === 'mov') {
+    if (s != null && G.own[s] === me && (G.mv[s] || 0) > 0 && moveDests(me, s).includes(i)) {
+      if (!seaOk(me, s, i)) return toast('Sem frota disponível para atravessar o mar.');
       G.tgt = i; showMovePanel();
     } else G.sel = i;
-  }
+  } else if (s != null && s !== i && G.own[s] === me && !mine && G.own[i] !== 'off' && G.A[s].includes(i)) {
+    // território seu e depois um vizinho de outro dono: é um ataque. Em trégua ou aliança, só vira ataque (com aviso) se as tropas permitirem
+    const bk = brk(me, G.own[i]);
+    if (bk && atkWhy(me, s, i)) G.sel = i;
+    else if (hostile(me, i) || bk) { if (tryAttack(s, i)) return; G.sel = i; }
+    else G.sel = i;
+  } else G.sel = i;
   render();
+}
+const sideOpen = () => $('#game').classList.remove('noside');
+// v62: encerrar com pesquisa parada ou proposta sem resposta pede confirmação, porque a perda não volta
+function endAsk() {
+  if (G.turnF !== G.player || G.busy || G.over) return;
+  const L = advice().filter(x => x.k === 'techs' || x.k === 'dipl');
+  if (!L.length || Fa(G.player).reinf > 0) return playerEnd();
+  modal(`<h2>Encerrar o turno assim?</h2><ul>${L.map(x => `<li>${x.ic} ${esc(x.t)}</li>`).join('')}</ul>`, [['Encerrar mesmo assim', playerEnd], ['Voltar e resolver', () => { G.tab = 'imp'; G.isub = 'acoes'; sideOpen(); render(); }]]);
 }
 function toPhase(p) {
   if (G.turnF !== G.player || G.busy) return;
   const F = Fa(G.player);
-  if (p === 'atk' && F.reinf > 0) return toast('Posicione todos os reforços primeiro.');
+  if (F.reinf > 0) return toast(`Distribua os reforços primeiro (faltam ${F.reinf}).`);
   if (G.pend) return toast('Ocupe o território conquistado primeiro.');
   G.phase = p; G.tgt = null; G.card = null; G.mode = null; hideBattle(); // v49: a seleção fica, para continuar na mesma região
   if (p === 'mov') G.mv = G.tr.map((t, i) => G.own[i] === G.player ? Math.max(0, Math.min(t - 1, t - (G.arr[i] || 0))) : 0);
@@ -2671,8 +2712,7 @@ function regionAct(a, i, k, j) {
     if (!seaOk(me, i, j)) return toast('Sem frota disponível para atravessar o mar.');
     G.sel = i; G.tgt = j; render(); return showMovePanel();
   }
-  if (G.phase !== 'atk') return toast('Isso acontece na fase de ações.');
-  if (a === 'atkFrom') { const w = atkWhy(me, i, j); if (w) return toast(w); G.sel = i; G.tgt = j; render(); return showBattlePanel(); }
+  if (a === 'atkFrom') return void tryAttack(i, j);
   let err = '';
   if (a === 'recAt') { if (!F.recOn) err = act(me, 'rec'); if (!err && !recruit(me, i)) err = F.gold < troopCost(me) ? 'Ouro insuficiente.' : 'Recrute na capital ou num território com ' + sName('qua') + '.'; if (!err) toast(`Recruta a caminho de ${tname(i)}: chega no seu próximo turno.`); }
   else if (a === 'bldAt') { if (!F.bldOn) err = act(me, 'obras'); if (!err) err = act(me, 'bld', k, i); if (!err) toast(`${sName(k)} entrou na fila de ${tname(i)}.`); }
@@ -2683,7 +2723,7 @@ function regionAct(a, i, k, j) {
 // botões de ação do jogador
 function playerAct(a, k) {
   const me = G.player, F = Fa(me);
-  if (G.turnF !== me || G.busy || G.phase !== 'atk') return;
+  if (G.turnF !== me || G.busy) return;
   G.card = null;
   if (G.mode && (G.mode === a || G.mode === 'bld:' + k)) { G.mode = null; return render(); }
   G.mode = null;
@@ -2726,7 +2766,7 @@ function qHtml(i) {
   if (!G.q[i].length) return '<p class="hint">Fila vazia.</p>';
   return '<ul class="q">' + G.q[i].map((x, n) => {
     const c = pCost(G.own[i], x.k, i), rc = rushCost(me, i, n);
-    const btn = mine && G.turnF === me && G.phase === 'atk' ? (true ? `<button class="mini" data-a="rush" data-i="${i}" data-n="${n}" ${canRush(me, i, n) ? '' : 'disabled'} title="${x.t >= G.round ? 'Não dá para apressar no turno em que a obra começou.' : ''}">Apressar ${rc}💰</button><button class="mini" data-a="unq" data-i="${i}" data-n="${n}" title="Retirar da fila (perde o progresso)">✕</button>` : '') : '';
+    const btn = mine && G.turnF === me ? (true ? `<button class="mini" data-a="rush" data-i="${i}" data-n="${n}" ${canRush(me, i, n) ? '' : 'disabled'} title="${x.t >= G.round ? 'Não dá para apressar no turno em que a obra começou.' : ''}">Apressar ${rc}💰</button><button class="mini" data-a="unq" data-i="${i}" data-n="${n}" title="Retirar da fila (perde o progresso)">✕</button>` : '') : '';
     return `<li>${STRUCT[x.k].ic} ${esc(sName(x.k))} ${pbar(x.p, c)} <span class="hint">${x.p}/${c} ⚒ · ${isFinite(eta[n]) ? eta[n] + ' turno(s)' : 'parada'}</span> ${btn}</li>`;
   }).join('') + '</ul>';
 }
@@ -2760,13 +2800,13 @@ function chainHtml(k, seen, d) {
   return `<li><span class="cn ${n ? 'has' : ok ? 'can' : 'no'}"><b>${S.ic || '🏛'} ${esc(sName(k))}</b> <span class="hint">${pCost(me, k)}⚒ · ${esc(S.fx || '')}</span><br><span class="hint">${n ? `✓ você tem ${n}` : ok ? '● pode construir agora' : '🔒 ' + reqText(k)}${S.tech ? ` · tecnologia ${esc(tName(S.tech))}${has(me, S.tech) ? ' ✓' : ''}` : ''}</span></span>${kids.length ? `<ul>${kids.map(x => chainHtml(x, seen, d + 1)).join('')}</ul>` : ''}</li>`;
 }
 function worksTab() {
-  const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me), my = G.turnF === me && !G.over && !G.busy, can = my && G.phase === 'atk';
+  const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me), my = G.turnF === me && !G.over && !G.busy, can = my;
   const os = ['fil', 'con', 'cad'].includes(G.osub) ? G.osub : 'fil';
   const idle = T.filter(i => !G.q[i].length), busy = T.length - idle.length;
   const tabs = [['fil', `📋 Filas${idle.length ? ' • ' + idle.length : ''}`], ['con', '🔨 Construir'], ['cad', '🌳 Cadeias']];
   let h = `<h4>Obras do império</h4><div class="kpis">${kp('🏗', 'Em obra', busy, `de ${T.length} território(s)`, 'Territórios com alguma obra na fila.')}${kp('💤', 'Ociosos', idle.length, idle.length ? 'produção parada' : 'nenhum', 'Território sem obra na fila não aproveita a produção ⚒ dele.', idle.length ? 'warn' : '')}${kp('💰', 'Manutenção', u.b, 'por turno', 'Ouro que as construções prontas custam por turno. Sem ouro, elas são desativadas.')}</div>
     <div class="stabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === os}" class="${k === os ? 'on' : ''}" data-a="stab" data-g="osub" data-k="${k}">${l}</button>`).join('')}</div>`;
-  if (!can) h += `<p class="hint adv">${my ? 'Novas obras entram na fila na fase de ações.' : 'Você pode consultar tudo; para mexer nas filas, espere o seu turno.'}</p>`;
+  if (!can) h += `<p class="hint adv">${my ? 'As filas ficam livres assim que a batalha em andamento terminar.' : 'Você pode consultar tudo; para mexer nas filas, espere o seu turno.'}</p>`;
   if (os === 'fil') {
     h += `<p class="hint">A produção ⚒ de cada território avança a obra do topo da fila dele (até ${qMax(me)} na fila). Apressar custa ouro; retirar perde o progresso.</p>`;
     h += [...idle, ...T.filter(i => G.q[i].length).sort((a, b) => prodOf(b) - prodOf(a))].map(i => `<div class="rbox${G.q[i].length ? '' : ' idle'}"><h5><button class="lnk" data-a="selObr" data-i="${i}" title="Abrir as obras de ${esc(tname(i))}">${esc(tname(i))}</button> <span class="hint">${esc(pName(i))} · ${prodOf(i)} ⚒ por turno · zonas ${zonesAt(i).length}/${G.lv[i]} · ${G.bld[i].length} construção(ões)${occupied(i) ? ' · ocupado' : ''}</span></h5>${G.q[i].length ? qHtml(i) : '<p class="hint">💤 Sem obra: a produção deste território está parada.</p>'}<button class="mini${G.q[i].length ? '' : ' pri'}" data-a="selObr" data-i="${i}">➕ Escolher obra aqui</button></div>`).join('');
@@ -2850,7 +2890,7 @@ function showBattlePanel(last) {
 async function doRoll(blitz) {
   if (G.busy || G.tgt == null) return; G.busy = true;
   const g = G, i = G.sel, j = G.tgt, d = G.own[j]; let r;
-  useSea(G.player, i, j);
+  warOn(G.player); useSea(G.player, i, j);
   const ad0 = diceFor(i, j)[0]; // v50: o ataque até o fim para quando os dados caem, para você decidir se segue
   do {
     if (r && diceFor(i, j)[0] < ad0) break;
@@ -2889,7 +2929,12 @@ function doMove() {
 
 // ---------- painel lateral ----------
 function bar(v) { const c = v < 15 ? 'var(--bad)' : v < 35 ? 'var(--warn)' : 'var(--good)'; return `<span class="bar"><i style="width:${v}%;background:${c}"></i></span><b>${Math.round(v)}</b>`; }
-function render() { if (!G) return; renderMap(); renderSide(); }
+function render() {
+  if (!G) return;
+  const P = G.player && Fa(G.player); // v62: com reforços por distribuir a etapa é Reforços; sem eles, Ataques (até o jogador remanejar)
+  if (P && G.turnF === G.player && !G.auto && !G.over && G.phase !== 'mov') G.phase = P.reinf > 0 ? 'ref' : 'atk';
+  renderMap(); renderSide();
+}
 // v50 (C-300): para que serve cada construção. Finalidade, conselho de quando vale a pena e o que ela abre
 const SCAT = {
   zona: ['🗺 Zonas de recurso', 'Comece por aqui. A zona ocupa uma vaga do território (aldeia 1, vila 2, cidade 3, metrópole 4), explora as jazidas dele e abre a cadeia de construções dela. Escolha a que casa com o terreno e as jazidas.'],
@@ -2934,18 +2979,19 @@ function bldList(i) {
 function quickActs(i) {
   const me = G.player, F = Fa(me);
   if (G.own[i] !== me || G.over || G.turnF !== me || G.busy) return '';
-  if (G.phase === 'ref') return F.reinf ? `<div class="row qa"><button class="mini pri" data-a="put1" data-i="${i}">+1 tropa aqui</button><button class="mini" data-a="all">Todas aqui (${F.reinf})</button></div>` : '';
-  if (G.phase === 'atk') { const tc = troopCost(me); return `<div class="row qa">${canRecruitAt(me, i) ? `<button class="mini" data-a="recAt" data-i="${i}" ${F.gold < tc ? 'disabled' : ''} title="A tropa chega aqui no início do seu próximo turno.">🪖 Recrutar 1 tropa · ${tc}💰</button>` : `<span class="hint" title="Construa um ${sName('qua')} aqui para recrutar na frente.">Recruta-se na capital ou onde houver ${sName('qua')}.</span>`}</div>`; }
-  return `<p class="hint qa">Pode mover ${G.mv[i] || 0} tropa(s): use Mover na lista de fronteiras.</p>`;
+  const tc = troopCost(me);
+  return (F.reinf ? `<div class="row qa"><button class="mini pri" data-a="put1" data-i="${i}">+1 tropa aqui</button><button class="mini" data-a="all">Todas aqui (${F.reinf})</button></div>` : '') +
+    (G.phase === 'mov' ? `<p class="hint qa">Pode mover ${G.mv[i] || 0} tropa(s): use Mover na lista de fronteiras.</p>` : '') +
+    `<div class="row qa">${canRecruitAt(me, i) ? `<button class="mini" data-a="recAt" data-i="${i}" ${F.gold < tc ? 'disabled' : ''} title="${F.gold < tc ? `Falta ouro: custa ${tc} e você tem ${F.gold}.` : 'A tropa chega aqui no início do seu próximo turno.'}">🪖 Recrutar 1 tropa · ${tc}💰</button>` : `<span class="hint" title="Construa um ${sName('qua')} aqui para recrutar na frente.">Recruta-se na capital ou onde houver ${sName('qua')}.</span>`}</div>`;
 }
 // v50 (UI-15, C-300): sub-aba Obras. Fila, o que já existe e o que dá para construir, agrupado por finalidade
 let bcat = null;
 function regionActs(i) {
   const me = G.player;
   if (G.own[i] !== me) return '';
-  const can = !G.over && G.turnF === me && !G.busy && G.phase === 'atk';
+  const can = !G.over && G.turnF === me && !G.busy;
   let h = `<div class="rbox"><h5>Fila de obras <span class="hint">${G.q[i].length}/${qMax(me)} · ${prodOf(i)} ⚒ por turno</span></h5>${qHtml(i)}</div>` + bldList(i);
-  if (!can) return h + (G.turnF === me && !G.over ? '<p class="hint">Novas obras entram na fila na fase de ações.</p>' : '');
+  if (!can) return h;
   const ks = Object.keys(STRUCT).filter(k => canQueue(me, k, i)), full = G.q[i].length >= qMax(me), by = {};
   ks.forEach(k => (by[sCat(k)] = by[sCat(k)] || []).push(k));
   const cats = Object.keys(SCAT).filter(c => by[c]); if (!cats.includes(bcat)) bcat = cats[0];
@@ -2959,24 +3005,23 @@ function bordersHtml(i) {
   const me = G.player, o = G.own[i], my = G.turnF === me && !G.busy && !G.over;
   const nbs = G.A[i].filter(j => G.own[j] !== 'off');
   if (o === 'off' || !nbs.length) return '';
-  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`)}">⚔ ${lab}</button>${G.tr[src] > 1 && hostile(me, dst) ? (pc => `<span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim, com os bônus de dado dos dois lados.">${pc}%</span>`)(Math.round(100 * odds(src, dst))) : ''}`; };
-  const I = j => { const w = G.phase !== 'atk' ? 'A influência acontece na fase de ações.' : inflWhy(me, j); return `<button class="mini" data-a="inflAt" data-i="${j}" ${w ? 'disabled' : ''} title="${esc(w || 'Anexa sem lutar; fica com metade das tropas.')}">⭐ Influenciar · ${inflCost(me, j)}</button>`; };
+  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst), bk = brk(me, G.own[dst]); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || (bk ? `Atacar rompe a ${bk}: o jogo mostra as consequências antes de confirmar.` : `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`))}">⚔ ${lab}${bk ? ` (rompe a ${bk})` : ''}</button>${w ? `<span class="hint why">${esc(w)}</span>` : ''}${G.tr[src] > 1 && hostile(me, dst) ? (pc => `<span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim, com os bônus de dado dos dois lados.">${pc}%</span>`)(Math.round(100 * odds(src, dst))) : ''}`; };
+  const I = j => { const w = inflWhy(me, j); return `<button class="mini" data-a="inflAt" data-i="${j}" ${w ? 'disabled' : ''} title="${esc(w || 'Anexa sem lutar; fica com metade das tropas.')}">⭐ Influenciar · ${inflCost(me, j)}</button>`; };
   const rows = nbs.map(j => {
     const d = G.own[j], D = Fa(d), rel = d === me ? 'seu' : !real(d) ? (d === 'reb' ? 'rebelde' : 'neutro') : allied(me, d) ? 'aliado' : peace(me, d) ? 'trégua' : 'inimigo';
     let b = '';
     if (my) {
-      if (o === me && d !== me && (rel === 'inimigo' || rel === 'neutro' || rel === 'rebelde')) b += A(i, j, 'Atacar');
+      if (o === me && d !== me && (rel === 'inimigo' || rel === 'neutro' || rel === 'rebelde' || brk(me, d))) b += A(i, j, 'Atacar');
       if (o === me && (d === 'neu' || d === 'reb')) b += I(j);
       if (o === me && real(d) && hostile(me, j) && G.tr[j] > 1) { const rk = Math.round(100 * odds(j, i)); if (rk >= 30) b += `<span class="pct ${rk >= 50 ? 'bad' : 'warn'}" title="Chance de ${esc(tname(j))} tomar ${esc(tname(i))} se atacar até o fim.">risco ${rk}%</span>`; }
       if (o === me && d === me && G.phase === 'mov') { const ok = (G.mv[i] || 0) > 0 && moveDests(me, i).includes(j) && seaOk(me, i, j); b += `<button class="mini" data-a="mvFrom" data-i="${i}" data-j="${j}" ${ok ? '' : 'disabled'} title="${ok ? 'Mover tropas para lá.' : 'Sem tropas livres ou sem caminho.'}">➜ Mover</button>`; }
-      if (o !== me && d === me && hostile(me, i)) b += A(j, i, 'Atacar daqui');
+      if (o !== me && d === me && (hostile(me, i) || brk(me, o))) b += A(j, i, 'Atacar daqui');
     }
     return `<li><button class="lnk" data-a="sel" data-i="${j}" title="Selecionar ${esc(tname(j))}"><i class="dot" style="background:${D.c}"></i>${esc(tname(j))}</button><span class="hint">${isSea(i, j) ? `<span title="Travessia pelo mar: gasta 1 travessia da frota por turno (restam ${Fa(me).navLeft}). Desembarque rola no máximo 2 dados sem porto na origem, navegação ou frota dominante. Frota maior que a sua dá +1 à defesa.">⚓ por mar</span> · ` : ''}🪖 ${G.tr[j]} · ${rel}${csOf(j) ? ' · cidade-estado' : ''}</span><span class="bt">${b}</span></li>`;
   }).join('');
   let top = '';
-  if (my && o !== me && (o === 'neu' || o === 'reb')) top = `<div class="row">${I(i)}${G.phase === 'atk' && inflWhy(me, i) ? `<span class="hint">${esc(inflWhy(me, i))}</span>` : ''}</div>`;
-  const camp = my && G.phase === 'atk' && !Fa(me).camp && (o === me ? nbs.some(j => hostile(me, j)) : hostile(me, i) && nbs.some(j => G.own[j] === me));
-  return `<div class="rbox"><h5>Fronteiras <span class="hint">${nbs.length} vizinho(s)${o === me ? '' : ' · ' + nbs.filter(j => G.own[j] === me).length + ' seu(s)'}</span></h5>${top}${camp ? `<p class="hint">Para atacar, <button class="mini pri" data-a="act" data-k="camp" title="Libera os ataques deste turno. Cada turno em campanha soma cansaço de guerra.">Declarar campanha</button></p>` : ''}<ul class="nbl">${rows}</ul></div>`;
+  if (my && o !== me && (o === 'neu' || o === 'reb')) top = `<div class="row">${I(i)}${inflWhy(me, i) ? `<span class="hint">${esc(inflWhy(me, i))}</span>` : ''}</div>`;
+  return `<div class="rbox"><h5>Fronteiras <span class="hint">${nbs.length} vizinho(s)${o === me ? '' : ' · ' + nbs.filter(j => G.own[j] === me).length + ' seu(s)'}</span></h5>${top}<ul class="nbl">${rows}</ul></div>`;
 }
 function renderSide() {
   const me = G.player, F = Fa(me), cur = G.turnF, CF = cur && Fa(cur), my = cur === me && !G.over;
@@ -3005,35 +3050,44 @@ function renderSide() {
     ${stabs('isub', isub, [['acoes', '⚙ Ações'], ['obj', '🎯 Objetivo'], ['facs', '👥 Facções'], ['cron', '📜 Crônica']])}
     <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${reportHtml()}${advisorHtml(adv)}${guideHtml()}</div>`;
   const forces = `<p class="forces" title="Cada travessia leva um ataque ou um remanejamento pelo mar neste turno. Ganha-se 1 por ${sName('por')}, mais as de navegação e estaleiros. Frota 2 acima da do defensor: desembarque com 3 dados. Frota menor que a dele: ele defende com +1.">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
-  let ph = '', abar = '', st = ''; // UI: a ação da fase fica na barra fixa (#actbar), sempre visível
-  const K = ' title="Atalho: Enter"';
-  if (G.over) { ph = `<p>Partida encerrada.</p>`; st = 'Partida encerrada'; abar = `<button class="pri" data-a="menu"${K}>Novo jogo</button>`; }
-  else if (!my) { ph = `<p class="hint">Aguardando ${esc(CF ? CF.n : '')}…</p>${forces}`; st = `<i class="dot" style="background:${CF ? CF.c : '#888'}"></i>Vez de ${esc(CF ? CF.n : '')}…`; }
-  else if (G.phase === 'ref') {
-    const ri = reinfOf(me);
-    ph = `<h4>Reforços: <b class="big">${F.reinf}</b> tropas</h4><p class="hint">Clique nos seus territórios para posicionar 1 tropa por clique.</p>
+  // v62 (UI-37): as etapas do turno ficam na barra inferior (#actbar, dentro de #cmd); o painel mostra os detalhes da etapa atual
+  let ph = '';
+  const K = ' title="Atalho: Enter"', advl = adv.length && my ? ` <button class="lnk warn" data-a="advgo" title="${esc(adv.map(x => x.t).join(' '))}">⚠ ${adv.length} ponto(s) de atenção</button>` : '';
+  const bar = (hint, btns) => `<div id="actbar" class="cturn" role="region" aria-label="Etapas do turno"><span class="cth">${hint}</span>${btns ? `<span class="tsr">${btns}</span>` : ''}</div>`;
+  if (G.over) { ph = `<p>Partida encerrada.</p>`; cmdTurn = bar('Partida encerrada', `<button class="pri te" data-a="menu"${K}>Novo jogo</button>`); }
+  else if (!my) { ph = `<p class="hint">Aguardando ${esc(CF ? CF.n : '')}…</p>${forces}`; cmdTurn = bar(`<i class="dot" style="background:${CF ? CF.c : '#888'}"></i>Vez de ${esc(CF ? CF.n : '')}…`, ''); }
+  else {
+    const need = F.reinf > 0, mov = G.phase === 'mov', left = mov ? G.mv.reduce((s, v) => s + (v || 0), 0) : 0;
+    let hint;
+    if (need) {
+      const ri = reinfOf(me);
+      ph = `<h4>1 · Distribuir reforços: <b class="big">${F.reinf}</b> tropas</h4><p class="hint">Clique nos seus territórios para pôr 1 tropa por clique. É a única etapa obrigatória: sem ela não dá para atacar, remanejar nem encerrar o turno. Obras, pesquisa, governo, diplomacia e comércio já estão liberados.</p>
       <p class="parts">${ri.parts.map(([n, v]) => `${esc(n)}${v ? (v > 0 ? ' +' : ' ') + v : ''}`).join(' · ')}</p>
       <p class="parts">Produção deste turno: +${inc.gold} 💰 · +${inc.sci} 🔬 · +${inc.pre} ⭐</p>
-      <div class="row"><button data-a="all" ${F.reinf ? '' : 'disabled'}>Tudo no selecionado</button></div>
-      ${forces}`;
-    st = F.reinf ? `<b>1 · Reforços</b> · toque nos seus territórios (faltam ${F.reinf})` : '<b>1 · Reforços</b> · tudo posicionado';
-    abar = `<button class="pri" data-a="toAtk" ${F.reinf ? 'disabled' : ''}${K}>${F.reinf ? `Posicione ${F.reinf} tropa${F.reinf > 1 ? 's' : ''}` : 'Ir para as ações →'}</button>`;
-  } else if (G.phase === 'atk') {
-    const noPA = F.pa < 1, tc = troopCost(me);
-    const Bt = (a, k, label, title, dis, on) => `<button class="ab2 ${on ? 'on' : ''}" data-a="${a}" data-k="${k}" title="${esc(title)}" ${dis ? 'disabled' : ''}>${label}</button>`;
-    // parte 4: só aparecem as obras que cabem em algum território seu agora; o catálogo mostra o resto
-    ph = `<h4>Etapa 2: ações</h4><p class="hint">Os comandos ficam na barra sob o mapa: Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias. Cada um diz o que faz e quanto custa. Para agir num lugar específico (atacar, recrutar, construir), clique no território: a aba Região mostra as ações e as fronteiras dele.</p>${forces}`;
-    st = `<b>2 · Ações</b> · ${F.camp ? `campanha: ${F.cq} conquista(s) no turno${blitzCost(me) ? ` · <span title="Desgaste da blitz: a partir da ${ECON.blitz + 1}ª conquista no turno, cada uma custa estabilidade crescente e 1 tropa">a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa</span>` : ` · as ${ECON.blitz} primeiras não têm desgaste`}` : 'use a barra de comandos sob o mapa; em Militar, declare campanha para atacar'}`;
-    abar = `<button class="ghost" data-a="end" title="Pula o remanejamento">Encerrar turno</button><button class="pri" data-a="toMov"${K}>Remanejar →</button>`;
-  } else {
-    const left = G.mv.reduce((s, v) => s + (v || 0), 0);
-    ph = `<h4>Remanejamento</h4><p class="hint">Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos; 1 tropa fica sempre. Restam ${left} tropa(s) para mover.</p>${forces}`;
-    st = `<b>3 · Remanejamento</b> · ${left} tropa(s) podem andar`;
-    abar = `<button class="pri" data-a="end"${K}>Encerrar turno</button>`;
+      <div class="row"><button data-a="all">Tudo no selecionado</button></div>${forces}`;
+      hint = `<b>Distribua ${F.reinf} tropa${F.reinf > 1 ? 's' : ''}:</b> toque nos seus territórios. O resto do império já pode ser cuidado.`;
+    } else if (mov) {
+      ph = `<h4>3 · Remanejar</h4><p class="hint">Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos; 1 tropa fica sempre. Restam ${left} tropa(s) para mover. Os ataques deste turno terminaram; obras, pesquisa e governo continuam liberados.</p>${forces}`;
+      hint = `<b>Remanejar:</b> clique num território seu e num vizinho seu (${left} tropa${left === 1 ? '' : 's'} podem andar).`;
+    } else {
+      // frentes abertas: o melhor ataque disponível contra cada vizinho, com a chance de vencer
+      const best = {};
+      if (G.tab === 'imp') for (const i of owned(me)) if (G.tr[i] > 1) for (const j of G.A[i]) if (hostile(me, j) && !atkWhy(me, i, j)) { const p = odds(i, j); if (!best[j] || p > best[j][1]) best[j] = [i, p]; }
+      const fr = Object.entries(best).map(([j, [i, p]]) => [i, +j, p]).sort((a, b) => b[2] - a[2]).slice(0, 6);
+      const none = G.round <= openR() ? `Nas primeiras rodadas as capitais estão protegidas (até a rodada ${openR()}); vizinhos neutros podem ser atacados se você tiver 2 ou mais tropas ao lado.` : real(me) && F.cq >= cqMax(me) ? `Limite de ${cqMax(me)} conquista(s) por turno atingido.` : 'Nenhum território seu com 2 ou mais tropas tem um vizinho que possa ser atacado agora.';
+      ph = `<h4>2 · Atacar <span class="hint">opcional</span></h4><p class="hint">Clique num território seu e depois num vizinho, ou escolha uma frente abaixo. Não é preciso declarar nada: o primeiro ataque do turno põe o império em campanha, e turnos seguidos em campanha somam cansaço de guerra.</p>
+      ${fr.length ? `<ul class="nbl">${fr.map(([i, j, p]) => { const pc = Math.round(100 * p); return `<li><button class="lnk" data-a="sel" data-i="${j}" title="Selecionar ${esc(tname(j))}"><i class="dot" style="background:${Fa(G.own[j]).c}"></i>${esc(tname(j))}</button><span class="hint">🪖 ${G.tr[j]} · a partir de ${esc(tname(i))} (${G.tr[i]})</span><span class="bt"><button class="mini bad" data-a="atkFrom" data-i="${i}" data-j="${j}" title="Abre a batalha: você ainda escolhe atacar uma vez, até o fim ou recuar.">⚔ Atacar</button><span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim.">${pc}%</span></span></li>`; }).join('')}</ul>` : `<p class="hint">${none}</p>`}
+      ${F.camp ? `<p class="parts">Em campanha: ${F.cq} conquista(s) neste turno${blitzCost(me) ? ` · a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa (desgaste da blitz)` : ` · as ${ECON.blitz} primeiras não têm desgaste`}.</p>` : ''}${forces}`;
+      hint = F.camp ? `<b>Em campanha:</b> ${F.cq} conquista(s)${blitzCost(me) ? ` · a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa` : ''}. Siga atacando, remaneje ou encerre.` : '<b>Seu turno:</b> para atacar, clique num território seu e num vizinho. Atacar e remanejar são opcionais.';
+    }
+    const S = (n, lab, cls, a, k, tt, dis) => `<button class="ts ${cls}" data-a="${a}"${k ? ` data-k="${k}"` : ''} title="${esc(tt)}"${dis ? ' aria-disabled="true"' : ''}${cls === 'cur' ? ' aria-current="step"' : ''}><i>${cls === 'done' ? '✓' : n}</i><span>${lab}</span></button>`;
+    cmdTurn = bar(`<span>${hint}</span>${advl}`,
+      S(1, need ? `Distribuir <b>${F.reinf}</b>` : 'Distribuir', need ? 'cur' : 'done', 'tstep', 'ref', need ? 'Etapa militar 1: ponha os reforços no mapa. É a única obrigatória. Toque para ver os detalhes.' : 'Reforços distribuídos.') +
+      S(2, 'Atacar', need ? 'off' : mov ? 'done' : 'cur', 'tstep', 'atk', need ? 'Distribua os reforços antes de atacar.' : mov ? 'Os ataques deste turno terminaram quando o remanejamento começou.' : 'Opcional: clique num território seu e num vizinho. Toque para ver as frentes abertas.', need) +
+      S(3, mov ? `Remanejar <b>${left}</b>` : 'Remanejar', need ? 'off' : mov ? 'cur' : '', mov ? 'tstep' : 'toMov', mov ? 'mov' : '', need ? 'Distribua os reforços antes de remanejar.' : mov ? 'Mova tropas entre territórios seus vizinhos.' : 'Opcional: encerra os ataques deste turno e libera mover tropas entre territórios seus. Obras, pesquisa e governo continuam liberados.', need) +
+      `<button class="pri te" data-a="end" title="${need ? 'Distribua os reforços para poder encerrar o turno.' : 'Passa a vez. Atalho: Enter'}"${need ? ' aria-disabled="true"' : ''}>Encerrar turno</button>`);
   }
   $('#phase').innerHTML = ph;
-  if (adv.length && my && !G.over) st += ` · <button class="lnk warn" data-a="advgo" title="${esc(adv.map(x => x.t).join(' '))}">⚠ ${adv.length} ponto(s) de atenção</button>`;
-  $('#actbar').innerHTML = `<span class="st">${st}</span><span class="bt">${abar}</span>`;
   renderCmd(adv);
   let inf = '';
   if (G.sel != null) {
@@ -3130,18 +3184,19 @@ function rules() {
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Perder territórios soma cansaço uma vez por rodada, e só a primeira agitação da rodada contra uma facção pega inteira (as outras valem 1/3).Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
+  <p><b>O turno.</b> O turno é livre: obras, pesquisa, governo, diplomacia, comércio e recrutamento podem ser feitos a qualquer momento. Só a parte militar tem ordem: 1 distribuir os reforços, 2 atacar, 3 remanejar. Atacar e remanejar são opcionais; distribuir os reforços é obrigatório para atacar, remanejar e encerrar o turno. As etapas ficam na barra inferior.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
-  <p><b>2. Ações.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. A lupa (tecla B ou /) busca um comando pelo que você quer fazer. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
+  <p><b>Comandos.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. A lupa (tecla B ou /) busca um comando pelo que você quer fazer. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>
-  <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno, quantos você quiser enquanto houver tropas. Não custa nada, mas cada turno em campanha soma cansaço de guerra.</li>
+  <li><b>⚔ Atacar</b> não exige declarar nada: com os reforços distribuídos, clique num território seu e num vizinho. O primeiro ataque ou bombardeio do turno põe o império em campanha, e cada turno em campanha soma cansaço de guerra. Atacar quem está em trégua ou é aliado é possível, mas rompe o tratado; o jogo mostra as consequências antes de confirmar.</li>
   <li><b>⚔ Recrutar</b> abre a compra de tropas por ouro, na capital ou num quartel. Elas chegam no início do próximo turno.</li>
   <li><b>🏛 Ordenar obras</b> abre todas as filas por um turno: ponha, retire e apresse obras em quantos territórios quiser. Oficina, mercado, academia, quartel, fortificação, templo, porto, aeródromo e a sua Maravilha.</li>
   <li><b>🤝 Festividades</b> (+15 de estabilidade), <b>Influenciar</b> (anexa um vizinho neutro ou rebelde com prestígio, sem lutar) e <b>Agitadores</b> (rival perde estabilidade).</li>
   <li><b>💰 Impostos</b> (ouro agora, estabilidade cai) e <b>Comércio</b> (troque recursos 2 por 1).</li>
   </ul>
   <p><b>Combate.</b> Como nos jogos clássicos de conquista: ataque e defesa rolam até 3 dados, compara-se do maior para o menor e o empate fica com a defesa. Ao vencer, você move até o número de dados da última rolagem. Fortificações, capitais, colinas, montanhas e florestas com 3+ tropas somam +1 ao maior dado da defesa; em montanha o empate é sempre da defesa, e quem ataca um pântano usa 1 dado a menos. Cada facção conquista no máximo 1 território por turno (2 com a doutrina militar).</p>
-  <p><b>Mar e ar.</b> Atravessar uma linha tracejada gasta uma travessia da frota; o desembarque usa no máximo 2 dados, ou 3 saindo de um porto. Nas eras com aviação, cada capital e aeródromo dá uma unidade aérea que bombardeia durante a campanha: o antiaéreo pode derrubá-la, e ela não conquista.</p>
-  <p><b>3. Remanejamento.</b> Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos, e 1 tropa fica sempre.</p>
+  <p><b>Mar e ar.</b> Atravessar uma linha tracejada gasta uma travessia da frota; o desembarque usa no máximo 2 dados, ou 3 saindo de um porto. Nas eras com aviação, cada capital e aeródromo dá uma unidade aérea que bombardeia depois dos reforços distribuídos: o antiaéreo pode derrubá-la, e ela não conquista.</p>
+  <p><b>3. Remanejamento.</b> Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos, e 1 tropa fica sempre. Ao começar a remanejar, os ataques do turno terminam; a gestão do império continua liberada.</p>
   <p><b>Cartas de benefício.</b> Você ganha uma por turno em que conquistar. Usar uma carta não gasta ação.</p>
   <p><b>Estabilidade.</b> Perder territórios, romper tréguas e cobrar impostos derrubam a estabilidade. Abaixo de 35, províncias podem se rebelar; abaixo de 15, os reforços caem pela metade.</p>`, [['Entendi']]);
 }
@@ -3194,13 +3249,13 @@ function startScenario(id, fid, diff, quiet, len, ld = 0, rl = false) {
 // v57 (UI-31): tutorial guiado. Escurece a tela, ilumina a função ensinada e explica em um cartão ao lado.
 // UI-35 (v60): barra de comandos sob o mapa. Tudo o que o jogador pode fazer no império fica a um toque, agrupado por tema;
 // cada item diz o que faz, quanto custa e, quando está indisponível, o motivo por escrito
-let cmdOpen = null, cmdAdv = [], cmdQ = '';
+let cmdOpen = null, cmdAdv = [], cmdQ = '', cmdTurn = '';
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 // v61 (UI-36): palavras que o jogador digitaria para achar cada comando na busca
-const CMDKW = { camp: 'atacar guerra invadir conquistar batalha', rec: 'tropas exercito soldados comprar reforco', merc: 'tropas exercito soldados contratar', air: 'aviao bombardear atacar', govm: 'politica religiao crenca civica panteao anarquia lei', figm: 'lider governador figura heroi nomear', fest: 'estabilidade felicidade revolta festa povo', colo: 'populacao nivel cidade aldeia migrar crescer', dipl: 'paz tregua alianca pacto guerra proposta acordo', infl: 'anexar neutro rebelde prestigio expandir', agit: 'sabotar estabilidade rival espiao revolta', routes: 'comercio ouro bens mercado porto dinheiro', tax: 'ouro dinheiro imposto cobrar', trade: 'trocar recursos comida producao cambio vender', cmdObr: 'construir construcao estrutura fila edificio erguer', techs: 'tecnologia ciencia saber pesquisar arvore', vicm: 'vencer objetivo ganhar legado dominacao', rules: 'manual ajuda como jogar', tut: 'ajuda aprender como jogar', save: 'gravar guardar', keys: 'teclado teclas' };
+const CMDKW = { atk: 'atacar guerra invadir conquistar batalha frente', toMov: 'mover tropas remanejar deslocar', end: 'passar terminar fim turno vez', rec: 'tropas exercito soldados comprar reforco', merc: 'tropas exercito soldados contratar', air: 'aviao bombardear atacar', govm: 'politica religiao crenca civica panteao anarquia lei', figm: 'lider governador figura heroi nomear', fest: 'estabilidade felicidade revolta festa povo', colo: 'populacao nivel cidade aldeia migrar crescer', dipl: 'paz tregua alianca pacto guerra proposta acordo', infl: 'anexar neutro rebelde prestigio expandir', agit: 'sabotar estabilidade rival espiao revolta', routes: 'comercio ouro bens mercado porto dinheiro', tax: 'ouro dinheiro imposto cobrar', trade: 'trocar recursos comida producao cambio vender', cmdObr: 'construir construcao estrutura fila edificio erguer', techs: 'tecnologia ciencia saber pesquisar arvore', vicm: 'vencer objetivo ganhar legado dominacao', rules: 'manual ajuda como jogar', tut: 'ajuda aprender como jogar', save: 'gravar guardar', keys: 'teclado teclas' };
 function cmdGroups() {
   const me = G.player, F = Fa(me), my = G.turnF === me && !G.over, tc = troopCost(me), noPA = F.pa < 1;
-  const ph = G.over ? 'Partida encerrada.' : !my ? 'Aguarde a sua vez.' : G.phase === 'ref' ? 'Posicione os reforços primeiro.' : G.phase !== 'atk' ? 'Só na etapa 2, Ações.' : '';
+  const ph = G.over ? 'Partida encerrada.' : !my ? 'Aguarde a sua vez.' : '', mil = F.reinf > 0 ? 'Distribua os reforços primeiro.' : G.phase === 'mov' ? 'Os ataques deste turno já terminaram.' : '';
   const A = (k, ic, n, cost, d, why, on, a) => ({ a: a || 'act', k, ic, n, cost, d, why: on ? '' : ph || why || '', on });
   const M = (a, ic, n, d, dot) => ({ a, k: '', ic, n, d, dot: !!dot, why: G.over ? 'Partida encerrada.' : '' });
   const gold = c => F.gold < c ? `Falta ouro: custa ${c} e você tem ${F.gold}.` : '', pa = noPA ? 'Sem ações disponíveis neste turno.' : '';
@@ -3209,10 +3264,10 @@ function cmdGroups() {
   // [chave, ícone, nome, itens ou null, ação direta, ponto, estado em poucas palavras, pendências do conselheiro, atalho]
   return [
     ['mil', '⚔', 'Militar', [
-      A('camp', '⚔', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'grátis', 'Libera os ataques deste turno. Depois, clique num território seu e num vizinho inimigo. Cada turno em campanha soma cansaço de guerra.', '', F.camp),
+      { a: 'tstep', k: 'atk', ic: '⚔', n: 'Atacar', cost: 'opcional', d: 'Clique num território seu e depois num vizinho. Não é preciso declarar nada: o primeiro ataque do turno põe o império em campanha. Abre a lista de frentes.', why: ph || mil, on: false },
       A('rec', '🪖', F.recOn ? 'Comprar tropas' : 'Recrutar', tc + '💰 por tropa', `Compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, F.recOn ? '' : pa || gold(tc), G.mode === 'rec'),
       A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
-      ...(F.camp && G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', '', G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'em campanha' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
+      ...(G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', mil, G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'em campanha' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
     ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'fila vazia', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
     ['tec', '🔬', 'Pesquisa', null, 'techs', pend(['techs']), rt ? `${F.sci}/${techCost(rt, me)}` : 'escolher', ['techs'], 'T', 'Árvore de tecnologias: escolha o que pesquisar.'],
     ['gov', '🏛', 'Governo', [
@@ -3231,11 +3286,11 @@ function cmdGroups() {
     ['vic', '🏆', 'Vitórias', null, 'vicm', false, `legado ${legacy(me)}/${legWin()}`, [], 'V', 'Caminhos para vencer e o avanço de cada facção.'],
   ];
 }
-const cmdItem = x => `<button class="cmi${x.on ? ' on' : ''}" role="menuitem" data-a="${x.a}"${x.k ? ` data-k="${x.k}"` : ''}${x.why || (x.k === 'camp' && x.on) ? ' aria-disabled="true"' : ''}><span class="ci">${x.ic}</span><span class="ct"><b>${esc(x.n)}${x.dot ? ' •' : ''}</b>${x.cost ? ` <small>${x.cost}</small>` : ''}<span class="cd">${esc(x.d)}</span>${x.why ? `<span class="cw">⚠ ${esc(x.why)}</span>` : x.on ? '<span class="cok">✓ ativo neste turno</span>' : ''}</span></button>`;
+const cmdItem = x => `<button class="cmi${x.on ? ' on' : ''}" role="menuitem" data-a="${x.a}"${x.k ? ` data-k="${x.k}"` : ''}${x.why ? ' aria-disabled="true"' : ''}><span class="ci">${x.ic}</span><span class="ct"><b>${esc(x.n)}${x.dot ? ' •' : ''}</b>${x.cost ? ` <small>${x.cost}</small>` : ''}<span class="cd">${esc(x.d)}</span>${x.why ? `<span class="cw">⚠ ${esc(x.why)}</span>` : x.on ? '<span class="cok">✓ ativo neste turno</span>' : ''}</span></button>`;
 // busca: todas as palavras digitadas precisam aparecer no nome, na descrição ou nas palavras-chave do comando
 function cmdFind(gs) {
   const X = (a, ic, n, d) => ({ a, k: '', ic, n, d, why: '' });
-  const all = gs.flatMap(g => g[3] || [X(g[4], g[1], g[2], g[9])]).concat([X('tut', '🎓', 'Tutorial guiado', 'Um passeio pela tela, função por função.'), X('rules', '📖', 'Regras', 'O manual completo do jogo.'), X('save', '💾', 'Salvar', 'Guarda a partida neste aparelho.')]);
+  const all = gs.flatMap(g => g[3] || [X(g[4], g[1], g[2], g[9])]).concat([X('tut', '🎓', 'Tutorial guiado', 'Um passeio pela tela, função por função.'), X('rules', '📖', 'Regras', 'O manual completo do jogo.'), X('save', '💾', 'Salvar', 'Guarda a partida neste aparelho.'), X('toMov', '➜', 'Remanejar tropas', 'Encerra os ataques do turno e libera mover tropas entre territórios seus vizinhos.'), X('end', '⏭', 'Encerrar turno', 'Passa a vez. Só exige que os reforços estejam distribuídos.')]);
   const ws = norm(cmdQ).split(/\s+/).filter(Boolean), hit = all.filter(x => { const t = norm(`${x.n} ${x.d} ${CMDKW[x.k || x.a] || ''}`); return ws.every(w => t.includes(w)); });
   return hit.length ? hit.map(cmdItem).join('') : '<p class="hint">Nada encontrado. Tente outra palavra, como "tropas", "ouro" ou "paz".</p>';
 }
@@ -3246,7 +3301,7 @@ function renderCmd(adv) {
   const gs = cmdGroups(), open = gs.find(g => g[0] === cmdOpen && g[3]), bus = cmdOpen === 'bus';
   const fi = [...box.querySelectorAll('.cmdm input,.cmdm button')].indexOf(document.activeElement), sel = bus && $('#cmq') ? $('#cmq').selectionStart : null;
   const pend = ks => cmdAdv.filter(x => ks.includes(x.k)).map(x => `<div class="cmp"><span>${x.ic} ${esc(x.t)}</span><button class="mini pri" data-a="adv" data-k="${x.k}"${x.i != null ? ` data-i="${x.i}"` : ''}>${x.lab}</button></div>`).join('');
-  box.innerHTML = (bus ? `<div class="cmdm" role="dialog" aria-label="Buscar comando"><input id="cmq" type="search" autocomplete="off" aria-label="O que você quer fazer?" placeholder="O que você quer fazer? Ex.: atacar, ouro, paz" value="${esc(cmdQ)}"><div id="cmr">${cmdFind(gs)}</div></div>`
+  box.innerHTML = cmdTurn + (bus ? `<div class="cmdm" role="dialog" aria-label="Buscar comando"><input id="cmq" type="search" autocomplete="off" aria-label="O que você quer fazer?" placeholder="O que você quer fazer? Ex.: atacar, ouro, paz" value="${esc(cmdQ)}"><div id="cmr">${cmdFind(gs)}</div></div>`
     : open ? `<div class="cmdm" role="menu" aria-label="${open[2]}"><p class="cmh">${open[1]} ${open[2]}<small>${esc(open[6])}</small></p>${pend(open[7])}${open[3].map(cmdItem).join('')}</div>` : '') +
     `<div class="cbar" role="toolbar" aria-label="Comandos do império">${gs.map(([g, ic, n, its, a, dot, st, , hk]) => { const on = its && its.some(x => x.on); return `<button class="cb${cmdOpen === g ? ' open' : ''}${on ? ' on' : ''}" data-a="${its ? 'cmd' : a}" data-g="${g}"${its ? ` aria-haspopup="menu" aria-expanded="${cmdOpen === g}"` : ''} title="${n}: ${esc(st)}${dot ? ', com pendência' : ''}. Tecla ${hk}."><span class="ci">${ic}</span><span>${n}</span><small class="cs">${esc(st)}</small>${dot ? '<i class="cdot"></i>' : ''}</button>`; }).join('')}<button class="cb bus${bus ? ' open' : ''}" data-a="cmd" data-g="bus" aria-expanded="${bus}" aria-label="Buscar comando" title="Buscar comando: digite o que você quer fazer. Tecla B ou /."><span class="ci">🔎</span><span class="cl">Buscar</span><small class="cs">tecla B</small></button></div>`;
   const fs = [...box.querySelectorAll('.cmdm input,.cmdm button')];
@@ -3254,7 +3309,7 @@ function renderCmd(adv) {
 }
 // Cada passo: [alvo (seletor ou função), título, texto, preparo opcional]. O tutorial não muda a partida: só troca abas e devolve tudo ao sair.
 const tutTab = (tab, sub) => () => { cmdOpen = null; G.tab = tab; if (tab === 'imp') G.isub = sub || 'acoes'; if (tab === 'obr') G.osub = sub || 'fil'; if (tab === 'reg') { G.sel = Fa(G.player).capI; G.rsub = sub || 'fro'; } render(); };
-const tutCmd = g => () => { tutTab('imp')(); cmdOpen = g; cmdQ = ''; renderCmd(); };
+const tutCmd = g => () => { tutTab('imp')(); cmdOpen = g; cmdQ = ''; renderCmd(); const m = $('#cmd .cmdm'); if (m && innerWidth <= 820) m.style.maxHeight = '30dvh'; }; // no celular o menu encolhe para o cartão do tutorial caber acima dele
 const tutFit = () => { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); };
 const TUT = [
   [null, 'Bem-vindo a Soberania', 'Você comanda uma nação num mapa histórico: cresce, constrói, negocia e, quando precisar, guerreia. Este tutorial passa por toda a tela, uma função de cada vez. A parte iluminada é a que está sendo explicada. Use Avançar e Voltar, as setas do teclado, ou Esc para sair. Nada do que você vê aqui altera a sua partida.'],
@@ -3263,13 +3318,13 @@ const TUT = [
   [() => `#badges .b[data-i="${Fa(G.player).capI}"]`, 'O marcador de um território', 'O número é a quantidade de tropas. O anel dourado marca uma capital: perder a sua enfraquece muito o império. Embaixo vem o nome e, de Vila em diante, o porte (Vila, Cidade, Metrópole). Ao aproximar o mapa, a cidade aparece desenhada, com as obras que você construiu.', tutFit],
   ['#lens', 'Lentes do mapa', 'Trocam o que o mapa mostra. Dono: quem controla cada território. Relevo: o terreno desenhado, com as fronteiras em faixa. Terreno: planície, montanha, floresta, que mudam a defesa e o que dá para construir. Zonas: o que cada território produz. Recursos: jazidas e bens. Rede: quais territórios estão ligados à sua capital por estrada e porto.'],
   ['#zoom', 'Zoom', 'Aproximar, afastar e voltar ao mapa inteiro. De longe você vê cores, tropas e nomes; de perto, cidades, obras e caminhos.'],
-  ['#actbar', 'O seu turno, passo a passo', 'Todo turno tem três etapas, sempre nesta ordem: 1 Reforços, 2 Ações e 3 Remanejar. Esta barra diz em qual etapa você está e o botão dourado leva ao próximo passo. Se algo ficou esquecido, o aviso de pontos de atenção aparece aqui.'],
+  ['#actbar', 'O seu turno, passo a passo', 'O turno é livre: obras, pesquisa, governo, diplomacia e comércio podem ser feitos a qualquer momento. Só a parte militar tem ordem: 1 Distribuir os reforços, 2 Atacar, 3 Remanejar. Atacar e remanejar são opcionais; distribuir é obrigatório para encerrar o turno. Tocar numa etapa abre os detalhes dela no painel. ', tutTab('imp')],
   ['#phase', 'Etapa 1: Reforços', 'No começo do turno você recebe tropas novas. A conta aparece aqui: o porte dos seus territórios, as regiões completas, as capitais e os quartéis. Clique nos seus territórios no mapa para posicionar uma tropa por clique, ou use Tudo no selecionado. Reforce as fronteiras ameaçadas antes de pensar em atacar.', tutTab('imp')],
   ['#ptabs', 'As três abas do painel', 'Império reúne o que vale para a nação inteira. Obras mostra todas as filas de construção num lugar só. Região mostra o território que você selecionou no mapa. O atalho I alterna entre Império e Região.', tutTab('imp')],
   ['#me .fh', 'A sua nação e o seu líder', 'O nome da facção, o líder com o traço dele e o governo atual. Em Poderes do líder você vê os bônus que valem a partida inteira. Cada líder puxa para um estilo de jogo: conquista, comércio, ciência ou fé.', tutTab('imp')],
   ['#me .kpis', 'Os seis indicadores', 'Ouro paga tropas, obras e manutenção; se faltar, soldados desertam. Saber alimenta a pesquisa. Prestígio é a moeda da diplomacia e da influência. Estabilidade baixa causa revoltas. Felicidade negativa corta 10% do ouro e do saber. Legado soma ciência, obras e cultura e é um dos caminhos para vencer. O número pequeno é o ganho por turno; toque num indicador para ver de onde ele vem.', tutTab('imp')],
   ['#cmd', 'Barra de comandos', 'Tudo o que você pode fazer no império fica nesta barra, sempre à vista sob o mapa. Um toque abre o tema; cada item diz o que faz, quanto custa e, se estiver apagado, o motivo. Um ponto dourado avisa que há algo pendente naquele tema, e o menu mostra a pendência no alto, com o botão para resolver. No computador, cada tema traz embaixo o estado em poucas palavras: tropas, obras na fila, pesquisa, estabilidade, ouro.', tutCmd(null)],
-  ['#cmd .cmdm', 'Militar', 'Declarar campanha libera os ataques do turno e não custa nada, mas cada turno em campanha cansa o povo. Recrutar compra tropas que chegam no turno seguinte. Mercenários chegam na hora e custam o dobro.', tutCmd('mil')],
+  ['#cmd .cmdm', 'Militar', 'Atacar não exige declarar nada: basta ter distribuído os reforços. Recrutar compra tropas que chegam no turno seguinte. Mercenários chegam na hora e custam o dobro.', tutCmd('mil')],
   ['#cmd [data-g=obr]', 'Obras', 'Abre a lista de tudo o que dá para construir, separada por finalidade, e mostra em qual território cada obra cabe e em quantos turnos fica pronta.', tutCmd(null)],
   ['#cmd [data-g=tec]', 'Pesquisa', 'Escolha sempre uma pesquisa: sem ela, o saber do turno se perde. Cada tecnologia libera obras, unidades, governos ou bônus, e a árvore mostra o que leva a quê. A pesquisa anda sozinha de um turno para o outro.', tutCmd(null)],
   ['#cmd .cmdm', 'Governo', 'Governo e fé reúne a forma de governo (trocar custa turnos de anarquia), as políticas, as cívicas e as crenças, cada uma com o requisito e o motivo quando está bloqueada. Em Personagens você nomeia governadores para os territórios importantes. Festividades sobem a estabilidade; Colonos transferem população entre territórios vizinhos.', tutCmd('gov')],
@@ -3287,8 +3342,8 @@ const TUT = [
   ['#info .kpis', 'Aba Região: a ficha do território', 'Tropas, porte e o que o território rende por turno em comida, produção, ouro e saber. A sobra de comida faz o território crescer em oito portes, de Aldeia a Megalópole, desde que haja moradia e emprego; portes maiores abrem mais zonas para construir. Com fome, ele encolhe.', tutTab('reg', 'fro')],
   ['#info .stabs', 'Fronteiras, Obras e Detalhes', 'Fronteiras lista os vizinhos com as ações possíveis. Obras mostra o que existe e o que dá para construir neste território. Detalhes traz terreno, jazidas, rede de estradas e explicações de cada número.', tutTab('reg', 'fro')],
   ['#info .rs', 'Fronteiras: atacar, influenciar e mover', 'Para cada vizinho você vê o dono, as tropas e o que pode fazer. Atacar mostra a chance de vencer, já com os bônus dos dois lados. Influenciar tenta trazer um território neutro sem luta, gastando prestígio. Mover leva tropas para um território seu. Quando uma ação não é possível, o motivo aparece escrito.', tutTab('reg', 'fro')],
-  ['#actbar', 'Etapa 2: Ações e guerra', 'Depois dos reforços vêm as ações. Para atacar, abra Militar na barra de comandos e declare campanha, que não custa nada mas cansa o povo se a guerra se arrasta. Selecione um território seu com mais de uma tropa e depois o vizinho inimigo. Os dados decidem: terreno, muralhas e capitais ajudam quem defende. Nas primeiras rodadas as capitais ficam protegidas. Conquistar demais num turno só desgasta a estabilidade. Nesta etapa você também recruta tropas com ouro, que chegam no turno seguinte.', tutTab('imp', 'acoes')],
-  ['#actbar', 'Etapa 3: Remanejar e encerrar', 'No fim do turno, mova tropas entre territórios vizinhos seus: cada tropa anda uma vez e sempre fica ao menos uma para guardar o lugar. Tropas que ficam paradas se entrincheiram e defendem melhor. Depois, Encerrar turno passa a vez aos rivais. As obras e a pesquisa avançam sozinhas.', tutTab('imp', 'acoes')],
+  ['#actbar', 'Atacar', 'Com os reforços distribuídos, clique num território seu e depois num vizinho: não é preciso declarar nada. O painel mostra as frentes abertas, com a chance de vencer em cada uma. O primeiro ataque do turno põe o império em campanha, e turnos seguidos em campanha cansam o povo. Atacar quem está em trégua ou é aliado abre antes um aviso com todas as consequências. ', () => { tutTab('imp')(); $('#phase').scrollIntoView({ block: 'nearest' }); }],
+  ['#actbar', 'Remanejar e encerrar', 'Remanejar move tropas entre territórios seus vizinhos: cada tropa anda uma vez e sempre fica ao menos uma no lugar. Ao começar o remanejamento, os ataques do turno terminam, mas obras, pesquisa e governo continuam liberados. Encerrar turno passa a vez; se a pesquisa estiver parada ou houver proposta sem resposta, o jogo avisa antes. ', tutTab('imp')],
   ['#me .stabs [data-k=obj]', 'Como vencer', 'Cumpra o objetivo da sua facção e segure-o por alguns turnos seguidos, ou alcance a meta de legado, ou elimine os rivais. Objetivo e legado só valem depois do primeiro terço da partida, então os primeiros turnos são para crescer. Se as rodadas acabarem, vence quem mais cresceu. Você perde se ficar sem territórios.', tutTab('imp', 'acoes')],
   ['#top [data-a=tut]', 'Ajuda sempre à mão', 'Este tutorial pode ser reaberto aqui a qualquer momento. O botão do teclado lista os atalhos, Regras traz o manual completo e o Guia na seção Ações acompanha os seus primeiros turnos. Boa partida.'],
 ];
@@ -3370,12 +3425,14 @@ document.addEventListener('click', e => {
   else if (a === 'demb') { const o = el.dataset.f, k = tk(G.player, o); if (G.emb.has(k)) G.emb.delete(k); else { G.emb.add(k); checkRoutes(); log(G.player, `Você declara embargo a ${fname(o)}.`); } render(); }
   else if (a === 'lens') { G.lens = el.dataset.l; renderMap(); }
   else if (a === 'zin') zoomBtn(1 / 1.4); else if (a === 'zout') zoomBtn(1.4); else if (a === 'zfit') { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); }
-  else if (a === 'toAtk') toPhase('atk'); else if (a === 'toMov') toPhase('mov'); else if (a === 'end') playerEnd();
+  else if (a === 'toMov') toPhase('mov'); else if (a === 'end') endAsk();
+  else if (a === 'tstep') { G.tab = 'imp'; G.isub = 'acoes'; sideOpen(); render(); $('#phase').scrollIntoView({ block: 'start' }); }
+  else if (a === 'side') { $('#game').classList.toggle('noside'); render(); }
   else if (a === 'all') addAll();
   else if (a === 'ptab') { G.tab = el.dataset.k; render(); }
   else if (a === 'stab') { G[el.dataset.g] = el.dataset.k; render(); }
   else if (a === 'bcat') { bcat = el.dataset.k; render(); }
-  else if (a === 'sel') { if (G.tgt != null) return; G.sel = +el.dataset.i; G.tab = 'reg'; render(); }
+  else if (a === 'sel') { if (G.tgt != null) return; G.sel = +el.dataset.i; G.tab = 'reg'; sideOpen(); render(); }
   else if (a === 'put1') { const i = +el.dataset.i, F = Fa(G.player); if (G.turnF === G.player && G.phase === 'ref' && G.own[i] === G.player && F.reinf > 0) { G.tr[i]++; F.reinf--; } render(); }
   else if (a === 'recAt' || a === 'bldAt' || a === 'inflAt' || a === 'atkFrom' || a === 'mvFrom') regionAct(a, +el.dataset.i, el.dataset.k, +el.dataset.j);
   else if (a === 'act') playerAct(el.dataset.k);
@@ -3385,9 +3442,9 @@ document.addEventListener('click', e => {
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; render(); }
   else if (a === 'cmd') cmdToggle(el.dataset.g);
-  else if (a === 'cmdObr') { G.tab = 'obr'; G.osub = 'con'; render(); if (innerWidth <= 820) $('#works').scrollIntoView({ block: 'start' }); }
+  else if (a === 'cmdObr') { sideOpen(); G.tab = 'obr'; G.osub = 'con'; render(); if (innerWidth <= 820) $('#works').scrollIntoView({ block: 'start' }); }
   else if (a === 'selObr') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'obr'; render(); }
-  else if (a === 'advgo') { G.tab = 'imp'; G.isub = 'acoes'; render(); const e = $('.advr'); if (e) e.scrollIntoView({ block: 'nearest' }); }
+  else if (a === 'advgo') { sideOpen(); G.tab = 'imp'; G.isub = 'acoes'; render(); const e = $('.advr'); if (e) e.scrollIntoView({ block: 'nearest' }); }
   else if (a === 'adv') { const k = el.dataset.k; if (k === 'sel') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'fro'; render(); } else if (k === 'works') { G.tab = 'obr'; G.osub = 'fil'; render(); } else if (['civ', 'pol', 'fe'].includes(k)) { gsub = k; govModal(); } else if (k === 'gvr' || k === 'fig') { fsub = k; figModal(); } else if (k === 'techs') techModal(); else if (k === 'dipl') diploModal(); else if (k === 'routes') routesModal(); }
   else if (a === 'gtab') { gsub = el.dataset.k; govModal(); }
   else if (a === 'ftab') { fsub = el.dataset.k; figModal(); }
@@ -3450,7 +3507,7 @@ document.addEventListener('keydown', e => {
   if (mo || !G || $('#game').hidden) return;
   if (e.key.toLowerCase() === 'i') { G.tab = G.tab === 'reg' ? 'imp' : 'reg'; return render(); } // v49: alterna Império e Região
   const k = e.key.toLowerCase();
-  if (k === 'enter') { if (e.target.closest && e.target.closest('button,a,[tabindex]')) return; const b = $('#battle:not([hidden]) button.pri:not(:disabled)') || $('#actbar .pri:not(:disabled)'); if (b) { e.preventDefault(); b.click(); } return; }
+  if (k === 'enter') { if (e.target.closest && e.target.closest('button,a,[tabindex]')) return; const b = $('#battle:not([hidden]) button.pri:not(:disabled)') || $('#actbar .pri:not([aria-disabled])'); if (b) { e.preventDefault(); b.click(); } return; }
   if (/^[1-9]$/.test(k)) { const b = document.querySelectorAll('#lens button')[+k - 1]; if (b) b.click(); return; }
   if (k === '?') return keysModal();
   const hk = { m: 'mil', e: 'eco', b: 'bus', '/': 'bus' }[k]; if (hk) { e.preventDefault(); return cmdToggle(hk, true); }

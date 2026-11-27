@@ -48,7 +48,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.screenshot({ path: shot('reforcos') });
   await p.evaluate(() => { const G = window.__sob.G; G.sel = G.ix['Rio Grande do Sul']; G.tr[G.sel] += 10; });
   await p.click('[data-a=all]');
-  await p.click('[data-a=toAtk]');
+  await p.evaluate(() => window.__sob.render()); // v62: com os reforços distribuídos a etapa de ataques abre sozinha
   // governo (v5): abre as obras (1 ação), põe mercado e oficina na fila, escolhe pesquisa (sem ação) e declara campanha
   await p.evaluate(() => { window.__sob.G.F.fa.gold = 60; window.__sob.G.F.fa.sci = 5; window.__sob.render(); });
   await p.click('#ptabs [data-k=obr]');
@@ -123,7 +123,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.screenshot({ path: shot('diplomacia') });
   ok(await p.evaluate(() => /relação/.test(document.querySelector('#modal').textContent) && document.querySelectorAll('#modal [data-a=dprop]').length > 0), 'painel diplomático lista facções, relação e propostas');
   await p.click('#modal [data-m="0"]');
-  await p.click('#cmd [data-g=mil]'); await p.click('.cmdm [data-k=camp]');
+  // v62: não é mais preciso declarar campanha
   await p.screenshot({ path: shot('acoes') });
   await clickT('Rio Grande do Sul'); await clickT('Santa Catarina');
   await p.screenshot({ path: shot('batalha') });
@@ -182,8 +182,8 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.waitForFunction(() => window.__sob.G.turnF === 'uk', null, { timeout: 30000 });
   await p.evaluate(() => { const G = window.__sob.G, F = G.F.uk; G.tr[F.capI] += F.reinf; F.reinf = 0; window.__sob.render(); });
   await p.click('[data-a=all]').catch(() => { });
-  await p.click('[data-a=toAtk]');
-  await p.click('#cmd [data-g=mil]'); await p.click('.cmdm [data-k=camp]');
+  await p.evaluate(() => window.__sob.render()); // v62: com os reforços distribuídos a etapa de ataques abre sozinha
+  // v62: não é mais preciso declarar campanha
   const planes = await p.evaluate(() => window.__sob.G.F.uk.planes);
   console.log('aviões UK', planes);
   if (planes) {
@@ -261,6 +261,8 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, o0 = G.own.slice(), r0 = G.round, h0 = G.heg, n0 = G.log.length; G.round = openR() + 1; const riv = G.order.filter(f => f !== me && G.F[f].alive && G.F[f].entered); let k = 0; for (let i = 0; i < G.N && k < Math.ceil(G.N * .6); i++) if (G.own[i] !== me) { G.own[i] = me; k++; } const h = hegCheck(), msg = G.log.length > n0, opn = /domina o mapa/.test(reportHtml()), j = owned(me)[0], b = riv.length ? hegB(riv[0], j) : 4; G.own = o0; G.round = r0; G.heg = h0; G.log.splice(0, G.log.length - n0); return h === me && msg && opn && b === 4 && hegemon() !== me; }), 'coalizão: quem domina o mapa vira alvo comum e o jogador é avisado (IA-20)');
   ok(await p.evaluate(() => { const q = s => document.querySelector(s), G = window.__sob.G; cmdOpen = null; renderCmd(); const n = document.querySelectorAll('#cmd .cb').length, noNav = !q('#me .nav'); q('#cmd [data-g=mil]').click(); const items = [...document.querySelectorAll('.cmdm .cmi')], desc = items.every(e => e.querySelector('.cd').textContent.length > 10), why = items.filter(e => e.getAttribute('aria-disabled') && e.dataset.k !== 'camp').every(e => e.querySelector('.cw')); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return n === 8 && noNav && items.length >= 3 && desc && why && !q('.cmdm'); }), 'barra de comandos: 7 temas, cada item com descrição e motivo quando indisponível; Esc fecha (UI-35)');
   ok(await p.evaluate(() => { const q = s => document.querySelector(s), qa = s => [...document.querySelectorAll(s)], names = () => qa('#cmr .cmi b').map(e => e.textContent).join('|'); cmdOpen = null; renderCmd(advice()); const st = qa('#cmd .cb .cs').every(e => e.textContent.length > 2); cmdAdv = [{ ic: '📜', t: 'teste', k: 'pol', lab: 'Ver' }]; renderCmd(); const dot = !!q('#cmd [data-g=gov] .cdot'); q('#cmd [data-g=gov]').click(); const pend = qa('.cmdm .cmp [data-a=adv]').length === 1; q('#cmd [data-g=bus]').click(); const inp = q('#cmq'), type = v => { inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); }; type('ouro'); const a = /Impostos/.test(names()); type('PAZ'); const b = /Relações/.test(names()); type('construção'); const c = /Obras/.test(names()); type('xyzq'); const d = !names() && /Nada encontrado/.test(q('#cmr').textContent); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); const closed = !q('.cmdm'); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true })); const hk = q('.cmdm') && cmdOpen === 'mil' && document.activeElement.classList.contains('cmi'); cmdOpen = null; renderCmd(advice()); return st && dot && pend && a && b && c && d && closed && hk; }), 'barra de comandos: estado em cada tema, pendência dentro do menu, busca por palavras e tecla M (UI-36)');
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, F = G.F[me], q = s => document.querySelector(s); if (G.turnF !== me || G.over) return 'skip'; const r0 = F.reinf, p0 = G.phase, c0 = F.camp; G.phase = 'atk'; F.reinf = 2; render(); const a = G.phase === 'ref' && q('#actbar [data-a=end]').getAttribute('aria-disabled') === 'true' && document.querySelectorAll('#actbar .ts').length === 3; let pr = null, en = null; for (let i = 0; i < G.N; i++) if (G.own[i] === me) for (const j of G.A[i]) { const d = G.own[j]; if (d !== me && d !== 'off' && hostile(me, j)) { pr = pr || [i, j]; if (G.F[d].real && !peace(me, d)) en = en || d; } } const b = !pr || /Distribua os reforços/.test(atkWhy(me, pr[0], pr[1])); F.reinf = 0; F.camp = false; render(); const c = G.phase === 'atk' && !q('#actbar [data-a=end]').getAttribute('aria-disabled') && !q('[data-k=camp]') && (!pr || !/campanha/i.test(atkWhy(me, pr[0], pr[1]))); let d = true; if (en) { G.truce.add(tk(me, en)); d = brk(me, en) === 'trégua'; G.truce.delete(tk(me, en)); } F.reinf = r0; F.camp = c0; G.phase = p0; render(); return (a && b && c && d) || (document.title = 'turno livre ' + [a, b, c, d].join(), false); }), 'turno livre: reforços travam só ataque e fim de turno, ataque sem declarar campanha, trégua vira aviso (D-19, UI-37)');
+  { const t = await p.title(); if (/^turno livre/.test(t)) console.log('diagnóstico', t); }
   // celular
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => window.__sob.startScenario('sengoku', 'oda', 1));

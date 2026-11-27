@@ -1,5 +1,22 @@
 # Histórico de versões
 
+## v62 — 27/11/2026 · Turno livre, etapas na barra e ataque sem declarar campanha (D-19, UI-37)
+
+O turno tinha três fases fechadas: nada de obras ou governo antes de pôr os reforços, nada de gestão durante o remanejamento, e para atacar era preciso abrir um menu e declarar campanha.
+
+- **Turno livre.** Obras, pesquisa, governo, diplomacia, comércio e recrutamento valem do começo ao fim do turno. Só a parte militar tem ordem: distribuir os reforços, atacar, remanejar. Atacar e remanejar são opcionais.
+- **Única obrigação:** distribuir os reforços. Sem isso não dá para atacar, remanejar nem encerrar o turno, e o jogo diz isso por escrito.
+- **Atacar sem declarar campanha.** Com os reforços distribuídos, basta clicar num território seu e num vizinho. O primeiro ataque do turno põe o império em campanha (é o que soma cansaço de guerra); turno sem ataque não soma.
+- **Aviso antes de romper tratado.** Atacar quem está em trégua ou é aliado deixou de ser bloqueado: abre um aviso com as consequências daquele caso (estabilidade, acordos que acabam, opinião da facção e das outras, quem entra na guerra por defesa mútua, motivo de guerra quando houver) e a chance de vencer. Esc ou "Não atacar" não rompe nada.
+- **Etapas do turno na barra inferior:** Distribuir, Atacar, Remanejar e Encerrar turno, com a etapa atual destacada, a concluída marcada e uma linha dizendo o que fazer agora. Tocar numa etapa abre os detalhes dela no painel lateral.
+- **Frentes abertas.** A etapa Atacar lista no painel os melhores ataques possíveis, com tropas dos dois lados e chance de vencer; um toque abre a batalha.
+- **Recusas explicadas.** Todo ataque negado diz o motivo: reforços por distribuir, remanejamento já iniciado, menos de 2 tropas, limite de conquistas do turno, frota sem travessias, capital protegida na abertura. O motivo também aparece ao lado do botão na lista de fronteiras. Antes, o limite de conquistas respondia só "Ataque indisponível agora".
+- **Fronteiras revisadas.** Os 11 mapas foram comparados com o desenho, território por território. Faltava uma fronteira no mapa-múndi (Canadá Leste e EUA Oeste, que se tocam por 15 px), agora incluída. Nos demais, toda divisa desenhada é fronteira no jogo.
+- **Mapa inteiro visível no computador.** O mapa agora termina acima da barra, então nenhum território fica coberto por ela. No celular a barra foi para o rodapé da tela e saiu de cima do mapa.
+- **Painel lateral recolhível** (botão junto ao zoom): o mapa ocupa a largura toda e o painel reabre ao escolher algo na barra ou um território.
+- **Encerrar com cuidado.** Se a pesquisa está parada ou há proposta diplomática sem resposta, encerrar o turno pede confirmação.
+- Carta de reforços pode ser usada em qualquer momento antes do remanejamento. Tutorial, guia do iniciante, busca e manual reescritos para o fluxo novo.
+
 ## v61 — 27/11/2026 · Barra de comandos: estado, pendências, busca e teclado (UI-36)
 
 A barra da v60 mostrava onde ficam os comandos. Faltava dizer como o império está, por que um tema pede atenção e ajudar quem não sabe em que tema procurar.

@@ -148,7 +148,7 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .cb .cs{font-size:10.5px;color:var(--mute);max-width:84px;overflow:hidden;text-overflow:ellipsis}.cmh small{float:right;font-size:12px;font-weight:500;color:var(--mute);letter-spacing:0;text-transform:none}
 .cmp{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:9px;background:#3a2f12;border:1px solid var(--brass);font-size:13px;line-height:1.35}.cmp .mini{flex:none}
 #cmq{width:100%;min-height:44px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:#17212d;color:var(--text);font:inherit;font-size:16px}#cmq:focus-visible{outline:2px solid var(--brass);outline-offset:1px}#cmr{display:flex;flex-direction:column;gap:4px}.cmdm>*,#cmr>*{flex:none}#cmr .hint{margin:4px 2px}
-#battle{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
+#battle{position:absolute;left:50%;bottom:164px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}
 .bh{font-size:15px;text-align:center}
 .bh span{font-weight:700;background:var(--deck2);padding:1px 7px;border-radius:10px}
@@ -314,12 +314,22 @@ button.mini{padding:4px 9px;font-size:12.5px;min-height:28px}
 .ab2{min-height:30px}
 .chk{min-height:28px}.chk input{width:18px;height:18px;accent-color:var(--brass)}
 .era,.rel,#log em,.fn span,.res i{font-size:12px}
-#actbar{position:sticky;bottom:-12px;margin:0 -12px -12px;padding:10px 12px;background:var(--deck2);border-top:2px solid var(--brass);display:flex;flex-direction:column;gap:6px;z-index:2;box-shadow:0 -6px 16px #0006}
-#actbar .st{font-size:13px;color:var(--text)}#actbar .st b{color:var(--brass)}
-#actbar .bt{display:flex;gap:6px}#actbar .bt:empty{display:none}#actbar .bt button{flex:1;min-height:40px;font-size:15px}#actbar .bt button.ghost{flex:0 0 auto}#actbar .bt button:disabled{opacity:.7}
+/* v62 (UI-37): etapas do turno na barra inferior */
+.cturn{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;padding:6px 8px;background:#0f1924f5;border:1px solid var(--brass);border-radius:12px;box-shadow:0 8px 24px #0009}
+.cturn .cth{display:flex;gap:4px 12px;flex-wrap:wrap;justify-content:space-between;align-items:baseline;font-size:12.5px;line-height:1.35;color:var(--text)}.cturn .cth b{color:var(--brass)}.cturn .cth .dot{margin-right:6px}.cturn .lnk.warn{color:#e8c15a}
+.cturn .tsr{display:flex;gap:4px;align-items:stretch}
+.ts{display:flex;align-items:center;justify-content:center;gap:6px;flex:1;min-height:36px;padding:4px 8px;border-radius:9px;background:#17212d;border:1px solid var(--line);color:var(--text);font-size:13px;white-space:nowrap}
+.ts i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#2a3a4d;font-size:12px;font-weight:700}
+.ts.cur{border-color:var(--brass);background:#3a2f12}.ts.cur i{background:var(--brass);color:#1a1205}.ts b{color:var(--brass)}
+.ts.done{color:var(--mute)}.ts.done i{background:#244a2c;color:#8fd694}
+.ts:hover:not([aria-disabled]){border-color:var(--brass)}.ts[aria-disabled],.cturn .te[aria-disabled]{opacity:.55;cursor:not-allowed}
+.cturn .te{flex:none;min-height:36px;padding:4px 14px;font-size:14px;white-space:nowrap}
+@media (min-width:821px){#map{height:calc(100% - 138px)}} /* o mapa termina acima da barra: nenhum território fica coberto */
+#game.noside{grid-template-columns:minmax(0,1fr) 0}#game.noside #side{display:none}
+.nbl .why{display:block;flex-basis:100%;font-size:12px;color:#ffb86b}
 #credit{font-size:12px}.warn{color:var(--warn)}
 /* v44: quadro de informações; o território selecionado vem logo depois do império */
-#me{order:1}#info{order:2}#phase{order:3}#cards{order:4}#tech{order:5}#facs{order:6}#side>section:not([id]){order:7}#credit{order:8}#actbar{order:9}.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
+#me{order:1}#info{order:2}#phase{order:3}#cards{order:4}#tech{order:5}#facs{order:6}#side>section:not([id]){order:7}#credit{order:8}.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
 .kp{background:var(--deck2);border:1px solid var(--line);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .kp small{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kp b{font-size:17px;font-family:var(--f-display);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -342,11 +352,11 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   #game{grid-template-rows:auto 44dvh auto}
   #mapw{position:sticky;top:0;z-index:4;border-bottom:1px solid var(--line)}
   #ptabs{position:sticky;top:44dvh;z-index:3;background:var(--deck);margin:-12px -12px 0;padding:8px 12px 0}
-  #side{padding-bottom:120px}
+  #side{padding-bottom:150px}
   #side>section,#side h4,#side .rbox,#side .advr{scroll-margin-top:calc(44dvh + 56px)}
   #top [data-a=keys]{display:none}
-  #cmd{bottom:6px}.cb{min-width:0;padding:4px 3px 3px;font-size:10.5px}.cb .cs,.cb.bus .cl{display:none}.cb.bus{min-width:34px;justify-content:center}.cmdm{max-height:calc(44dvh - 84px)}#battle{bottom:68px}
-  #actbar{position:fixed;left:0;right:0;bottom:0;margin:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:5}
+  #cmd{position:fixed;left:0;right:0;bottom:0;transform:none;max-width:none;z-index:6}.cturn{margin:0;border-radius:0;border-width:2px 0 0;padding:6px 8px}.cbar{border-radius:0;border-width:1px 0 0;justify-content:space-between;padding-bottom:calc(4px + env(safe-area-inset-bottom))}.ts{font-size:12px;padding:4px 6px;gap:4px}.ts i{display:none}.ts.done i{display:inline-grid;width:16px;height:16px;font-size:10px}.cturn .te{padding:4px 10px;font-size:13px}.cturn .lnk.warn,.sdt{display:none}.cturn .cth{font-size:12px}
+  .cb{min-width:0;padding:4px 3px 3px;font-size:10.5px}.cb .cs,.cb.bus .cl{display:none}.cb.bus{min-width:34px;justify-content:center}.cmdm{left:8px;right:8px;width:auto;transform:none;max-height:min(58dvh,440px)}#battle{bottom:8px}
   #lens button{font-size:12px}
 }
 </style>
@@ -370,9 +380,9 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="lgd" hidden></div>
-    <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
+    <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button><button data-a="side" class="sdt" aria-label="Esconder ou mostrar o painel lateral" title="Esconde ou mostra o painel lateral. Ele reabre quando você escolhe algo na barra ou um território.">◨</button></div>
     <div id="cmd" aria-label="Barra de comandos"></div><div id="toast" hidden></div><div id="battle" hidden></div></main>
-  <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
+  <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
 <div id="tut" hidden><div class="tuth"></div><div class="tutc" role="dialog" aria-modal="true" aria-labelledby="tutT" aria-live="polite"></div></div>
