@@ -152,10 +152,11 @@ const WANT = m.terr.map(t => (GEO[t.n] || 'p').split(' ')[0].includes('r'));
     m.terr.forEach((t, i) => {
       const area = cells[i].length / (S * S), need = Math.min(14, .45 * Math.sqrt(area)); let src = '';
       // escala do território: a do mapa; se nela o território ficaria sem rio, desce até a escala em que os seus rios reais aparecem
+      const rk = Array(11).fill(0); if (real[i]) real[i].forEach(r => { rk[Math.min(10, Math.max(0, Math.round(r[1])))] += r[2]; });
       if (real[i]) { let c = cut; const tot = k => real[i].reduce((s, r) => s + (r[1] <= k ? r[2] : 0), 0); while (c < 10 && tot(c) < need) c++; real[i] = real[i].filter(r => r[1] <= c); real[i].forEach(r => { len[i] += r[2]; if (r[1] <= cut - 3) big[i] += r[2]; if (r[3]) names[i].add(r[3]); }); }
       if (real[i] && len[i] >= need) { src = 'real'; outAll[i] = real[i].map(([run, rank]) => { const Rr = rdp(run, .22).map(q => [Math.round(q[0] * 10), Math.round(q[1] * 10)]); if (Rr.length < 2) return null; let d = 'M' + Rr[0][0] / 10 + ' ' + Rr[0][1] / 10 + 'l'; for (let j = 1; j < Rr.length; j++) { const dx = (Rr[j][0] - Rr[j - 1][0]) / 10, dy = (Rr[j][1] - Rr[j - 1][1]) / 10; d += (j > 1 && dx >= 0 ? ' ' : '') + dx + (dy >= 0 ? ' ' : '') + dy; } return [d, +wr(rank).toFixed(2)]; }).filter(Boolean); }
       else if (rivers[i]) { src = 'relevo'; outAll[i] = rivers[i]; }
-      rep.push({ n: t.n, flag: !!want[i], src, len: +len[i].toFixed(0), big: +big[i].toFixed(0), need: +need.toFixed(0), names: [...names[i]].slice(0, 4) });
+      rep.push({ n: t.n, flag: !!want[i], src, len: +len[i].toFixed(0), big: +big[i].toFixed(0), need: +need.toFixed(0), area: +area.toFixed(0), rk: rk.map(v => +v.toFixed(0)), names: [...names[i]].slice(0, 4) });
     });
     return { rivers: outAll, n: Object.keys(outAll).length, paths: Object.values(outAll).reduce((a, c) => a + c.length, 0), rep };
   }, { m, tiles, z, projSrc: PROJ[ID], S, want: WANT, ne, cut, arid: m.terr.map(t => ARID.test(t.n)) });

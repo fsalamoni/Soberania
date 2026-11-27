@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v73 — 27/11/2026 · Rio grande de verdade vira regra do jogo (MC-05)
+
+- **Mais territórios com rio na regra, pelo mundo real.** Escolha do Flavio. Passa a contar como "com rio" todo território cortado por um rio de grande porte real. Eram 68 de 348, agora são 148. Os 68 antigos continuam.
+- **O que isso muda para quem joga.** Nesses 80 territórios novos valem o bônus de rio (+1 comida, +1 ouro, +1 saúde) e as obras de rio: irrigação, moinho, roda d'água, cais fluvial, ponte e represa. Poço e açude, que são obras de quem não tem rio, deixam de aparecer neles.
+- **Critério único.** Rio grande é o de escala até 2 no mapa-múndi, até 3 no mapa das Américas e até 4 nos mapas regionais, na base Natural Earth, com trecho dentro do território pelo menos do tamanho mínimo usado no desenho. Exemplos novos: Danúbio na Áustria, Sérvia e Bulgária; Reno na Holanda e na Suíça; Don na Rússia Meridional; Ohio e Missouri no meio-oeste dos EUA; São Francisco na Bahia, Minas e Pernambuco; Araguaia e Tocantins em Goiás; Amazonas no Peru; Ob, Ienissei e Lena na Sibéria.
+- **Por mapa (antes e depois):** mundo 21 e 31 de 75; Europa 1805 8 e 19 de 36; Europa 1914 10 e 21 de 46; Mediterrâneo 7 e 19 de 46; nórdico 4 e 12 de 32; Américas 3 e 9 de 27; EUA 1861 7 e 22 de 35; Brasil 1835 2 e 9 de 20; Japão 6 e 6 de 31 (a base mundial quase não tem rio japonês; ficam os já marcados).
+- **Equilíbrio medido.** Bateria completa com a mesma semente (65), antes e depois: partidas de 32,2 para 31,2 rodadas em média, obras por partida de 327 para 334, vitórias por domínio de 26 para 32 em 109 partidas, dentro da variação já vista entre sementes (24 a 33). Medido com uma semente só.
+- O desenho dos rios não mudou. A dica ao passar o cursor agora aparece nos 148.
+
 ## v72 — 27/11/2026 · Rios reais em todas as regiões de todos os mapas (MC-05, UI-38)
 
 - **Todos os rios do mundo real, em todas as regiões.** Antes só os territórios que a regra marca com rio (68 de 348) tinham rio desenhado. Agora 337 de 348 territórios dos 9 mapas mostram os seus rios reais. Pedido do Flavio.
