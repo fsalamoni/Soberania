@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v58 — 27/11/2026 · Jogar no celular sem perder o mapa de vista (UI-32 a UI-34)
+
+Joguei turnos inteiros pela interface, no computador e numa tela de 390 px, anotando cada atrito. No computador o fluxo está redondo; os problemas reais estavam no celular e em duas telas comuns aos dois.
+
+- **Celular: mapa preso no alto (UI-32).** Antes, ao tocar num território, a ficha e as fronteiras ficavam abaixo da dobra: era preciso rolar e o mapa sumia. Agora o mapa ocupa a parte de cima e fica fixo; o painel rola por baixo dele, com as abas Império, Obras e Região sempre à vista. A barra do alto ficou em duas linhas estáveis (o estado do turno encurta com reticências) e o botão de atalhos de teclado some no toque.
+- **Tecnologias: o que dá para pesquisar vem primeiro (UI-33).** A tela abria com mais de vinte tecnologias já conhecidas antes da primeira pesquisável. As conhecidas agora ficam recolhidas numa linha por era ("22 já conhecidas"), que abre com um toque.
+- **O turno abre onde importa (UI-34).** A partir da segunda rodada, a sua vez começa em Império, Ações, com o relatório "Desde o seu último turno" e o conselheiro; no celular a tela rola até o relatório.
+- **Tutorial ajustado ao novo desenho:** no celular o foco iluminado não invade as abas nem a barra de ação, e o alvo nunca fica atrás do mapa.
+
 ## v57 — 27/11/2026 · Tutorial guiado (UI-31)
 
 Um tutorial que ensina o jogo dentro do próprio jogo: a tela escurece e só a função explicada fica iluminada, com um cartão ao lado dizendo o que ela é e como usar.

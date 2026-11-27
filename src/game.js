@@ -1762,7 +1762,7 @@ async function loop0() {
     const f = G.order[G.cur], F = Fa(f);
     if (F.alive && F.entered) {
       G.turnF = f; if (f === G.player && !G.auto) save(); beginTurn(f); if (G.over) return; render();
-      if (f === G.player && !G.auto) { repBuild(); render(); if (G.evq.length) showChoice(); return; }
+      if (f === G.player && !G.auto) { repBuild(); if (G.round > 1) { G.tab = 'imp'; G.isub = 'acoes'; } render(); if (G.round > 1 && innerWidth <= 820) { const e = $('.is-acoes .rep'); if (e) e.scrollIntoView({ block: 'start' }); else scrollTo(0, 0); } if (G.evq.length) showChoice(); return; }
       await aiTurn(f); if (G.over) return;
       finishTurn(f);
     }
@@ -2694,7 +2694,7 @@ function techModal() {
   // revelação: o que você sabe e o que pode pesquisar aparece inteiro; o passo seguinte aparece como silhueta; o resto fica oculto
   const near = t => techOk(me, t) || has(me, t.k), vis = t => near(t) ? 2 : (t.req || []).every(r => near(TK[r])) ? 1 : 0;
   const ghost = t => `<div class="tech lock ghost"><div><b>❔ Por descobrir</b> <span class="hint">${techCost(t, me)} 🔬 · depois de ${esc((t.req || []).filter(r => !has(me, r)).map(tName).join(' e '))}</span></div></div>`;
-  const sec = ts => { const v = ts.filter(vis), n = ts.length - v.length; return v.map(t => vis(t) === 2 ? row(t) : ghost(t)).join('') + (n ? `<p class="hint">+${n} tecnologia(s) ainda ocultas: aparecem quando você chegar perto delas.</p>` : '') || '<p class="hint">Nada aqui.</p>'; };
+  const sec = ts => { const v = ts.filter(vis), n = ts.length - v.length, kn = v.filter(t => has(me, t.k)); return v.filter(t => !has(me, t.k)).map(t => vis(t) === 2 ? row(t) : ghost(t)).join('') + (kn.length ? `<details class="known"><summary>✓ ${kn.length} já conhecida(s)</summary>${kn.map(row).join('')}</details>` : '') + (n ? `<p class="hint">+${n} tecnologia(s) ainda ocultas: aparecem quando você chegar perto delas.</p>` : '') || '<p class="hint">Nada aqui.</p>'; };
   const row = t => {
     const own = has(me, t.k), ok = techOk(me, t), on = F.res === t.k, can = ok && !on && G.turnF === me, c = techCost(t, me);
     const req = (t.req || []).map(tName).join(' e '), left = Math.max(0, c - F.sci), eta = left ? Math.ceil(left / si) : 0;
@@ -3196,7 +3196,7 @@ const tutTab = (tab, sub) => () => { G.tab = tab; if (tab === 'imp') G.isub = su
 const tutFit = () => { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); };
 const TUT = [
   [null, 'Bem-vindo a Soberania', 'Você comanda uma nação num mapa histórico: cresce, constrói, negocia e, quando precisar, guerreia. Este tutorial passa por toda a tela, uma função de cada vez. A parte iluminada é a que está sendo explicada. Use Avançar e Voltar, as setas do teclado, ou Esc para sair. Nada do que você vê aqui altera a sua partida.'],
-  ['#top', 'Barra da partida', 'Aqui ficam o cenário e o ano, a rodada atual e o total de rodadas, e de quem é a vez. À direita: IA rápida (acelera os turnos rivais), os atalhos de teclado, as Regras completas, Salvar, este Tutorial e o Menu para sair.'],
+  ['#top', 'Barra da partida', 'Aqui ficam o cenário e o ano, a rodada atual e o total de rodadas, e de quem é a vez. Nos botões: IA rápida (acelera os turnos rivais), os atalhos de teclado (no computador), este Tutorial, as Regras completas, Salvar e o Menu para sair.'],
   ['#map', 'O mapa', 'Cada área é um território. A cor mostra o dono; cinza é terra neutra, sem facção. Arraste para mover o mapa e use a roda do mouse ou a pinça dos dedos para aproximar. Clique num território para abrir a ficha dele na aba Região.', tutFit],
   [() => `#badges .b[data-i="${Fa(G.player).capI}"]`, 'O marcador de um território', 'O número é a quantidade de tropas. O anel dourado marca uma capital: perder a sua enfraquece muito o império. Embaixo vem o nome e, de Vila em diante, o porte (Vila, Cidade, Metrópole). Ao aproximar o mapa, a cidade aparece desenhada, com as obras que você construiu.', tutFit],
   ['#lens', 'Lentes do mapa', 'Trocam o que o mapa mostra. Dono: quem controla cada território. Relevo: o terreno desenhado, com as fronteiras em faixa. Terreno: planície, montanha, floresta, que mudam a defesa e o que dá para construir. Zonas: o que cada território produz. Recursos: jazidas e bens. Rede: quais territórios estão ligados à sua capital por estrada e porto.'],
@@ -3246,15 +3246,18 @@ function tutShow() {
   if (pre) pre();
   let el = sel ? document.querySelector(typeof sel === 'function' ? sel() : sel) : null;
   if (el && !el.getClientRects().length) el = null; // alvo que não existe agora (por exemplo, o relatório na 1ª rodada): explica com a tela toda escurecida
-  if (el && !el.closest('svg')) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+  if (el && !el.closest('svg')) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); const d = el.closest('#side') ? stickB() + 10 - el.getBoundingClientRect().top : 0; if (d > 0) scrollBy(0, -d); }
   const last = tut.i === TUT.length - 1, miss = sel && !el;
   card.innerHTML = `<p class="kick">Tutorial · passo ${tut.i + 1} de ${TUT.length}</p><h3 id="tutT">${title}</h3><p>${text}</p>${miss ? '<p class="hint">Esta parte não está na tela agora; ela aparece quando houver o que mostrar.</p>' : ''}<div class="tutp" aria-hidden="true"><i style="width:${(tut.i + 1) / TUT.length * 100}%"></i></div><div class="row"><button data-a="tutx">Sair</button><span class="sp"></span><button data-a="tutp"${tut.i ? '' : ' disabled'}>← Voltar</button><button class="pri" data-a="tutn">${last ? 'Concluir' : 'Avançar →'}</button></div>`;
   tutPlace(el); card.querySelector('[data-a=tutn]').focus({ preventScroll: true });
 }
+const stickB = () => innerWidth <= 820 ? $('#mapw').getBoundingClientRect().bottom : 0; // base do mapa preso no alto (celular)
 function tutPlace(el, again) {
   const box = $('#tut'), hole = box.firstElementChild, card = box.lastElementChild, W = innerWidth, H = innerHeight, m = 10;
   let r = el ? el.getBoundingClientRect() : { left: W / 2, top: H / 2, width: 0, height: 0 };
-  const x = Math.max(4, r.left - 6), y = Math.max(4, r.top - 6), w = Math.min(W - 4, r.left + r.width + 6) - x, h = Math.min(H - 4, r.top + r.height + 6) - y;
+  const cut = el && W <= 820 && el.closest('#side') && !el.closest('#actbar,#ptabs'); // celular: o foco não invade as abas presas nem a barra de ação fixa
+  const lo = cut ? $('#ptabs').getBoundingClientRect().bottom + 2 : 4, hi = cut ? $('#actbar').getBoundingClientRect().top - 4 : H - 4;
+  const x = Math.max(4, r.left - 6), y = Math.max(lo, r.top - 6), w = Math.min(W - 4, r.left + r.width + 6) - x, h = Math.max(0, Math.min(hi, r.top + r.height + 6) - y);
   Object.assign(hole.style, el ? { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' } : { left: W / 2 + 'px', top: H / 2 + 'px', width: '0px', height: '0px' }); hole.classList.toggle('none', !el);
   card.style.maxWidth = Math.min(380, W - 2 * m) + 'px'; const cw = card.offsetWidth, ch = card.offsetHeight;
   let cx = (W - cw) / 2, cy = (H - ch) / 2;
@@ -3263,7 +3266,7 @@ function tutPlace(el, again) {
     const fit = [[x + w / 2 - cw / 2, y + h + m], [x + w / 2 - cw / 2, y - ch - m], [x - cw - m, y + h / 2 - ch / 2], [x + w + m, y + h / 2 - ch / 2]].map(([a, b]) => [cl(a, m, W - cw - m), cl(b, m, H - ch - m)]).find(([a, b]) => b >= y + h || b + ch <= y || a + cw <= x || a >= x + w);
     if (fit) [cx, cy] = fit;
     else if (!again && !el.closest('svg') && h + ch + 3 * m <= H) { // tela baixa: rola o alvo para logo abaixo do cartão e mede de novo
-      el.style.scrollMarginTop = ch + 2 * m + 6 + 'px'; el.scrollIntoView({ block: 'start', behavior: 'instant' }); el.style.scrollMarginTop = ''; return tutPlace(el, 1);
+      el.style.scrollMarginTop = Math.max(ch + 2 * m + 6, el.closest('#side') ? stickB() + 10 : 0) + 'px'; el.scrollIntoView({ block: 'start', behavior: 'instant' }); el.style.scrollMarginTop = ''; return tutPlace(el, 1);
     } else { cx = x + w / 2 > W / 2 ? m : W - cw - m; cy = y + h / 2 > H / 2 ? m : H - ch - m; }
   }
   card.style.left = Math.max(m, Math.min(W - cw - m, cx)) + 'px'; card.style.top = Math.max(m, Math.min(H - ch - m, cy)) + 'px';
