@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## v64 — 27/11/2026 · Foco de produção da IA só no Difícil; simulações com semente (P-14, IA-22)
+
+- **Dificuldade.** No Difícil, os impérios da IA também aproveitam a produção das regiões sem obra, sempre em comida. No Fácil e no Normal, só o jogador tem o foco. O resumo da escolha de dificuldade explica a diferença.
+- **Simulações repetíveis (IA-22).** `SEED=n node test3.js` repete exatamente as mesmas partidas simuladas, o que permite comparar o equilíbrio antes e depois de uma mudança. Sem `SEED`, a semente é sorteada e impressa no começo.
+- Análise completa do conteúdo (construções, tecnologias, recursos, cartas, governos, líderes, mapa) e plano em 7 partes em documento separado.
+
 ## v63 — 27/11/2026 · Foco de produção: região sem obra não fica parada (P-14)
 
 - **Produção nunca se perde.** Território com a fila vazia passa a converter a produção ⚒ no foco escolhido: Alimentação (comida da região, sempre disponível), Riqueza (ouro, exige Comércio, rende 50% a mais na república mercantil), Ciência (saber, exige Escrita), Cultura (exige Alvenaria) ou Festividades (estabilidade, exige Construção civil, até +3 por turno no império). Antes, essa produção era desperdiçada.

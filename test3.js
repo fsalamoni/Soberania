@@ -12,13 +12,18 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   p.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_|net::/.test(m.text())) errs.push('console: ' + m.text()); });
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   await p.route('http://soberania.test/', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + html + '</body></html>' }));
+  // semente: SEED=n repete exatamente as mesmas partidas simuladas (o jogo guarda Math.random ao carregar, por isso a troca vem antes)
+  const SEED = +(process.env.SEED || Math.floor(Math.random() * 1e6));
+  await p.addInitScript(() => { let a = 1; window.__rs = s => { a = s >>> 0; }; Math.random = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; });
   await p.goto('http://soberania.test/');
   await p.screenshot({ path: shot('setup') });
+  console.log('semente', SEED, '(use SEED=' + SEED + ' para repetir)');
   const REP = +(process.env.REP || 1);
-  const res = await p.evaluate(async ([REP, ONLY, LEN]) => {
+  const res = await p.evaluate(async ([REP, ONLY, LEN, SEED]) => {
     const S = window.__sob, out = [];
     for (const sc of S.SCEN.filter(s => !ONLY || s.id === ONLY)) for (const f of sc.f.filter(f => !f.late)) for (let k = 0; k < REP; k++) {
       try {
+        window.__rs(SEED + [...(sc.id + f.id)].reduce((h, c) => h * 31 + c.charCodeAt(0) | 0, k * 7919));
         S.startScenario(sc.id, f.id, 1, true, LEN);
         const G = S.G; G.auto = true; G.fast = true;
         await S.loop();
@@ -28,7 +33,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
       } catch (e) { out.push([sc.id, f.id, 'ERRO ' + e.message + ' ' + e.stack.split('\n')[1]]); }
     }
     return out;
-  }, [REP, process.env.ONLY || '', process.env.LEN || 'c']);
+  }, [REP, process.env.ONLY || '', process.env.LEN || 'c', SEED]);
   const by = {};
   for (const r of res) (by[r[0]] = by[r[0]] || []).push(r);
   for (const [k, v] of Object.entries(by)) {

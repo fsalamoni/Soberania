@@ -3221,7 +3221,7 @@ function focoBox(i) {
 }
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
-  const foc = f === G.player && !G.auto; if (foc) Fa(f).fesN = 0; // P-14 só para o jogador: com a IA, as simulações mostraram bem mais vitórias por domínio
+  const foc = f === G.player ? !G.auto : G.diff === 2 && real(f); if (foc) Fa(f).fesN = 0; // P-14: vale para o jogador; no Difícil, a IA também aproveita (em comida). Com a IA ligada sempre, as simulações deram mais vitórias por domínio
   for (const i of owned(f)) {
     if (foc && !G.q[i].length) { focoApply(f, i); continue; } // P-14: fila vazia, a produção segue o foco
     let p = prodOf(i) + supNet(i, 'prod') + (G.q[i].length ? ldv(f, 'OB') : 0);
@@ -5205,7 +5205,7 @@ function showSetup() {
     $('#lds').innerHTML = ldPickHtml(sc);
     $('#cons').innerHTML = ['Históricos', 'Sorteados'].map((t, k) => `<button class="${+pickR === k ? 'on' : ''}" data-a="cons" data-c="${k}" title="Históricos: cada rival usa o primeiro líder da lista. Sorteados: cada rival sorteia entre os seus.">${t}</button>`).join('');
     { const f = sc.f.find(x => x.id === pickF), Ls = leadersOf(sc.id, f), L = LEN[pickL] || Object.values(LEN)[0], ld = Ls[pickLd] || Ls[0];
-      $('#setSum').innerHTML = `<b>Resumo.</b> Você comanda ${esc(f.n)}${ld ? ' com ' + esc(ld.n) : ''}. <b>${['Fácil', 'Normal', 'Difícil'][pickD]}:</b> ${['os rivais recebem 1 reforço a menos por turno', 'sem ajustes para os rivais', 'os rivais recebem 2 reforços a mais por turno e atacam com menos vantagem'][pickD]}. <b>${L.n}:</b> ${L.r} rodadas, obras e tecnologias custam ×${L.k}, o objetivo precisa ser mantido por ${L.hold} turnos e ${L.leg} de legado vence. <b>Rivais:</b> ${+pickR ? 'cada um sorteia um líder entre os seus' : 'cada um usa o líder histórico principal'}.`; }
+      $('#setSum').innerHTML = `<b>Resumo.</b> Você comanda ${esc(f.n)}${ld ? ' com ' + esc(ld.n) : ''}. <b>${['Fácil', 'Normal', 'Difícil'][pickD]}:</b> ${['os rivais recebem 1 reforço a menos por turno', 'sem ajustes para os rivais', 'os rivais recebem 2 reforços a mais por turno, atacam com menos vantagem e aproveitam em comida a produção das regiões sem obra'][pickD]}. <b>${L.n}:</b> ${L.r} rodadas, obras e tecnologias custam ×${L.k}, o objetivo precisa ser mantido por ${L.hold} turnos e ${L.leg} de legado vence. <b>Rivais:</b> ${+pickR ? 'cada um sorteia um líder entre os seus' : 'cada um usa o líder histórico principal'}.`; }
     $('#len').innerHTML = Object.entries(LEN).map(([k, L]) => `<button class="${pickL === k ? 'on' : ''}" data-a="len" data-l="${k}" title="Obras e tecnologias custam ×${L.k}; objetivo mantido por ${L.hold} turnos; ${L.leg} de legado vence.">${L.n} · ${L.r} rodadas</button>`).join('');
   }
 }
