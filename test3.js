@@ -72,7 +72,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   // parte 5: estrada nos dois lados liga a rede e aparece no mapa; remanejamento anda 2 pela estrada
   ok(await p.evaluate(() => { const G = window.__sob.G, a = G.ix['Rio Grande do Sul'], b = G.ix['Santa Catarina']; if (G.own[b] !== 'fa') return 'skip'; G.bld[a].push('est'); G.bld[b].push('est'); window.__sob.render(); const n = document.querySelectorAll('#roads line').length; G.bld[a].pop(); G.bld[b].pop(); window.__sob.render(); return n === 1; }), 'estrada entre dois territórios aparece no mapa');
   // parte 6: painel de comércio abre e lista rotas
-  await p.click('[data-a=routes]');
+  await p.click('#cmd [data-g=eco]'); await p.click('.cmdm [data-a=routes]');
   ok(await p.evaluate(() => /Comércio/.test(document.querySelector('#modal').textContent)), 'painel de comércio abre');
   await p.click('#modal [data-m="0"]');
   await p.click('[data-a=lens][data-l=net]');
@@ -87,7 +87,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('#ptabs [data-k=obr]');
   await p.screenshot({ path: shot('obras-imperio') });
   ok(await p.evaluate(() => { const G = window.__sob.G, vis = s => { const e = document.querySelector(s); return !!e && e.offsetParent !== null; }; G.osub = 'fil'; render(); const a = vis('#works') && !vis('#phase') && document.querySelectorAll('#works .rbox').length === owned(G.player).length; G.osub = 'cad'; render(); const b = document.querySelectorAll('#works ul.chain li').length > 20; G.osub = 'con'; render(); const c = document.querySelectorAll('#works .fic').length > 0 && !document.querySelector('#phase [data-k=obras]'); G.osub = 'fil'; G.tab = 'imp'; render(); return a && b && c; }), 'aba Obras: filas, construir e cadeias, fora das ações do império');
-  await p.click('[data-a=techs]');
+  await p.click('#cmd [data-a=techs]');
   await p.click('[data-a=tech][data-k=adm]');
   await p.screenshot({ path: shot('tecnologias') });
   ok(await p.evaluate(() => { const a = civScenario({ seed: 5, size: 'p', type: 'pan' }), b = civScenario({ seed: 5, size: 'p', type: 'pan' }); return a.f.length === 4 && a._m.terr.length === 40 && JSON.stringify(a._m) === JSON.stringify(b._m); }), 'modo Civilização: mesma semente, mesmo mundo');
@@ -96,7 +96,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { techModal(); const n = document.querySelectorAll('#modal .tech').length, gh = document.querySelectorAll('#modal .ghost').length, r = n < TECH.length && /ainda ocultas/.test(document.querySelector('#modal').textContent) && [...document.querySelectorAll('#modal .ghost')].every(e => !/Pesquisar/.test(e.textContent)); return r && gh >= 0; }), 'árvore mostra só o que está perto e esconde o resto');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.res === 'adm' && !F.tech.includes('adm') && F.pa === 99; }), 'pesquisa escolhida sem gastar ação');
   await p.click('#modal [data-m="0"]');
-  await p.click('[data-a=figm]');
+  await p.click('#cmd [data-g=gov]'); await p.click('.cmdm [data-a=figm]');
   ok(await p.evaluate(() => /Grandes figuras/.test(document.querySelector('#modal').textContent) && /Governadores/.test(document.querySelector('#modal').textContent)), 'painel de personagens');
   await p.click('#modal [data-m="0"]');
   ok(await p.evaluate(() => /Guia/.test(document.querySelector('.guide')?.textContent || '')), 'guia da primeira partida aparece');
@@ -115,15 +115,15 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');
-  await p.click('[data-a=govm]');
+  await p.click('#cmd [data-g=gov]'); await p.click('.cmdm [data-a=govm]');
   await p.screenshot({ path: shot('governo') });
   ok(await p.evaluate(() => /Cívicas/.test(document.querySelector('#modal').textContent) && /atual/.test(document.querySelector('#modal').textContent) && !!window.__sob.G.F.fa.gov), 'painel de governo, cívicas e fé');
   await p.click('#modal [data-m="0"]');
-  await p.click('[data-a=dipl]');
+  await p.click('#cmd [data-g=dip]'); await p.click('.cmdm [data-a=dipl]');
   await p.screenshot({ path: shot('diplomacia') });
   ok(await p.evaluate(() => /relação/.test(document.querySelector('#modal').textContent) && document.querySelectorAll('#modal [data-a=dprop]').length > 0), 'painel diplomático lista facções, relação e propostas');
   await p.click('#modal [data-m="0"]');
-  await p.click('[data-a=act][data-k=camp]');
+  await p.click('#cmd [data-g=mil]'); await p.click('.cmdm [data-k=camp]');
   await p.screenshot({ path: shot('acoes') });
   await clickT('Rio Grande do Sul'); await clickT('Santa Catarina');
   await p.screenshot({ path: shot('batalha') });
@@ -183,11 +183,11 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.evaluate(() => { const G = window.__sob.G, F = G.F.uk; G.tr[F.capI] += F.reinf; F.reinf = 0; window.__sob.render(); });
   await p.click('[data-a=all]').catch(() => { });
   await p.click('[data-a=toAtk]');
-  await p.click('[data-a=act][data-k=camp]');
+  await p.click('#cmd [data-g=mil]'); await p.click('.cmdm [data-k=camp]');
   const planes = await p.evaluate(() => window.__sob.G.F.uk.planes);
   console.log('aviões UK', planes);
   if (planes) {
-    await p.click('[data-a=air]');
+    await p.click('#cmd [data-g=mil]'); await p.click('.cmdm [data-a=air]');
     await p.screenshot({ path: shot('ar-alvos') });
     const t = await p.evaluate(() => { const G = window.__sob.G; for (let j = 0; j < G.N; j++) if (G.own[j] === 'de' && G.tr[j] >= 2) return G.m.terr[j].n; });
     if (t) { await clickT(t); await p.waitForTimeout(200); await p.screenshot({ path: shot('ar-ataque') }); }
