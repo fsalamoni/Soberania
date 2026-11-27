@@ -6,6 +6,8 @@ O jogo é **original**: usa mecânicas do gênero, mas nomes, regras, números, 
 
 ## Como jogar
 
+**Online:** https://fsalamoni.github.io/Soberania/ (publicado automaticamente a cada atualização da `main`, pelo workflow `.github/workflows/pages.yml`).
+
 Abra `index.html` em qualquer navegador moderno. É um arquivo único, sem servidor e sem instalação. A partida fica salva no navegador (localStorage) a cada turno.
 
 Hoje o jogo é solo contra IAs, em 16 cenários:
