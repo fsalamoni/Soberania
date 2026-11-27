@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v71 — 27/11/2026 · Rios que seguem o relevo de verdade (MC-05, UI-38)
+
+- **O traçado dos rios agora sai da elevação real**, a mesma que desenha o relevo do mapa. Antes era uma curva inventada entre dois pontos do território, e por isso cortava serras. Pedido do Flavio.
+- **Como é calculado (`maps/rios.js`).** O terreno é enchido a partir do mar, cada ponto escoa para o vizinho mais baixo e a vazão se acumula rio abaixo. Em cada território com rio saem o rio principal, os maiores afluentes e, quando existe, um segundo rio de outra bacia. O curso corre pelos vales, serpenteia nas planícies, engrossa rumo à foz e continua no território vizinho.
+- **Resultado.** Nos mapas reais aparecem os grandes sistemas no lugar certo: Amazonas com Negro e Madeira, Mississippi com Ohio e Missouri, Nilo, Danúbio, Vístula, Loire, Shinano.
+- **Largura constante na tela.** O traço do rio não engrossa com o zoom: de perto continua uma linha fina sobre o vale, de longe continua visível.
+- Vale para os 9 mapas com relevo. Os rios seguem só nas lentes Relevo e Terreno. Não muda regra: quais territórios têm rio continua igual.
+- As projeções dos mapas saíram de `maps/relevo.js` para `maps/proj.js`, usado pelo relevo e pelos rios.
+
 ## v70 — 27/11/2026 · Mais obras militares (C-146 a C-149)
 
 - **Torre de vigia (C-146).** +1 no maior dado de defesa com 3 ou mais tropas no território. Tecnologia: Alvenaria.
