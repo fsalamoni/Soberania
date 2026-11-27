@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v59 — 27/11/2026 · Rivais que reagem a quem domina o mapa (IA-20, IA-21)
+
+Até aqui cada rival jogava sozinho: quem saía na frente crescia sem resposta, e isso vale também para o jogador que dispara. Agora os rivais leem o mapa.
+
+- **Coalizão contra a potência dominante (IA-20).** Passada a abertura, quem tiver pelo menos 18% do mapa e 35% mais territórios que o segundo colocado vira a ameaça comum. Os rivais passam a mirar os territórios dela primeiro, procuram trégua entre si com mais frequência e aceitam mais fácil, e uma trégua antiga com ela (5 rodadas ou mais) pode ser rompida. Aliados dela ficam de fora.
+- **O jogador é avisado.** Um aviso aparece na hora, a crônica registra e o topo das ações explica o que muda: se é você quem domina, reforce as fronteiras; se é um rival, é a hora de atacá-lo junto com os outros.
+- **Capital guardada (IA-21).** O rival com a capital ameaçada põe os reforços nela antes de atacar.
+- **Celular:** a fileira de lentes do mapa esmaece no fim, mostrando que rola para o lado.
+- **Equilíbrio medido lado a lado (3 partidas por facção):** em Sengoku a distribuição de vencedores segue espalhada (7 clãs vencem, como antes). Em Regências os Farrapos continuam vencendo a maioria (13 de 15 antes, 11 a 13 de 15 depois): a coalizão não resolve esse cenário, cuja vantagem vem da posição inicial. Uma primeira versão, que proibia atacar a partir da capital ameaçada, travava as facções de um território só e foi descartada.
+
 ## v58 — 27/11/2026 · Jogar no celular sem perder o mapa de vista (UI-32 a UI-34)
 
 Joguei turnos inteiros pela interface, no computador e numa tela de 390 px, anotando cada atrito. No computador o fluxo está redondo; os problemas reais estavam no celular e em duas telas comuns aos dois.

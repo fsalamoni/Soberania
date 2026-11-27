@@ -1164,7 +1164,7 @@ function repBuild() {
   G.rep = { r: G.round, lost: lost.map(i => `${tname(i)} agora é de ${real(G.own[i]) ? fname(G.own[i]) : 'rebeldes'}`), won: won.map(tname), mine, vs, world: world.slice(0, 7), top };
 }
 function reportHtml() {
-  const R = G.rep, opn = G.round <= openR() ? `<p class="hint opn">🛡 Abertura: nenhuma capital pode ser atacada até o fim da rodada ${openR()}. Use esse tempo para crescer e erguer defesas.</p>` : '';
+  const R = G.rep, opn = G.round <= openR() ? `<p class="hint opn">🛡 Abertura: nenhuma capital pode ser atacada até o fim da rodada ${openR()}. Use esse tempo para crescer e erguer defesas.</p>` : G.heg ? `<p class="hint opn">⚠ ${G.heg === G.player ? 'Você domina o mapa. Os rivais se unem contra você: fazem trégua entre si, miram os seus territórios e podem romper tréguas antigas. Reforce as fronteiras.' : esc(fname(G.heg)) + ' domina o mapa. Os rivais se unem contra ela: é a hora de atacá-la junto com eles ou de propor trégua aos demais.'}</p>` : '';
   if (!R || R.r !== G.round || G.turnF !== G.player) return opn;
   const ul = (t, a, c) => a.length ? `<p class="rph ${c || ''}">${t}</p><ul>${a.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ul>` : '';
   const quiet = !(R.lost.length + R.won.length + R.mine.length + R.vs.length + R.world.length);
@@ -1895,14 +1895,14 @@ function hegemon() {
   if (G.round <= openR()) return null;
   const fs = G.order.filter(f => Fa(f).alive && Fa(f).entered).map(f => [f, owned(f).length]).sort((a, b) => b[1] - a[1]);
   if (fs.length < 3) return null;
-  const [a, b] = fs; return a[1] >= 5 && a[1] >= 1.5 * b[1] && a[1] >= .22 * G.N ? a[0] : null;
+  const [a, b] = fs; return a[1] >= 5 && a[1] >= 1.35 * b[1] && a[1] >= .18 * G.N ? a[0] : null;
 }
 function hegCheck() {
   const h = hegemon();
   if (h !== (G.heg || null)) { G.heg = h; if (h) { log(h, `${fname(h)} domina o mapa: os rivais passam a tratá-la como a maior ameaça e se unem contra ela.`); if (!G.auto) toast(h === G.player ? 'Você domina o mapa: os rivais se unem contra você.' : `${fname(h)} domina o mapa: os rivais se unem contra ela.`); } }
   return h;
 }
-const hegB = (f, j) => G.heg && f !== G.heg && G.own[j] === G.heg && !allied(f, G.heg) ? 3 : 0;
+const hegB = (f, j) => G.heg && f !== G.heg && G.own[j] === G.heg && !allied(f, G.heg) ? 4 : 0;
 function bestAttack(f, minEdge, probe) {
   let best = null;
   for (const i of owned(f)) {
