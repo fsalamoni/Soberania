@@ -307,6 +307,9 @@ details.bq,details.rdet{margin:6px 0}details.bq>summary,details.rdet>summary{cur
 #map .sv .svr{fill:none;stroke:#d2b27c;stroke-width:1.7;stroke-linecap:round;stroke-dasharray:3.2 1.4}
 .ledger{margin:.4em 0}.ledger summary{cursor:pointer;font-size:.85em}.ledger table,.emp{border-collapse:collapse;font-size:.8em;width:100%}.ledger td,.emp td,.emp th{padding:2px 4px;border-bottom:1px solid #ffffff14;vertical-align:top;text-align:left}.ledger td.n,.ledger td:first-child{white-space:nowrap}.ledger .neg,.emp .neg{color:#e58b7c}.emp .tot td{font-weight:700;border-top:1px solid #ffffff40}.emp a{color:inherit}
 #rib path.rb{fill:none;stroke-width:7;stroke-opacity:.85;vector-effect:non-scaling-stroke;pointer-events:none}
+#rivers path{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#rivers .rvk{stroke:#173f5e;stroke-width:2;opacity:.6}
+#rivers .rv{stroke:#6dbbe6;stroke-width:1.1;pointer-events:stroke}
 #relS{mix-blend-mode:multiply;pointer-events:none;opacity:.85}#relc{pointer-events:none}
 /* v42: barra de ação fixa, foco visível, alvos de toque, painéis recolhíveis */
 :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
@@ -984,6 +987,8 @@ Object.assign(STRUCT, {
   fmu: { pc: 12, up: 1, need: 'zin', tech: 'rif', good: ['aco'], atk: 1, ic: '💥', fx: 'Fábrica de munições (C-138): ataques saindo daqui somam +1 ao maior dado. Exige distrito industrial aqui e aço na rede.', n: 'Fábrica de Munições' },
   acn: { pc: 12, up: 1, need: 'stl', tech: 'hdg', nav: 1, y: { pre: 1 }, ic: '⚓', fx: 'Academia naval (C-139): +1 travessia marítima por turno e +1 prestígio. Exige estaleiro.', n: 'Academia Naval' },
   hml: { pc: 10, up: 1, need: 'qua', tech: 'mdc', hl: 1, y: { stab: 1 }, ag: .4, ic: '🏥', fx: 'Hospital militar (C-140): +1 saúde e +1 estabilidade. Exige quartel.', n: 'Hospital Militar' },
+  // v67: transporte fluvial (C-141). O cais fluvial entra na rede de bens como um porto (netOf)
+  cfl: { pc: 6, tech: 'nav', rioReq: 1, y: { gold: 1 }, ag: .5, ic: '🛶', fx: 'Cais fluvial (C-141): +1 ouro e hidrovia. Liga o território à rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio.', n: { ant: 'Cais Fluvial', med: 'Cais Fluvial', pol: 'Cais Fluvial', mod: 'Terminal Hidroviário', fan: 'Cais Fluvial' } },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },
@@ -2147,16 +2152,16 @@ function zoneOk(k, i) {
 const known = (i, d) => !REVEAL[d] || !real(G.own[i]) || has(G.own[i], REVEAL[d]); // K-02, K-04, K-15
 const worked = i => G.dep[i].filter(d => known(i, d) && G.bld[i].some(k => STRUCT[k].z === DEP[d].z && nb(i, k)));
 // ---------- parte 5: rede de bens (L-01 a L-03, L-05, C-120 a C-122, C-126) ----------
-// rede = capital + territórios seus ligados por estrada (os dois lados com estrada) ou entre portos;
+// rede = capital + territórios seus ligados por estrada (os dois lados com estrada) ou entre portos e cais fluviais (C-141);
 // a trilha (C-120) liga também os vizinhos por terra de quem está na rede.
 const road = i => nb(i, 'tav') ? 5 : nb(i, 'frv') ? 3 : nb(i, 'pav') || nb(i, 'rdv') ? 2 : nb(i, 'est') ? 1 : 0;
 function netOf(f) {
   const F = Fa(f), core = new Set(); if (!real(f) || G.own[F.capI] !== f) return { core, linked: core };
   const q = [F.capI]; core.add(F.capI);
-  const ports = () => owned(f).filter(i => nb(i, 'por'));
+  const port = i => nb(i, 'por') || nb(i, 'cfl'), ports = () => owned(f).filter(port);
   for (let h = 0; h < q.length; h++) {
     const i = q[h], nx = G.A[i].filter(j => G.own[j] === f && !isSea(i, j) && road(j) && (road(i) || i === F.capI));
-    if (nb(i, 'por')) nx.push(...ports());
+    if (port(i)) nx.push(...ports());
     for (const j of nx) if (!core.has(j)) { core.add(j); q.push(j); }
   }
   const linked = new Set(core); core.forEach(i => G.A[i].forEach(j => { if (G.own[j] === f && !isSea(i, j)) linked.add(j); }));
@@ -4308,6 +4313,44 @@ function diploModal() {
 
 // ---------- mapa ----------
 let svg, vb, P = [], B = [];
+// v67 (MC-05): rios desenhados. O dado do mapa só diz se o território tem rio; o traçado é calculado uma vez por mapa:
+// nasce na divisa com o vizinho mais alto (montanha, depois colina), passa ao lado da cidade e deságua no litoral
+// ou segue para o vizinho que também tem rio. Fica sob o sombreado do relevo, para parecer parte do terreno.
+function drawRivers() {
+  const m = G.m, g = svg.querySelector('#rivers'); if (!g) return;
+  const key = G.sc.map + ':' + G.riv.map(r => r ? 1 : 0).join('');
+  if (m.rvK !== key) {
+    const pts = i => { const p = P[i], L = p.getTotalLength(), a = []; for (let k = 0; k < 48; k++) { const q = p.getPointAtLength(L * k / 48); a.push([q.x, q.y]); } return a; };
+    const near = (a, x, y) => a.reduce((b, q) => Math.hypot(q[0] - x, q[1] - y) < Math.hypot(b[0] - x, b[1] - y) ? q : b);
+    const hgt = j => ({ m: 3, h: 2, f: 1, s: 1 })[G.ter[j]] || 0, land = (i, j) => !isSea(i, j) && G.own[j] !== 'off';
+    m.rv = []; m.rvK = key;
+    for (let i = 0; i < G.N; i++) {
+      if (!G.riv[i] || G.own[i] === 'off') continue;
+      const t = m.terr[i], o = pts(i), N = G.A[i].filter(j => land(i, j)), r = k => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+      // nascente: vizinho mais alto; sem vizinho por terra, o ponto do contorno mais longe do mar
+      const up = N.slice().sort((a, b) => hgt(b) - hgt(a) || a - b)[0];
+      const far = () => o.reduce((b, q) => { const d = Math.min(...m.terr.map((u, j) => j === i ? 1e9 : Math.hypot(u.x - q[0], u.y - q[1]))); return d > b[2] ? [q[0], q[1], d] : b; }, [t.x, t.y, -1]);
+      const S = up != null ? near(o, m.terr[up].x, m.terr[up].y) : near(o, 2 * t.x - far()[0], 2 * t.y - far()[1]);
+      // foz: no litoral, o ponto do contorno mais longe dos outros territórios; no interior, a divisa com um vizinho de rio mais baixo, ou o mais baixo
+      let E;
+      if (coastal(i)) E = far();
+      else { const dn = N.filter(j => j !== up).sort((a, b) => (G.riv[b] ? 1 : 0) - (G.riv[a] ? 1 : 0) || hgt(a) - hgt(b) || a - b)[0]; E = dn != null ? near(o, m.terr[dn].x, m.terr[dn].y) : [2 * t.x - S[0], 2 * t.y - S[1]]; }
+      // passa ao lado do centro (a cidade fica na margem) e serpenteia
+      const dx = E[0] - S[0], dy = E[1] - S[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, off = Math.min(L * .16, 9) * (r(1) < .5 ? -1 : 1);
+      const C = [t.x + nx * off, t.y + ny * off], f = q => q[0].toFixed(1) + ' ' + q[1].toFixed(1);
+      // meandros: pontos ao longo de nascente, cidade e foz, deslocados para os lados em zigue-zague irregular e depois suavizados
+      const n = Math.max(6, Math.min(16, Math.round(L / 5))), amp = Math.min(3.2, L * .06), q = [];
+      for (let k = 0; k <= n; k++) {
+        const u = k / n, A = u < .5 ? S : C, B = u < .5 ? C : E, v = u < .5 ? u * 2 : u * 2 - 2 + 1, e = k && k < n ? ((k % 2 ? 1 : -1) * (.45 + r(k + 9) * .55)) * amp : 0;
+        q.push([A[0] + (B[0] - A[0]) * v + nx * e + (r(k + 40) - .5) * amp * .5, A[1] + (B[1] - A[1]) * v + ny * e + (r(k + 70) - .5) * amp * .5]);
+      }
+      let d = 'M' + f(q[0]);
+      for (let k = 1; k < n; k++) d += 'Q' + f(q[k]) + ' ' + f([(q[k][0] + q[k + 1][0]) / 2, (q[k][1] + q[k + 1][1]) / 2]);
+      m.rv.push([i, d + 'L' + f(q[n])]);
+    }
+  }
+  g.innerHTML = m.rv.map(([i, d]) => `<clipPath id="rvc${i}"><path d="${P[i].getAttribute('d')}"/></clipPath><g clip-path="url(#rvc${i})"><path class="rvk" d="${d}"/><path class="rv" d="${d}"><title>Rio em ${esc(m.terr[i].n)}: permite irrigação, moinho, roda d'água, cais fluvial e represa</title></path></g>`).join('');
+}
 function buildMap() {
   const m = G.m; svg = $('#map');
   vb = { x: 0, y: 0, w: m.w, h: m.h };
@@ -4318,13 +4361,14 @@ function buildMap() {
   if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
   const RL = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map]; // relevo real (maps/relevo.js)
   if (RL) h += `<image id="relc" href="${RL.c}" x="0" y="0" width="${m.w}" height="${m.h}" preserveAspectRatio="none"/>`;
-  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g>' + (RL ? `<image id="relS" href="${RL.s}" x="0" y="0" width="${m.w}" height="${m.h}" preserveAspectRatio="none"/>` : '') + '<g id="rib"></g><g id="brd"></g>';
+  h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g><g id="rivers"></g>' + (RL ? `<image id="relS" href="${RL.s}" x="0" y="0" width="${m.w}" height="${m.h}" preserveAspectRatio="none"/>` : '') + '<g id="rib"></g><g id="brd"></g>';
   const sl = seaEnds(m);
   h += '<g class="sealinks">' + m.sea.map(([a, b, w], k) => { const A = m.terr[a], C = m.terr[b], tt = `<title>Travessia por mar: ${esc(A.n)} e ${esc(C.n)}</title>`; if (!w) { const [x1, y1, x2, y2] = sl[k]; return `<g data-k="${k}">${tt}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="2.2"/><circle cx="${x2}" cy="${y2}" r="2.2"/></g>`; } const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<g data-k="${k}">${tt}<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/></g>`; }).join('') + '</g>';
   h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><g class="sv"></g><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><g class="pl"><text class="nm" y="23">${esc(t.n)}</text><text class="lvn" y="32.5"></text></g></g>`).join('') + '</g>';
   svg.innerHTML = h; brdKey = ''; ribOn = false;
   P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')]; NM = null;
   seaVia();
+  drawRivers();
   setVB();
 }
 // v53: distância de cada território ao vizinho mais próximo; dá a escala das cidades e o zoom máximo do mapa
@@ -4381,7 +4425,7 @@ const SV = {
   won: SHD + bx(-5.6, 4.2, 8.4, 1.8, 3, '#d9ae42', '#f6da78', '#a8842a') + bx(-4, 2.6, 5.8, 1.8, 2.4, '#e0b84a', '#f8e08a', '#b08a2a') + bx(-2.4, 1, 3.2, 1.8, 1.8, '#e6c052', '#fbe79a', '#b8922e') + bx(-.9, -.6, 1, 3.6, .8, '#f0cf6a', '#fff2b8', '#c09a34') + '<path d="M-.1 -6.2l.5 1.2l1.3 .1l-1 .8l.3 1.3l-1.1 -.7l-1.1 .7l.3 -1.3l-1 -.8l1.3 -.1z" fill="#fff6c8" stroke="#b08a2a" stroke-width=".25"/>',
 };
 const SVN = { farm: 'Agricultura', past: 'Pecuária', fish: 'Pesca', wood: 'Floresta', mine: 'Mineração', ind: 'Indústria e ofícios', mkt: 'Comércio', port: 'Porto', tmpl: 'Fé e cultura', civ: 'Obras públicas', sci: 'Saber', mil: 'Exército', fort: 'Defesa', cult: 'Espetáculos', air: 'Aviação', won: 'Maravilha' };
-const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt rdg', mkt: 'mer car ban bol arm', port: 'por stl cia frl acn', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm pco acq rsa rep ete', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil dps fmu hml', fort: 'for pal cas fab bkr btc', cult: 'anf tea etd', air: 'aer apt' };
+const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt rdg', mkt: 'mer car ban bol arm', port: 'por stl cia frl acn cfl', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm pco acq rsa rep ete', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil dps fmu hml', fort: 'for pal cas fab bkr btc', cult: 'anf tea etd', air: 'aer apt' };
 const SVZ = { agr: 'farm', pec: 'past', pes: 'fish', flo: 'wood', min: 'mine', com: 'mkt', por: 'port', rel: 'tmpl', mil: 'mil', sci: 'sci' };
 const SVY = { food: 'farm', prod: 'ind', gold: 'mkt', sci: 'sci', pre: 'tmpl', stab: 'civ' };
 const svOf = k => { const S = STRUCT[k]; if (!S || S.road) return null; if (S.wonder) return 'won'; for (const c in SVK) if (SVK[c].split(' ').includes(k)) return c; return S.def ? 'fort' : S.air ? 'air' : S.rf || S.atk ? 'mil' : S.nav ? 'port' : SVZ[S.z] || SVY[Object.keys(S.y || {})[0]] || 'ind'; };

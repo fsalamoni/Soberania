@@ -282,6 +282,8 @@ Object.assign(STRUCT, {
   fmu: { pc: 12, up: 1, need: 'zin', tech: 'rif', good: ['aco'], atk: 1, ic: '💥', fx: 'Fábrica de munições (C-138): ataques saindo daqui somam +1 ao maior dado. Exige distrito industrial aqui e aço na rede.', n: 'Fábrica de Munições' },
   acn: { pc: 12, up: 1, need: 'stl', tech: 'hdg', nav: 1, y: { pre: 1 }, ic: '⚓', fx: 'Academia naval (C-139): +1 travessia marítima por turno e +1 prestígio. Exige estaleiro.', n: 'Academia Naval' },
   hml: { pc: 10, up: 1, need: 'qua', tech: 'mdc', hl: 1, y: { stab: 1 }, ag: .4, ic: '🏥', fx: 'Hospital militar (C-140): +1 saúde e +1 estabilidade. Exige quartel.', n: 'Hospital Militar' },
+  // v67: transporte fluvial (C-141). O cais fluvial entra na rede de bens como um porto (netOf)
+  cfl: { pc: 6, tech: 'nav', rioReq: 1, y: { gold: 1 }, ag: .5, ic: '🛶', fx: 'Cais fluvial (C-141): +1 ouro e hidrovia. Liga o território à rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio.', n: { ant: 'Cais Fluvial', med: 'Cais Fluvial', pol: 'Cais Fluvial', mod: 'Terminal Hidroviário', fan: 'Cais Fluvial' } },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },

@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## v67 — 27/11/2026 · Rios desenhados no mapa e cais fluvial (MC-05, C-141)
+
+- **Os rios aparecem no mapa (MC-05).** Antes o rio era só uma informação do território. Agora cada território com rio mostra o curso d'água: ele nasce na divisa com o vizinho mais alto (montanha, depois colina), passa ao lado da cidade em meandros e deságua no litoral. O desenho fica sob o sombreado do relevo, como parte do terreno, e não sai dos limites do território. Passar o cursor sobre o rio diz o que ele permite construir.
+- **Cais fluvial (C-141).** +1 ouro e hidrovia: o território entra na rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio. Tecnologia: Navegação.
+- O traçado é calculado uma vez por mapa e é sempre o mesmo para o mesmo mapa. Não muda regra nem equilíbrio; só o cais fluvial é obra nova.
+- Teste novo: todo território com rio tem rio desenhado, e o cais liga à rede e exige rio.
+
 ## v66 — 27/11/2026 · Quartel com nome único e obras militares novas (C-136 a C-140)
 
 - **Quartel existe com esse nome.** A obra mudava de nome por era (Acampamento, Quartel, Base Militar, Caserna), enquanto as regras, o manual e outras obras falavam sempre em "quartel". Agora se chama Quartel em todas as eras.

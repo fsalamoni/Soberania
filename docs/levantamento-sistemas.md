@@ -447,6 +447,7 @@ A infraestrutura faz três coisas: **liga** territórios numa rede (os bens circ
 | C-138 | Fábrica de munições (v66) | Rifles; distrito industrial; aço |  |  | +1 ataque saindo do território |
 | C-139 | Academia naval (v66) | Hidrografia; estaleiro |  |  | +1 travessia, +1 prestígio |
 | C-140 | Hospital militar (v66) | Medicina; quartel |  |  | +1 saúde, +1 estabilidade |
+| C-141 | Cais fluvial (v67) | Navegação; rio |  |  | +1 ouro; hidrovia: entra na rede de bens junto com os outros cais fluviais e portos |
 
 ### Regras de rede e movimento
 
@@ -975,7 +976,7 @@ Um modo novo, ao lado dos cenários. Cada facção começa com uma aldeia e um c
 | MC-02 | Tipo de mundo | Continentes, Pangeia, Arquipélago, Mar interior, Terra-espelho (formas inspiradas na Terra, sem ser cópia) |
 | MC-03 | Territórios | Polígonos gerados a partir de pontos espalhados (diagrama de Voronoi) e agrupados em regiões de 4 a 8, como os continentes do War. Fronteiras seguem rios e montanhas quando possível |
 | MC-04 | Clima e terreno | Latitude e distância do mar definem o clima: tundra nos polos, desertos nas faixas secas, floresta tropical no equador, planícies e colinas no meio. Cordilheiras ao longo de "placas" sorteadas |
-| MC-05 | Rios e traços | Rios descem das montanhas ao mar e dão os traços M-20 a M-26 (delta, passo, estreito, ilha) |
+| MC-05 | Rios e traços | Rios descem das montanhas ao mar e dão os traços M-20 a M-26 (delta, passo, estreito, ilha). Desde a v67 o rio aparece desenhado no mapa: nasce na divisa com o vizinho mais alto, passa ao lado da cidade e deságua no litoral |
 | MC-06 | Jazidas | Distribuídas por terreno com regra de equilíbrio: cada facção tem a até 3 territórios ao menos um luxo, um estratégico antigo e terra boa |
 | MC-07 | Maravilhas naturais | 4 a 8 pontos especiais (grande cachoeira, vulcão sagrado, recife) com bônus |
 | MC-08 | Semente | Todo mapa tem um código; digitar o mesmo código gera o mesmo mapa (para jogar de novo ou dividir com amigos) |
