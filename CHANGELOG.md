@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v63 — 27/11/2026 · Foco de produção: região sem obra não fica parada (P-14)
+
+- **Produção nunca se perde.** Território com a fila vazia passa a converter a produção ⚒ no foco escolhido: Alimentação (comida da região, sempre disponível), Riqueza (ouro, exige Comércio, rende 50% a mais na república mercantil), Ciência (saber, exige Escrita), Cultura (exige Alvenaria) ou Festividades (estabilidade, exige Construção civil, até +3 por turno no império). Antes, essa produção era desperdiçada.
+- **Sem pedido de obra impossível.** Quando nada cabe na região, o painel deixa de mostrar "Construir aqui" e "Escolher obra": aparece só o foco, com o ganho por turno. A obra volta a ser oferecida quando uma tecnologia, zona ou construção a liberar.
+- **Aba Obras.** O indicador "Ociosos" virou "Sem obra" e conta só os territórios em que há algo a construir. Os demais aparecem no fim da lista com o foco e o rendimento.
+- **Um toque para todos.** Botão "Usar este foco em todas as regiões"; focos bloqueados mostram o cadeado e a tecnologia que falta.
+- A IA usa sempre a Alimentação. O foco entra no salvamento.
+- Texto da doutrina de conquista atualizado (não existe mais "declarar campanha").
+- Manual e teste novo (P-14).
+
 ## v62 — 27/11/2026 · Turno livre, etapas na barra e ataque sem declarar campanha (D-19, UI-37)
 
 O turno tinha três fases fechadas: nada de obras ou governo antes de pôr os reforços, nada de gestão durante o remanejamento, e para atacar era preciso abrir um menu e declarar campanha.

@@ -325,6 +325,7 @@ button.mini{padding:4px 9px;font-size:12.5px;min-height:28px}
 .ts:hover:not([aria-disabled]){border-color:var(--brass)}.ts[aria-disabled],.cturn .te[aria-disabled]{opacity:.55;cursor:not-allowed}
 .cturn .te{flex:none;min-height:36px;padding:4px 14px;font-size:14px;white-space:nowrap}
 @media (min-width:821px){#map{height:calc(100% - 138px)}} /* o mapa termina acima da barra: nenhum território fica coberto */
+.rbox.foco .cats{margin:6px 0}.rbox.foco .mini small{color:var(--brass);font-weight:600}.rbox.foco .mini:disabled{opacity:.55}
 #game.noside{grid-template-columns:minmax(0,1fr) 0}#game.noside #side{display:none}
 .nbl .why{display:block;flex-basis:100%;font-size:12px;color:#ffb86b}
 #credit{font-size:12px}.warn{color:var(--warn)}
@@ -558,7 +559,7 @@ const TECH = [
   { k: 'ret', t: 2, cost: 7, req: ['adm'], fx: '+1 prestígio por turno, e influenciar custa 1 a menos.', n: { ant: 'Retórica', med: 'Imprensa', pol: 'Jornais', mod: 'Propaganda de Massa', fan: 'Bardos Reais' } },
   { k: 'log', t: 2, cost: 7, req: ['eng'], fx: '+2 tropas grátis por turno.', n: { ant: 'Estradas', med: 'Rotas de Suprimento', pol: 'Ferrovias', mod: 'Motorização', fan: 'Portais' } },
   { k: 'arq', t: 3, cost: 11, req: ['eng', 'ret'], fx: 'Permite construir a sua Maravilha (+5 de legado).', n: { ant: 'Arquitetura', med: 'Arte Gótica', pol: 'Iluminismo', mod: 'Ciência de Ponta', fan: 'Alta Magia' } },
-  { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Declarar campanha não gasta ponto de ação, e você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
+  { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
 ];
 // ---------- parte 7: árvore de tecnologias por era (K-01 a K-59) ----------
 // e = era da tecnologia (0 Antiguidade, 1 Idade Média, 2 Idade Moderna). No início, cada facção já conhece as
@@ -1973,7 +1974,7 @@ function newGame(sc, player, diff, len) {
   const m = MAPS[sc.map], ix = idxOf(m), N = m.terr.length;
   const need = n => { if (!(n in ix)) throw Error(sc.id + ': território desconhecido ' + n); return ix[n]; };
   const L = LEN[len] || LEN.c;
-  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu ?? 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], win: Array(N).fill(0), dug: Array(N).fill(0), acted: new Set(), F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), sel: null, tgt: null, over: false, fast: false, auto: false };
+  const g = { sc, m, ix, N, player, diff, lenK: LEN[len] ? len : 'c', len: L, rounds: L.r, era: eraOf(sc), air: airOf(sc), own: Array(N).fill('neu'), tr: Array(N).fill(sc.neu ?? 2), fort: Array(N).fill(0), bld: Array.from({ length: N }, () => []), q: Array.from({ length: N }, () => []), occ: Array(N).fill(0), dis: new Set(), rl: [], mv: [], arr: [], win: Array(N).fill(0), dug: Array(N).fill(0), acted: new Set(), F: { neu: NEU, reb: REB, off: OFF }, order: [], cur: 0, round: 1, phase: 'ref', truce: new Set(), cool: {}, log: [], trades: 0, seaUsed: new Set(), foc: {}, sel: null, tgt: null, over: false, fast: false, auto: false };
   g.A = Array.from({ length: N }, () => []);
   for (const [a, b] of m.adj) { g.A[a].push(b); g.A[b].push(a); }
   g.seaK = new Set(m.sea.map(([a, b]) => a * 1e4 + b).concat(m.sea.map(([a, b]) => b * 1e4 + a)));
@@ -3188,9 +3189,41 @@ function finishWork(i, n) {
   if (STRUCT[x.k].wonder) era(f, G.bld.filter(b => b.some(k => STRUCT[k].wonder)).length === 1 ? 3 : 1, `concluiu ${sName(x.k)}`); // E-10
   if (STRUCT[x.k].ww) for (let j = 0; j < G.N; j++) { const n0 = G.q[j].length; G.q[j] = G.q[j].filter(y => y.k !== x.k); if (G.q[j].length < n0 && real(G.own[j])) log(G.own[j], `${fname(G.own[j])} perde a obra de ${sName(x.k)}: outra facção terminou primeiro.`); }
 }
+// v63 (P-14): foco de produção. Região sem obra na fila não perde a produção: ela vira o recurso do foco escolhido.
+// r = quantos ⚒ valem 1 unidade; tech = tecnologia que libera o foco. O foco padrão (e o da IA) é a alimentação.
+const FOCO = {
+  com: { ic: '🌾', n: 'Alimentação', un: 'comida', r: 3, d: 'Vira comida no estoque da região, que cresce de porte mais depressa e resiste à fome.' },
+  our: { ic: '💰', n: 'Riqueza', un: 'ouro', r: 4, tech: 'com', d: 'Vira ouro no tesouro do império. A república mercantil rende 50% a mais.' },
+  sab: { ic: '🔬', n: 'Ciência', un: 'saber', r: 5, tech: 'esc', d: 'Vira saber para a pesquisa em andamento.' },
+  cul: { ic: '🎭', n: 'Cultura', un: 'cultura', r: 4, tech: 'alv', d: 'Vira cultura, que paga as cívicas e as crenças.' },
+  fes: { ic: '🎉', n: 'Festividades', un: 'estabilidade', r: 6, tech: 'civ', d: 'Vira estabilidade para o império, até +3 por turno somando todas as regiões.' },
+};
+const focoWhy = (f, k) => { const t = FOCO[k].tech; return t && !has(f, t) ? `exige a tecnologia ${tName(t)}` : ''; };
+const focoOf = i => { const f = G.own[i], k = f === G.player && G.foc && G.foc[i]; return k && FOCO[k] && !focoWhy(f, k) ? k : 'com'; };
+const focoGain = (i, k) => Math.max(1, Math.round((prodOf(i) + supNet(i, 'prod')) / FOCO[k].r * (k === 'our' && gov(G.own[i]) === 'rme' ? 1.5 : 1)));
+function focoApply(f, i) {
+  const F = Fa(f), k = focoOf(i), g = focoGain(i, k);
+  if (k === 'com') G.food[i] += g;
+  else if (k === 'our') F.gold += g;
+  else if (k === 'sab') F.sci += g;
+  else if (k === 'cul') F.cu = (F.cu || 0) + g;
+  else if (k === 'fes') { const v = Math.min(g, 3 - (F.fesN || 0)); F.fesN = (F.fesN || 0) + v; F.stab = Math.min(100, F.stab + v); }
+}
+// caixa do foco na aba de obras da região
+function focoBox(i) {
+  const me = G.player, fk = focoOf(i), idle = !G.q[i].length, lock = Object.keys(FOCO).filter(k => focoWhy(me, k));
+  return `<div class="rbox foco"><h5>Foco da produção <span class="hint">${idle ? 'ativo: a fila está vazia' : 'vale quando a fila esvaziar'}</span></h5>
+    <p class="hint">Sem obra na fila, os ${prodOf(i) + supNet(i, 'prod')} ⚒ desta região não se perdem: viram o que você escolher aqui.</p>
+    <div class="cats">${Object.keys(FOCO).map(k => { const w = focoWhy(me, k); return `<button class="mini ${k === fk ? 'on' : ''}" data-a="foco" data-i="${i}" data-k="${k}" aria-pressed="${k === fk}" ${w ? 'disabled' : ''} title="${esc(FOCO[k].d + (w ? ' Bloqueado: ' + w + '.' : ''))}">${FOCO[k].ic} ${FOCO[k].n} <small>${w ? '🔒' : '+' + focoGain(i, k)}</small></button>`; }).join('')}</div>
+    <p class="hint adv">${FOCO[fk].ic} <b>${FOCO[fk].n}:</b> +${focoGain(i, fk)} de ${FOCO[fk].un} por turno. ${esc(FOCO[fk].d)}</p>
+    ${lock.length ? `<p class="hint">🔒 ${lock.map(k => `${FOCO[k].n} ${esc(focoWhy(me, k))}`).join('; ')}.</p>` : ''}
+    <p class="hint"><button class="mini" data-a="focoAll" data-k="${fk}" title="Põe este foco em todas as suas regiões. Cada uma só o usa quando a fila dela esvazia.">Usar ${FOCO[fk].n} em todas as regiões</button></p></div>`;
+}
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
+  if (real(f)) Fa(f).fesN = 0;
   for (const i of owned(f)) {
+    if (real(f) && !G.q[i].length) { focoApply(f, i); continue; } // P-14: fila vazia, a produção segue o foco
     let p = prodOf(i) + supNet(i, 'prod') + (G.q[i].length ? ldv(f, 'OB') : 0);
     while (p > 0 && G.q[i].length) {
       const x = G.q[i][0], use = Math.min(p, pCost(f, x.k, i) - x.p);
@@ -3821,7 +3854,7 @@ function endGame(w, why) {
 const SLOT = n => SAVE + '-' + n;
 function snapshot() {
   const F = {}; G.order.forEach(f => { const X = Fa(f); F[f] = Object.fromEntries(Object.entries(X).filter(([k]) => !['tS', 'tN', 'tSet'].includes(k))); });
-  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, hist: G.hist || [], crise: G.crise || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, sub: G.sub || null, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
+  return JSON.stringify({ v: 5, sc: G.sc.id, player: G.player, diff: G.diff, len: G.lenK, own: G.own, tr: G.tr, fort: G.fort, bld: G.bld, q: G.q, occ: G.occ, lv: G.lv, food: G.food, gvr: G.gvr, gfc: G.gfc, genA: G.genA, fai: G.fai, faiths: G.faiths, pacts: G.pacts, ally: [...G.ally], mem: G.mem, cb: [...G.cb], truceT: G.truceT, dem: G.dem, cs: G.cs, cul: G.cul, asm: G.asm, win: G.win, dug: G.dug, foc: G.foc || {}, corp: G.corp, cong: G.cong, banMis: G.banMis, polLim: G.polLim, green: G.green || 0, civ: G.sc.civ || null, hist: G.hist || [], crise: G.crise || null, ruin: [...(G.ruin || [])], seen: G.seen ? [...G.seen] : null, routes: G.routes, sub: G.sub || null, emb: [...G.emb], rl: G.rl, F, cur: G.cur, round: G.round, truce: [...G.truce], cool: G.cool, log: G.log.slice(0, 30), trades: G.trades, at: Date.now() });
 }
 function save() { try { G.snap = snapshot(); localStorage.setItem(SAVE, G.snap); } catch (e) { } }
 function loadSave(k = SAVE) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -3829,7 +3862,7 @@ function restore(s) {
   if (s && s.civ) civSetup(s.civ); // MC-08: o mundo volta pela semente
   const sc = s && s.v === 5 && SCEN.find(x => x.id === s.sc); if (!sc) return false;
   startScenario(sc.id, s.player, s.diff, true, s.len);
-  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), hist: s.hist || [], crise: s.crise || null, seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
+  Object.assign(G, { own: s.own, tr: s.tr, fort: s.fort, bld: s.bld, q: s.q, occ: s.occ, lv: s.lv || G.lv, food: s.food || G.food, gvr: s.gvr || {}, gfc: s.gfc || {}, genA: s.genA || {}, evq: [], fai: s.fai || G.fai, faiths: s.faiths || {}, pacts: s.pacts || [], ally: new Set(s.ally || []), mem: s.mem || {}, cb: new Set(s.cb || []), truceT: s.truceT || {}, dem: s.dem || null, cs: s.cs || {}, offers: [], cul: s.cul || G.cul, asm: s.asm || G.asm, win: s.win || G.win, dug: s.dug || G.dug, foc: s.foc || {}, corp: s.corp || [], cong: s.cong || { on: false, res: [], pv: {} }, banMis: s.banMis || 0, polLim: s.polLim || 0, green: s.green || 0, ruin: new Set(s.ruin || []), hist: s.hist || [], crise: s.crise || null, seen: s.seen ? new Set(s.seen) : G.seen, routes: s.routes || [], emb: new Set(s.emb || []), rl: s.rl, cur: s.cur, round: s.round, truce: new Set(s.truce), cool: s.cool, log: s.log, trades: s.trades });
   for (const [f, v] of Object.entries(s.F)) Object.assign(G.F[f], v);
   G.sub = s.sub || G.sub;
   render(); loop(); return true;
@@ -4742,14 +4775,15 @@ function chainHtml(k, seen, d) {
 function worksTab() {
   const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me), my = G.turnF === me && !G.over && !G.busy, can = my;
   const os = ['fil', 'con', 'cad'].includes(G.osub) ? G.osub : 'fil';
-  const idle = T.filter(i => !G.q[i].length), busy = T.length - idle.length;
+  const opt = i => Object.keys(STRUCT).some(k => canQueue(me, k, i)), empty = T.filter(i => !G.q[i].length), idle = empty.filter(opt), done = empty.filter(i => !opt(i)), busy = T.length - empty.length;
+  const fl = i => { const k = focoOf(i); return `${FOCO[k].ic} ${FOCO[k].n}: +${focoGain(i, k)} de ${FOCO[k].un} por turno`; };
   const tabs = [['fil', `📋 Filas${idle.length ? ' • ' + idle.length : ''}`], ['con', '🔨 Construir'], ['cad', '🌳 Cadeias']];
-  let h = `<h4>Obras do império</h4><div class="kpis">${kp('🏗', 'Em obra', busy, `de ${T.length} território(s)`, 'Territórios com alguma obra na fila.')}${kp('💤', 'Ociosos', idle.length, idle.length ? 'produção parada' : 'nenhum', 'Território sem obra na fila não aproveita a produção ⚒ dele.', idle.length ? 'warn' : '')}${kp('💰', 'Manutenção', u.b, 'por turno', 'Ouro que as construções prontas custam por turno. Sem ouro, elas são desativadas.')}</div>
+  let h = `<h4>Obras do império</h4><div class="kpis">${kp('🏗', 'Em obra', busy, `de ${T.length} território(s)`, 'Territórios com alguma obra na fila.')}${kp('💤', 'Sem obra', idle.length, idle.length ? 'há o que construir' : 'nenhum', 'Territórios com a fila vazia e alguma obra possível. Enquanto isso, a produção deles vai para o foco escolhido.', idle.length ? 'warn' : '')}${kp('💰', 'Manutenção', u.b, 'por turno', 'Ouro que as construções prontas custam por turno. Sem ouro, elas são desativadas.')}</div>
     <div class="stabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === os}" class="${k === os ? 'on' : ''}" data-a="stab" data-g="osub" data-k="${k}">${l}</button>`).join('')}</div>`;
   if (!can) h += `<p class="hint adv">${my ? 'As filas ficam livres assim que a batalha em andamento terminar.' : 'Você pode consultar tudo; para mexer nas filas, espere o seu turno.'}</p>`;
   if (os === 'fil') {
-    h += `<p class="hint">A produção ⚒ de cada território avança a obra do topo da fila dele (até ${qMax(me)} na fila). Apressar custa ouro; retirar perde o progresso.</p>`;
-    h += [...idle, ...T.filter(i => G.q[i].length).sort((a, b) => prodOf(b) - prodOf(a))].map(i => `<div class="rbox${G.q[i].length ? '' : ' idle'}"><h5><button class="lnk" data-a="selObr" data-i="${i}" title="Abrir as obras de ${esc(tname(i))}">${esc(tname(i))}</button> <span class="hint">${esc(pName(i))} · ${prodOf(i)} ⚒ por turno · zonas ${zonesAt(i).length}/${G.lv[i]} · ${G.bld[i].length} construção(ões)${occupied(i) ? ' · ocupado' : ''}</span></h5>${G.q[i].length ? qHtml(i) : '<p class="hint">💤 Sem obra: a produção deste território está parada.</p>'}<button class="mini${G.q[i].length ? '' : ' pri'}" data-a="selObr" data-i="${i}">➕ Escolher obra aqui</button></div>`).join('');
+    h += `<p class="hint">A produção ⚒ de cada território avança a obra do topo da fila dele (até ${qMax(me)} na fila). Com a fila vazia, ela vai para o foco da região (comida, ouro, saber, cultura ou estabilidade). Apressar custa ouro; retirar perde o progresso.</p>`;
+    h += [...idle, ...T.filter(i => G.q[i].length).sort((a, b) => prodOf(b) - prodOf(a)), ...done].map(i => `<div class="rbox${idle.includes(i) ? ' idle' : ''}"><h5><button class="lnk" data-a="selObr" data-i="${i}" title="Abrir as obras de ${esc(tname(i))}">${esc(tname(i))}</button> <span class="hint">${esc(pName(i))} · ${prodOf(i)} ⚒ por turno · zonas ${zonesAt(i).length}/${G.lv[i]} · ${G.bld[i].length} construção(ões)${occupied(i) ? ' · ocupado' : ''}</span></h5>${G.q[i].length ? qHtml(i) : `<p class="hint">${opt(i) ? '💤 Sem obra na fila.' : '✓ Nada a construir aqui agora.'} A produção vai para o foco: ${fl(i)}.</p>`}${opt(i) ? `<button class="mini${G.q[i].length ? '' : ' pri'}" data-a="selObr" data-i="${i}">➕ Escolher obra aqui</button>` : `<button class="mini" data-a="selObr" data-i="${i}">Trocar o foco</button>`}</div>`).join('');
   } else if (os === 'con') {
     const by = {}, all = Object.keys(STRUCT).filter(k => !STRUCT[k].air || G.air);
     all.forEach(k => (by[sCat(k)] = by[sCat(k)] || []).push(k));
@@ -4930,15 +4964,16 @@ function regionActs(i) {
   const me = G.player;
   if (G.own[i] !== me) return '';
   const can = !G.over && G.turnF === me && !G.busy;
-  let h = `<div class="rbox"><h5>Fila de obras <span class="hint">${G.q[i].length}/${qMax(me)} · ${prodOf(i)} ⚒ por turno</span></h5>${qHtml(i)}</div>` + bldList(i);
-  if (!can) return h;
+  let h = `<div class="rbox"><h5>Fila de obras <span class="hint">${G.q[i].length}/${qMax(me)} · ${prodOf(i)} ⚒ por turno</span></h5>${qHtml(i)}</div>`;
+  if (!can) return h + focoBox(i) + bldList(i);
   const ks = Object.keys(STRUCT).filter(k => canQueue(me, k, i)), full = G.q[i].length >= qMax(me), by = {};
   ks.forEach(k => (by[sCat(k)] = by[sCat(k)] || []).push(k));
+  if (!ks.length && !full) return h + focoBox(i) + bldList(i) + `<p class="hint">✓ Nada a construir aqui agora: a produção segue o foco acima. Uma obra nova aparece aqui quando uma tecnologia, uma zona ou outra construção a liberar. <button class="mini" data-a="catalog">Catálogo completo</button></p>`;
   const cats = Object.keys(SCAT).filter(c => by[c]); if (!cats.includes(bcat)) bcat = cats[0];
   h += `<div class="rbox"><h5>Construir aqui <span class="hint">${full ? 'fila cheia' : ks.length + ' opção(ões)'}</span></h5>${ks.length ? `<div class="cats">${cats.map(c => `<button class="mini ${c === bcat ? 'on' : ''}" data-a="bcat" data-k="${c}">${SCAT[c][0]} <small>${by[c].length}</small></button>`).join('')}</div>
     <p class="hint adv">${esc(SCAT[bcat][1])}</p>${by[bcat].map(k => sFicha(k, i)).join('')}` : `<p class="hint">${full ? 'A fila desta região está cheia: espere uma obra terminar ou retire uma.' : 'Nenhuma obra cabe aqui agora.'}</p>`}
     <p class="hint"><button class="mini" data-a="catalog">Catálogo completo</button> mostra também as bloqueadas e o que falta para cada uma.</p></div>`;
-  return h;
+  return h + focoBox(i) + bldList(i);
 }
 // v49 (UI-16): fronteiras da região selecionada, com o que dá para fazer em cada uma
 function bordersHtml(i) {
@@ -5114,6 +5149,7 @@ function rules() {
   <p><b>Duração.</b> Partida curta (60 rodadas), média (120) ou longa (250). Quanto mais longa, mais caras ficam obras e tecnologias e mais turnos o objetivo precisa ser mantido. Os eventos históricos se espalham pela primeira metade da partida.</p>
   <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (3, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida, e os turnos seguidos do objetivo só começam a contar aí; quem cumpre o objetivo é anunciado a todos e vira alvo. A dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
+  <p><b>Foco da produção.</b> Território com a fila vazia não desperdiça a produção ⚒: ela vira o foco escolhido em Região > Obras. Alimentação (comida para a região, sempre disponível), Riqueza (ouro, com Comércio), Ciência (saber, com Escrita), Cultura (com Alvenaria) ou Festividades (estabilidade, com Construção civil, até +3 por turno no império). Quando nada mais pode ser construído, o jogo deixa de pedir uma obra e mostra só o foco.</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido. Trocar de pesquisa não perde nada. A árvore mostra o que você sabe, o que pode pesquisar e, como silhueta, o passo seguinte; o resto aparece quando você chegar perto.</p>
   <p><b>Regiões.</b> Cada região rende sozinha (relevo, rio, porte, construções e jazidas) e o império é a soma delas. Clique numa região sua e abra o Rendimento da região: cada ganho e cada perda aparece com a causa. Há 8 portes, de aldeia a megalópole; crescer pede sobra de comida, moradia e empregos. Em Abastecimento, uma região manda a sobra de comida ou produção para outra sua (até 2 por turno, 3 com estrada nas duas pontas); ocupar o caminho corta a rota.</p>
@@ -5381,6 +5417,7 @@ document.addEventListener('click', e => {
   else if (a === 'empire') empireModal();
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; render(); }
+  else if (a === 'foco' || a === 'focoAll') { const k = el.dataset.k, me = G.player; if (!FOCO[k] || focoWhy(me, k)) return; G.foc = G.foc || {}; (a === 'foco' ? [+el.dataset.i] : owned(me)).forEach(i => { if (G.own[i] === me) G.foc[i] = k; }); if (a === 'focoAll') toast(`${FOCO[k].n} é agora o foco de todas as suas regiões.`); render(); }
   else if (a === 'cmd') cmdToggle(el.dataset.g);
   else if (a === 'cmdObr') { sideOpen(); G.tab = 'obr'; G.osub = 'con'; render(); if (innerWidth <= 820) $('#works').scrollIntoView({ block: 'start' }); }
   else if (a === 'selObr') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'obr'; render(); }

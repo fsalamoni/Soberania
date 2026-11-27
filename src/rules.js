@@ -166,7 +166,7 @@ const TECH = [
   { k: 'ret', t: 2, cost: 7, req: ['adm'], fx: '+1 prestígio por turno, e influenciar custa 1 a menos.', n: { ant: 'Retórica', med: 'Imprensa', pol: 'Jornais', mod: 'Propaganda de Massa', fan: 'Bardos Reais' } },
   { k: 'log', t: 2, cost: 7, req: ['eng'], fx: '+2 tropas grátis por turno.', n: { ant: 'Estradas', med: 'Rotas de Suprimento', pol: 'Ferrovias', mod: 'Motorização', fan: 'Portais' } },
   { k: 'arq', t: 3, cost: 11, req: ['eng', 'ret'], fx: 'Permite construir a sua Maravilha (+5 de legado).', n: { ant: 'Arquitetura', med: 'Arte Gótica', pol: 'Iluminismo', mod: 'Ciência de Ponta', fan: 'Alta Magia' } },
-  { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Declarar campanha não gasta ponto de ação, e você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
+  { k: 'dou', t: 3, cost: 11, req: ['con', 'log'], fx: 'Você pode conquistar 2 territórios por turno em vez de 1.', n: { ant: 'Doutrina Imperial', med: 'Ordens Militares', pol: 'Guerra Napoleônica', mod: 'Guerra Relâmpago', fan: 'Pacto de Guerra' } },
 ];
 // ---------- parte 7: árvore de tecnologias por era (K-01 a K-59) ----------
 // e = era da tecnologia (0 Antiguidade, 1 Idade Média, 2 Idade Moderna). No início, cada facção já conhece as
