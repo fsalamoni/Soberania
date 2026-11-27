@@ -1280,7 +1280,7 @@ function focoBox(i) {
 }
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
-  const foc = f === G.player; if (foc) Fa(f).fesN = 0; // P-14 só para o jogador: com a IA, as simulações mostraram bem mais vitórias por domínio
+  const foc = f === G.player && !G.auto; if (foc) Fa(f).fesN = 0; // P-14 só para o jogador: com a IA, as simulações mostraram bem mais vitórias por domínio
   for (const i of owned(f)) {
     if (foc && !G.q[i].length) { focoApply(f, i); continue; } // P-14: fila vazia, a produção segue o foco
     let p = prodOf(i) + supNet(i, 'prod') + (G.q[i].length ? ldv(f, 'OB') : 0);

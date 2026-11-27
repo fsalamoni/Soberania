@@ -6,7 +6,7 @@
 - **Sem pedido de obra impossível.** Quando nada cabe na região, o painel deixa de mostrar "Construir aqui" e "Escolher obra": aparece só o foco, com o ganho por turno. A obra volta a ser oferecida quando uma tecnologia, zona ou construção a liberar.
 - **Aba Obras.** O indicador "Ociosos" virou "Sem obra" e conta só os territórios em que há algo a construir. Os demais aparecem no fim da lista com o foco e o rendimento.
 - **Um toque para todos.** Botão "Usar este foco em todas as regiões"; focos bloqueados mostram o cadeado e a tecnologia que falta.
-- O foco vale para o império do jogador e entra no salvamento. Os impérios da IA seguem como antes: nas simulações com o foco ligado para todos, as vitórias por domínio subiram de 20 para 33 em 109 partidas, então ele ficou de fora da IA para não mexer no equilíbrio.
+- O foco vale para o império do jogador e entra no salvamento. Os impérios da IA seguem como antes: em 109 partidas simuladas, as vitórias por domínio foram 20 na v62, 33 com o foco ligado para todos e 26 com o foco só no jogador. A variação entre rodadas é grande, mas por cautela o foco ficou de fora da IA.
 - Texto da doutrina de conquista atualizado (não existe mais "declarar campanha").
 - Manual e teste novo (P-14).
 
