@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## v61 — 27/11/2026 · Barra de comandos: estado, pendências, busca e teclado (UI-36)
+
+A barra da v60 mostrava onde ficam os comandos. Faltava dizer como o império está, por que um tema pede atenção e ajudar quem não sabe em que tema procurar.
+
+- **Estado em cada tema (computador):** sob o nome, o que importa agora: tropas ou "em campanha", obras na fila, avanço da pesquisa, estabilidade, prestígio ou propostas, ouro e saldo do turno, legado e meta. No celular, o estado aparece no alto do menu aberto.
+- **Pendências dentro do menu:** o ponto dourado agora se explica. Ao abrir o tema, o aviso do conselheiro vem no alto, com o botão que resolve ("Há vaga de política livre", Ver políticas). Militar avisa de territórios em risco; Economia, de vaga de rota.
+- **Busca (lupa, tecla B ou /):** escreva o que quer fazer com as suas palavras, como "atacar", "ouro", "paz" ou "construir", e a busca mostra os comandos que servem, com custo, explicação e motivo quando apagados. Sem acento e sem maiúscula também vale. Enter aciona o primeiro resultado. Tutorial, Regras e Salvar também são encontrados.
+- **Teclado:** M abre Militar, E abre Economia, setas andam pelos itens, Esc fecha e devolve o foco ao tema. Os itens apagados agora recebem foco e são lidos por leitor de tela junto com o motivo (antes eram pulados).
+- **Correção:** com muitos itens, as linhas do menu se espremiam e cortavam o texto no celular; agora o menu rola.
+- Tutorial com o passo da busca (34 passos); atalhos novos na janela de atalhos.
+
 ## v60 — 27/11/2026 · Barra de comandos: tudo a um toque, com explicação (UI-35)
 
 O painel tinha virado uma rolagem longa. Para declarar campanha era preciso estar na aba Império, na seção Ações, e rolar por baixo do conselheiro e do guia: numa tela de 1000 px de altura o botão ficava fora da vista. As janelas (tecnologias, governo, diplomacia) estavam numa fileira, as ações noutra, bem abaixo, sem dizer o que faziam a não ser passando o mouse.

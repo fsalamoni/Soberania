@@ -143,8 +143,12 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 .cmi{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;padding:8px 10px;border-radius:9px;background:#17212d;border:1px solid var(--line);color:var(--text);font-size:13.5px;line-height:1.35}
 .cmi .ci{font-size:20px;line-height:1.2;width:24px;text-align:center;flex:none}.cmi .ct{display:block;min-width:0}.cmi small{color:var(--brass);font-weight:600;margin-left:4px}
 .cmi .cd,.cmi .cw,.cmi .cok{display:block;font-size:12.5px;color:var(--mute)}.cmi .cw{color:#ffb86b}.cmi .cok{color:#8fd694}
-.cmi:hover:not(:disabled){border-color:var(--brass)}.cmi.on{border-color:var(--good)}.cmi:disabled{opacity:1;cursor:not-allowed}.cmi:disabled b,.cmi:disabled .ci,.cmi:disabled .cd{opacity:.55}
-#battle{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
+.cmi:hover:not([aria-disabled]){border-color:var(--brass)}.cmi.on{border-color:var(--good)}.cmi[aria-disabled]{cursor:not-allowed}.cmi[aria-disabled] b,.cmi[aria-disabled] .ci,.cmi[aria-disabled] .cd{opacity:.55}
+/* v61 (UI-36): estado de cada tema, pendências dentro do menu e busca */
+.cb .cs{font-size:10.5px;color:var(--mute);max-width:84px;overflow:hidden;text-overflow:ellipsis}.cmh small{float:right;font-size:12px;font-weight:500;color:var(--mute);letter-spacing:0;text-transform:none}
+.cmp{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:9px;background:#3a2f12;border:1px solid var(--brass);font-size:13px;line-height:1.35}.cmp .mini{flex:none}
+#cmq{width:100%;min-height:44px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:#17212d;color:var(--text);font:inherit;font-size:16px}#cmq:focus-visible{outline:2px solid var(--brass);outline-offset:1px}#cmr{display:flex;flex-direction:column;gap:4px}.cmdm>*,#cmr>*{flex:none}#cmr .hint{margin:4px 2px}
+#battle{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}
 .bh{font-size:15px;text-align:center}
 .bh span{font-weight:700;background:var(--deck2);padding:1px 7px;border-radius:10px}
@@ -341,7 +345,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   #side{padding-bottom:120px}
   #side>section,#side h4,#side .rbox,#side .advr{scroll-margin-top:calc(44dvh + 56px)}
   #top [data-a=keys]{display:none}
-  #cmd{bottom:6px}.cb{min-width:50px;padding:4px 3px 3px;font-size:10.5px}.cmdm{max-height:calc(44dvh - 84px)}#battle{bottom:68px}
+  #cmd{bottom:6px}.cb{min-width:0;padding:4px 3px 3px;font-size:10.5px}.cb .cs,.cb.bus .cl{display:none}.cb.bus{min-width:34px;justify-content:center}.cmdm{max-height:calc(44dvh - 84px)}#battle{bottom:68px}
   #actbar{position:fixed;left:0;right:0;bottom:0;margin:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:5}
   #lens button{font-size:12px}
 }
@@ -5057,7 +5061,7 @@ function rules() {
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Perder territórios soma cansaço uma vez por rodada, e só a primeira agitação da rodada contra uma facção pega inteira (as outras valem 1/3).Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
-  <p><b>2. Ações.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
+  <p><b>2. Ações.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. A lupa (tecla B ou /) busca um comando pelo que você quer fazer. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>
   <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno, quantos você quiser enquanto houver tropas. Não custa nada, mas cada turno em campanha soma cansaço de guerra.</li>
   <li><b>⚔ Recrutar</b> abre a compra de tropas por ouro, na capital ou num quartel. Elas chegam no início do próximo turno.</li>
@@ -5120,7 +5124,10 @@ function startScenario(id, fid, diff, quiet, len, ld = 0, rl = false) {
 // v57 (UI-31): tutorial guiado. Escurece a tela, ilumina a função ensinada e explica em um cartão ao lado.
 // UI-35 (v60): barra de comandos sob o mapa. Tudo o que o jogador pode fazer no império fica a um toque, agrupado por tema;
 // cada item diz o que faz, quanto custa e, quando está indisponível, o motivo por escrito
-let cmdOpen = null, cmdAdv = [];
+let cmdOpen = null, cmdAdv = [], cmdQ = '';
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// v61 (UI-36): palavras que o jogador digitaria para achar cada comando na busca
+const CMDKW = { camp: 'atacar guerra invadir conquistar batalha', rec: 'tropas exercito soldados comprar reforco', merc: 'tropas exercito soldados contratar', air: 'aviao bombardear atacar', govm: 'politica religiao crenca civica panteao anarquia lei', figm: 'lider governador figura heroi nomear', fest: 'estabilidade felicidade revolta festa povo', colo: 'populacao nivel cidade aldeia migrar crescer', dipl: 'paz tregua alianca pacto guerra proposta acordo', infl: 'anexar neutro rebelde prestigio expandir', agit: 'sabotar estabilidade rival espiao revolta', routes: 'comercio ouro bens mercado porto dinheiro', tax: 'ouro dinheiro imposto cobrar', trade: 'trocar recursos comida producao cambio vender', cmdObr: 'construir construcao estrutura fila edificio erguer', techs: 'tecnologia ciencia saber pesquisar arvore', vicm: 'vencer objetivo ganhar legado dominacao', rules: 'manual ajuda como jogar', tut: 'ajuda aprender como jogar', save: 'gravar guardar', keys: 'teclado teclas' };
 function cmdGroups() {
   const me = G.player, F = Fa(me), my = G.turnF === me && !G.over, tc = troopCost(me), noPA = F.pa < 1;
   const ph = G.over ? 'Partida encerrada.' : !my ? 'Aguarde a sua vez.' : G.phase === 'ref' ? 'Posicione os reforços primeiro.' : G.phase !== 'atk' ? 'Só na etapa 2, Ações.' : '';
@@ -5128,41 +5135,56 @@ function cmdGroups() {
   const M = (a, ic, n, d, dot) => ({ a, k: '', ic, n, d, dot: !!dot, why: G.over ? 'Partida encerrada.' : '' });
   const gold = c => F.gold < c ? `Falta ouro: custa ${c} e você tem ${F.gold}.` : '', pa = noPA ? 'Sem ações disponíveis neste turno.' : '';
   const pend = ks => cmdAdv.some(x => ks.includes(x.k));
+  const T = owned(me), rt = F.res && TK[F.res], inc = income(me), u = upkeepOf(me), net = inc.gold - u.b - u.t, nq = T.reduce((s, i) => s + G.q[i].length, 0);
+  // [chave, ícone, nome, itens ou null, ação direta, ponto, estado em poucas palavras, pendências do conselheiro, atalho]
   return [
     ['mil', '⚔', 'Militar', [
       A('camp', '⚔', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'grátis', 'Libera os ataques deste turno. Depois, clique num território seu e num vizinho inimigo. Cada turno em campanha soma cansaço de guerra.', '', F.camp),
       A('rec', '🪖', F.recOn ? 'Comprar tropas' : 'Recrutar', tc + '💰 por tropa', `Compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, F.recOn ? '' : pa || gold(tc), G.mode === 'rec'),
       A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
-      ...(F.camp && G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', '', G.mode === 'air', 'air')] : [])]],
-    ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works'])],
-    ['tec', '🔬', 'Pesquisa', null, 'techs', !F.res && !G.over],
+      ...(F.camp && G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', '', G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'em campanha' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
+    ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'fila vazia', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
+    ['tec', '🔬', 'Pesquisa', null, 'techs', pend(['techs']), rt ? `${F.sci}/${techCost(rt, me)}` : 'escolher', ['techs'], 'T', 'Árvore de tecnologias: escolha o que pesquisar.'],
     ['gov', '🏛', 'Governo', [
       M('govm', '🏛', 'Governo e fé', 'Forma de governo, políticas, cívicas e crenças.', pend(['pol', 'civ', 'fe'])),
       M('figm', '👤', 'Personagens', 'Líder, grandes figuras e governadores dos territórios.', pend(['gvr', 'fig'])),
       A('fest', '🎉', 'Festividades', ECON.fest + '💰', '+15 de estabilidade e +4 de felicidade por 2 turnos. Gasta 5 de comida da capital.', pa || gold(ECON.fest)),
-      A('colo', '🧳', 'Colonos', '3💰', 'Uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1 nível.', pa || gold(3) || (coloPair(me) ? '' : 'Precisa de uma cidade sua ao lado de uma aldeia sua.'))]],
+      A('colo', '🧳', 'Colonos', '3💰', 'Uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1 nível.', pa || gold(3) || (coloPair(me) ? '' : 'Precisa de uma cidade sua ao lado de uma aldeia sua.'))], null, pend(['pol', 'civ', 'fe', 'gvr', 'fig']), 'estab. ' + Math.round(F.stab), ['pol', 'civ', 'fe', 'gvr', 'fig'], 'G'],
     ['dip', '🤝', 'Diplomacia', [
-      M('dipl', '🤝', 'Relações e acordos', 'Trégua, comércio, pesquisa, defesa mútua e aliança com cada facção.', G.offers.length || (G.dem && G.dem.to === me)),
+      M('dipl', '🤝', 'Relações e acordos', 'Trégua, comércio, pesquisa, defesa mútua e aliança com cada facção.', pend(['dipl'])),
       A('infl', '⭐', 'Influenciar', 'prestígio', 'Anexe um território neutro ou rebelde vizinho sem lutar. Custa as tropas dele + 1 de prestígio.', pa, G.mode === 'infl'),
-      A('agit', '🔥', 'Agitadores', ECON.agit + '⭐', 'Uma facção rival perde 15 de estabilidade.', pa || (F.pre < ECON.agit ? `Falta prestígio: custa ${ECON.agit} e você tem ${F.pre}.` : ''), G.mode === 'agit')]],
+      A('agit', '🔥', 'Agitadores', ECON.agit + '⭐', 'Uma facção rival perde 15 de estabilidade.', pa || (F.pre < ECON.agit ? `Falta prestígio: custa ${ECON.agit} e você tem ${F.pre}.` : ''), G.mode === 'agit')], null, pend(['dipl']), G.offers.length ? G.offers.length + ' proposta(s)' : F.pre + ' prestígio', ['dipl'], 'D'],
     ['eco', '💰', 'Economia', [
-      M('routes', '🚢', `Comércio e rotas ${myRoutes(me).length}/${routeMax(me)}`, 'Abra rotas entre mercados e portos para ganhar ouro, produção e bens.'),
-      A('tax', '🧾', 'Impostos', 'grátis', `+${Math.ceil(owned(me).length / 2)} de ouro agora, −8 de estabilidade.`, pa),
-      A('trade', '⚖', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'grátis', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', F.tradeOn ? '' : pa, F.tradeOn)]],
-    ['vic', '🏆', 'Vitórias', null, 'vicm', false],
+      M('routes', '🚢', `Comércio e rotas ${myRoutes(me).length}/${routeMax(me)}`, 'Abra rotas entre mercados e portos para ganhar ouro, produção e bens.', pend(['routes'])),
+      A('tax', '🧾', 'Impostos', 'grátis', `+${Math.ceil(T.length / 2)} de ouro agora, −8 de estabilidade.`, pa),
+      A('trade', '⚖', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'grátis', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', F.tradeOn ? '' : pa, F.tradeOn)], null, pend(['routes']), `${F.gold} ouro ${net >= 0 ? '+' : ''}${net}`, ['routes'], 'E'],
+    ['vic', '🏆', 'Vitórias', null, 'vicm', false, `legado ${legacy(me)}/${legWin()}`, [], 'V', 'Caminhos para vencer e o avanço de cada facção.'],
   ];
 }
+const cmdItem = x => `<button class="cmi${x.on ? ' on' : ''}" role="menuitem" data-a="${x.a}"${x.k ? ` data-k="${x.k}"` : ''}${x.why || (x.k === 'camp' && x.on) ? ' aria-disabled="true"' : ''}><span class="ci">${x.ic}</span><span class="ct"><b>${esc(x.n)}${x.dot ? ' •' : ''}</b>${x.cost ? ` <small>${x.cost}</small>` : ''}<span class="cd">${esc(x.d)}</span>${x.why ? `<span class="cw">⚠ ${esc(x.why)}</span>` : x.on ? '<span class="cok">✓ ativo neste turno</span>' : ''}</span></button>`;
+// busca: todas as palavras digitadas precisam aparecer no nome, na descrição ou nas palavras-chave do comando
+function cmdFind(gs) {
+  const X = (a, ic, n, d) => ({ a, k: '', ic, n, d, why: '' });
+  const all = gs.flatMap(g => g[3] || [X(g[4], g[1], g[2], g[9])]).concat([X('tut', '🎓', 'Tutorial guiado', 'Um passeio pela tela, função por função.'), X('rules', '📖', 'Regras', 'O manual completo do jogo.'), X('save', '💾', 'Salvar', 'Guarda a partida neste aparelho.')]);
+  const ws = norm(cmdQ).split(/\s+/).filter(Boolean), hit = all.filter(x => { const t = norm(`${x.n} ${x.d} ${CMDKW[x.k || x.a] || ''}`); return ws.every(w => t.includes(w)); });
+  return hit.length ? hit.map(cmdItem).join('') : '<p class="hint">Nada encontrado. Tente outra palavra, como "tropas", "ouro" ou "paz".</p>';
+}
+function cmdToggle(g, kb) { cmdOpen = cmdOpen === g ? null : g; cmdQ = ''; renderCmd(); const f = (kb || g === 'bus') && !tut && $('#cmd .cmdm input, #cmd .cmdm button'); if (f) f.focus(); }
 function renderCmd(adv) {
   if (adv) cmdAdv = adv;
   const box = $('#cmd'); if (!box || !G || !G.player || !Fa(G.player)) return;
-  const gs = cmdGroups(), open = gs.find(g => g[0] === cmdOpen && g[3]);
-  const item = x => `<button class="cmi${x.on ? ' on' : ''}" role="menuitem" data-a="${x.a}"${x.k ? ` data-k="${x.k}"` : ''} ${x.why || (x.k === 'camp' && x.on) ? 'disabled' : ''}><span class="ci">${x.ic}</span><span class="ct"><b>${esc(x.n)}${x.dot ? ' •' : ''}</b>${x.cost ? ` <small>${x.cost}</small>` : ''}<span class="cd">${esc(x.d)}</span>${x.why ? `<span class="cw">⚠ ${esc(x.why)}</span>` : x.on ? '<span class="cok">✓ ativo neste turno</span>' : ''}</span></button>`;
-  box.innerHTML = (open ? `<div class="cmdm" role="menu" aria-label="${open[2]}"><p class="cmh">${open[1]} ${open[2]}</p>${open[3].map(item).join('')}</div>` : '') +
-    `<div class="cbar" role="toolbar" aria-label="Comandos do império">${gs.map(([g, ic, n, its, a, dot]) => { const d = its ? its.some(x => x.dot) : dot, on = its && its.some(x => x.on); return `<button class="cb${cmdOpen === g ? ' open' : ''}${on ? ' on' : ''}" data-a="${its ? 'cmd' : a}" data-g="${g}"${its ? ` aria-haspopup="menu" aria-expanded="${cmdOpen === g}"` : ''} title="${n}${its ? ': abre as opções' : ''}"><span class="ci">${ic}</span><span>${n}</span>${d ? '<i class="cdot"></i>' : ''}</button>`; }).join('')}</div>`;
+  const gs = cmdGroups(), open = gs.find(g => g[0] === cmdOpen && g[3]), bus = cmdOpen === 'bus';
+  const fi = [...box.querySelectorAll('.cmdm input,.cmdm button')].indexOf(document.activeElement), sel = bus && $('#cmq') ? $('#cmq').selectionStart : null;
+  const pend = ks => cmdAdv.filter(x => ks.includes(x.k)).map(x => `<div class="cmp"><span>${x.ic} ${esc(x.t)}</span><button class="mini pri" data-a="adv" data-k="${x.k}"${x.i != null ? ` data-i="${x.i}"` : ''}>${x.lab}</button></div>`).join('');
+  box.innerHTML = (bus ? `<div class="cmdm" role="dialog" aria-label="Buscar comando"><input id="cmq" type="search" autocomplete="off" aria-label="O que você quer fazer?" placeholder="O que você quer fazer? Ex.: atacar, ouro, paz" value="${esc(cmdQ)}"><div id="cmr">${cmdFind(gs)}</div></div>`
+    : open ? `<div class="cmdm" role="menu" aria-label="${open[2]}"><p class="cmh">${open[1]} ${open[2]}<small>${esc(open[6])}</small></p>${pend(open[7])}${open[3].map(cmdItem).join('')}</div>` : '') +
+    `<div class="cbar" role="toolbar" aria-label="Comandos do império">${gs.map(([g, ic, n, its, a, dot, st, , hk]) => { const on = its && its.some(x => x.on); return `<button class="cb${cmdOpen === g ? ' open' : ''}${on ? ' on' : ''}" data-a="${its ? 'cmd' : a}" data-g="${g}"${its ? ` aria-haspopup="menu" aria-expanded="${cmdOpen === g}"` : ''} title="${n}: ${esc(st)}${dot ? ', com pendência' : ''}. Tecla ${hk}."><span class="ci">${ic}</span><span>${n}</span><small class="cs">${esc(st)}</small>${dot ? '<i class="cdot"></i>' : ''}</button>`; }).join('')}<button class="cb bus${bus ? ' open' : ''}" data-a="cmd" data-g="bus" aria-expanded="${bus}" aria-label="Buscar comando" title="Buscar comando: digite o que você quer fazer. Tecla B ou /."><span class="ci">🔎</span><span class="cl">Buscar</span><small class="cs">tecla B</small></button></div>`;
+  const fs = [...box.querySelectorAll('.cmdm input,.cmdm button')];
+  if (fi >= 0 && fs[fi] && !tut) { fs[fi].focus(); if (sel != null && fs[fi].id === 'cmq') fs[fi].setSelectionRange(sel, sel); } // a tela é redesenhada a cada ação: o foco e o cursor ficam onde estavam
 }
 // Cada passo: [alvo (seletor ou função), título, texto, preparo opcional]. O tutorial não muda a partida: só troca abas e devolve tudo ao sair.
 const tutTab = (tab, sub) => () => { cmdOpen = null; G.tab = tab; if (tab === 'imp') G.isub = sub || 'acoes'; if (tab === 'obr') G.osub = sub || 'fil'; if (tab === 'reg') { G.sel = Fa(G.player).capI; G.rsub = sub || 'fro'; } render(); };
-const tutCmd = g => () => { tutTab('imp')(); cmdOpen = g; renderCmd(); };
+const tutCmd = g => () => { tutTab('imp')(); cmdOpen = g; cmdQ = ''; renderCmd(); };
 const tutFit = () => { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); };
 const TUT = [
   [null, 'Bem-vindo a Soberania', 'Você comanda uma nação num mapa histórico: cresce, constrói, negocia e, quando precisar, guerreia. Este tutorial passa por toda a tela, uma função de cada vez. A parte iluminada é a que está sendo explicada. Use Avançar e Voltar, as setas do teclado, ou Esc para sair. Nada do que você vê aqui altera a sua partida.'],
@@ -5176,13 +5198,14 @@ const TUT = [
   ['#ptabs', 'As três abas do painel', 'Império reúne o que vale para a nação inteira. Obras mostra todas as filas de construção num lugar só. Região mostra o território que você selecionou no mapa. O atalho I alterna entre Império e Região.', tutTab('imp')],
   ['#me .fh', 'A sua nação e o seu líder', 'O nome da facção, o líder com o traço dele e o governo atual. Em Poderes do líder você vê os bônus que valem a partida inteira. Cada líder puxa para um estilo de jogo: conquista, comércio, ciência ou fé.', tutTab('imp')],
   ['#me .kpis', 'Os seis indicadores', 'Ouro paga tropas, obras e manutenção; se faltar, soldados desertam. Saber alimenta a pesquisa. Prestígio é a moeda da diplomacia e da influência. Estabilidade baixa causa revoltas. Felicidade negativa corta 10% do ouro e do saber. Legado soma ciência, obras e cultura e é um dos caminhos para vencer. O número pequeno é o ganho por turno; toque num indicador para ver de onde ele vem.', tutTab('imp')],
-  ['#cmd', 'Barra de comandos', 'Tudo o que você pode fazer no império fica nesta barra, sempre à vista sob o mapa. Um toque abre o tema; cada item diz o que faz, quanto custa e, se estiver apagado, o motivo. Um ponto dourado avisa que há algo pendente naquele tema.', tutCmd(null)],
+  ['#cmd', 'Barra de comandos', 'Tudo o que você pode fazer no império fica nesta barra, sempre à vista sob o mapa. Um toque abre o tema; cada item diz o que faz, quanto custa e, se estiver apagado, o motivo. Um ponto dourado avisa que há algo pendente naquele tema, e o menu mostra a pendência no alto, com o botão para resolver. No computador, cada tema traz embaixo o estado em poucas palavras: tropas, obras na fila, pesquisa, estabilidade, ouro.', tutCmd(null)],
   ['#cmd .cmdm', 'Militar', 'Declarar campanha libera os ataques do turno e não custa nada, mas cada turno em campanha cansa o povo. Recrutar compra tropas que chegam no turno seguinte. Mercenários chegam na hora e custam o dobro.', tutCmd('mil')],
   ['#cmd [data-g=obr]', 'Obras', 'Abre a lista de tudo o que dá para construir, separada por finalidade, e mostra em qual território cada obra cabe e em quantos turnos fica pronta.', tutCmd(null)],
   ['#cmd [data-g=tec]', 'Pesquisa', 'Escolha sempre uma pesquisa: sem ela, o saber do turno se perde. Cada tecnologia libera obras, unidades, governos ou bônus, e a árvore mostra o que leva a quê. A pesquisa anda sozinha de um turno para o outro.', tutCmd(null)],
   ['#cmd .cmdm', 'Governo', 'Governo e fé reúne a forma de governo (trocar custa turnos de anarquia), as políticas, as cívicas e as crenças, cada uma com o requisito e o motivo quando está bloqueada. Em Personagens você nomeia governadores para os territórios importantes. Festividades sobem a estabilidade; Colonos transferem população entre territórios vizinhos.', tutCmd('gov')],
   ['#cmd .cmdm', 'Diplomacia', 'Em Relações e acordos você vê a opinião de cada facção e propõe trégua, acordo comercial, pacto de pesquisa, defesa mútua e aliança; o jogo diz por escrito o que cada proposta faz e por que seria recusada. Influenciar anexa um vizinho neutro sem luta. Agitadores derrubam a estabilidade de um rival.', tutCmd('dip')],
   ['#cmd .cmdm', 'Economia', 'Comércio e rotas: cada mercado, porto e banco permite uma rota, que rende ouro, produção e bens; guerra ou perda de uma ponta desfaz a rota. Impostos dão ouro na hora e custam estabilidade. O Câmbio troca um recurso por outro.', tutCmd('eco')],
+  ['#cmd .cmdm', 'Buscar', 'Não sabe onde fica alguma coisa? Toque na lupa e escreva o que quer fazer, com as suas palavras: atacar, ouro, paz, construir. A busca mostra os comandos que servem, já com custo, explicação e o motivo quando estão apagados. No teclado, B ou a barra / abrem a busca e Enter aciona o primeiro resultado.', () => { tutCmd('bus')(); cmdQ = 'ouro'; renderCmd(); }],
   ['#cmd [data-g=vic]', 'Vitórias', 'Mostra todos os caminhos para vencer e o quanto você e os rivais avançaram em cada um: além do objetivo do cenário, do legado e da dominação, há vitórias próprias, cada uma com a sua barra de progresso. Quem passa de 75% em alguma vira alvo de todos. Consulte antes de decidir no que investir.', tutCmd(null)],
   ['#me .stabs', 'Seções do império', 'Ações traz o que fazer neste turno. Objetivo detalha a meta do cenário e o que falta. Facções compara poder, opinião e ameaça de cada rival. Crônica guarda tudo o que aconteceu na partida.', tutTab('imp')],
   ['.is-acoes .advr:not(.rep)', 'Conselheiro', 'A lista do que está parado ou esquecido neste turno: pesquisa não escolhida, território sem obra, vaga de política livre, governador sem posto, fronteira em risco. Cada linha tem o botão que resolve. Zere a lista antes de encerrar o turno.', tutTab('imp', 'acoes')],
@@ -5245,7 +5268,8 @@ function tutPlace(el, again) {
 }
 addEventListener('resize', () => { if (tut) tutShow(); });
 document.addEventListener('click', e => {
-  if (cmdOpen && !e.target.closest('[data-a=cmd]')) setTimeout(() => { cmdOpen = null; renderCmd(); }, 0); // qualquer clique fora fecha o menu de comandos
+  if (e.target.closest('#cmd [aria-disabled=true]')) return; // item apagado: o motivo já está escrito nele
+  if (cmdOpen && !e.target.closest('[data-a=cmd],#cmq')) setTimeout(() => { cmdOpen = null; renderCmd(); }, 0); // qualquer clique fora fecha o menu de comandos
   const fh = e.target.closest('h4.fh4'); if (fh && !e.target.closest('button')) return foldToggle(fh);
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a;
@@ -5290,7 +5314,7 @@ document.addEventListener('click', e => {
   else if (a === 'empire') empireModal();
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; render(); }
-  else if (a === 'cmd') { cmdOpen = cmdOpen === el.dataset.g ? null : el.dataset.g; renderCmd(); }
+  else if (a === 'cmd') cmdToggle(el.dataset.g);
   else if (a === 'cmdObr') { G.tab = 'obr'; G.osub = 'con'; render(); if (innerWidth <= 820) $('#works').scrollIntoView({ block: 'start' }); }
   else if (a === 'selObr') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'obr'; render(); }
   else if (a === 'advgo') { G.tab = 'imp'; G.isub = 'acoes'; render(); const e = $('.advr'); if (e) e.scrollIntoView({ block: 'nearest' }); }
@@ -5333,9 +5357,11 @@ document.addEventListener('change', e => { if (e.target.id === 'fast' && G) G.fa
 // UI: atalhos de teclado. Enter = ação da fase; 1–6 lentes; + − 0 zoom; T G D V P letras dos painéis; ? lista.
 const fire = a => { const b = document.createElement('button'); b.dataset.a = a; b.hidden = true; document.body.append(b); b.click(); b.remove(); };
 const KEYS = { t: 'techs', g: 'govm', d: 'dipl', v: 'vicm', p: 'figm', o: 'works', c: 'routes', s: 'save', r: 'rules', '+': 'zin', '=': 'zin', '-': 'zout', '0': 'zfit' };
-function keysModal() { modal(`<h2>Atalhos de teclado</h2><table class="rank"><tr><td>Enter</td><td>ação da fase (seguir, remanejar, encerrar turno)</td></tr><tr><td>Esc</td><td>fecha a janela ou cancela a seleção</td></tr><tr><td>1 a 6</td><td>lentes do mapa</td></tr><tr><td>+ − 0</td><td>aproximar, afastar, mapa inteiro</td></tr><tr><td>I</td><td>alterna as abas Império e Região</td></tr><tr><td>T</td><td>tecnologias</td></tr><tr><td>G</td><td>governo e fé</td></tr><tr><td>D</td><td>diplomacia</td></tr><tr><td>V</td><td>vitórias</td></tr><tr><td>P</td><td>personagens</td></tr><tr><td>O</td><td>obras do império</td></tr><tr><td>C</td><td>comércio e rotas</td></tr><tr><td>S</td><td>salvar</td></tr><tr><td>R</td><td>regras</td></tr></table>`, [['Fechar']]); }
+function keysModal() { modal(`<h2>Atalhos de teclado</h2><table class="rank"><tr><td>Enter</td><td>ação da fase (seguir, remanejar, encerrar turno)</td></tr><tr><td>Esc</td><td>fecha a janela ou cancela a seleção</td></tr><tr><td>1 a 6</td><td>lentes do mapa</td></tr><tr><td>+ − 0</td><td>aproximar, afastar, mapa inteiro</td></tr><tr><td>I</td><td>alterna as abas Império e Região</td></tr><tr><td>B ou /</td><td>buscar um comando pelo nome</td></tr><tr><td>M</td><td>comandos militares</td></tr><tr><td>E</td><td>comandos de economia</td></tr><tr><td>↑ ↓</td><td>andam pelos itens do menu aberto</td></tr><tr><td>T</td><td>tecnologias</td></tr><tr><td>G</td><td>governo e fé</td></tr><tr><td>D</td><td>diplomacia</td></tr><tr><td>V</td><td>vitórias</td></tr><tr><td>P</td><td>personagens</td></tr><tr><td>O</td><td>obras do império</td></tr><tr><td>C</td><td>comércio e rotas</td></tr><tr><td>S</td><td>salvar</td></tr><tr><td>R</td><td>regras</td></tr></table>`, [['Fechar']]); }
+document.addEventListener('input', e => { if (e.target.id === 'cmq') { cmdQ = e.target.value; $('#cmr').innerHTML = cmdFind(cmdGroups()); } });
 document.addEventListener('keydown', e => {
-  if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  const inp = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName);
+  if (e.ctrlKey || e.metaKey || e.altKey || (inp && e.target.id !== 'cmq')) return;
   if (tut) { // o tutorial prende o foco no cartão: Tab circula pelos botões, setas trocam de passo, Esc sai
     const bs = [...$('#tut').querySelectorAll('button:not([disabled])')];
     if (e.key === 'Tab') { e.preventDefault(); bs[(bs.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + bs.length) % bs.length].focus(); }
@@ -5344,7 +5370,12 @@ document.addEventListener('keydown', e => {
   }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h4.fh4')) { e.preventDefault(); return foldToggle(e.target); }
   const mo = !$('#modal').hidden;
-  if (e.key === 'Escape' && cmdOpen) { cmdOpen = null; renderCmd(); return; }
+  if (cmdOpen) { // menu de comandos: Esc fecha, setas andam pelos itens, Enter na busca aciona o primeiro resultado
+    if (e.key === 'Escape') { const g = cmdOpen; cmdOpen = null; renderCmd(); const b = $(`#cmd [data-g=${g}]`); if (b) b.focus(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { const bs = [...$('#cmd').querySelectorAll('.cmdm input,.cmdm button')]; if (bs.length) { e.preventDefault(); bs[(bs.indexOf(document.activeElement) + (e.key === 'ArrowDown' ? 1 : -1) + bs.length) % bs.length].focus(); } return; }
+    if (inp && e.key === 'Enter') { const b = $('#cmr .cmi:not([aria-disabled])'); if (b) b.click(); return; }
+  }
+  if (inp) return;
   if (e.key === 'Escape') { if (mo) { const b = $('#modal [data-m]:last-of-type'); if (b) b.click(); return; } if (G && !G.busy && !G.pend) { hideBattle(); G.sel = null; G.card = null; G.mode = null; G.tab = 'imp'; render(); } return; }
   if (mo || !G || $('#game').hidden) return;
   if (e.key.toLowerCase() === 'i') { G.tab = G.tab === 'reg' ? 'imp' : 'reg'; return render(); } // v49: alterna Império e Região
@@ -5352,6 +5383,7 @@ document.addEventListener('keydown', e => {
   if (k === 'enter') { if (e.target.closest && e.target.closest('button,a,[tabindex]')) return; const b = $('#battle:not([hidden]) button.pri:not(:disabled)') || $('#actbar .pri:not(:disabled)'); if (b) { e.preventDefault(); b.click(); } return; }
   if (/^[1-9]$/.test(k)) { const b = document.querySelectorAll('#lens button')[+k - 1]; if (b) b.click(); return; }
   if (k === '?') return keysModal();
+  const hk = { m: 'mil', e: 'eco', b: 'bus', '/': 'bus' }[k]; if (hk) { e.preventDefault(); return cmdToggle(hk, true); }
   if (KEYS[k] && (G.turnF === G.player || /^(zin|zout|zfit|rules|vicm|techs)$/.test(KEYS[k]))) fire(KEYS[k]);
 });
 
