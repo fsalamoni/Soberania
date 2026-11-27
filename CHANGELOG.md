@@ -1,5 +1,216 @@
 # Histórico de versões
 
+## v60 — 27/11/2026 · Barra de comandos: tudo a um toque, com explicação (UI-35)
+
+O painel tinha virado uma rolagem longa. Para declarar campanha era preciso estar na aba Império, na seção Ações, e rolar por baixo do conselheiro e do guia: numa tela de 1000 px de altura o botão ficava fora da vista. As janelas (tecnologias, governo, diplomacia) estavam numa fileira, as ações noutra, bem abaixo, sem dizer o que faziam a não ser passando o mouse.
+
+- **Barra de comandos fixa sob o mapa**, sempre visível, em qualquer aba e também no celular: Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias.
+- **Um toque abre o tema; cada item se explica.** Nome, custo, o que faz e, quando não dá para usar, o motivo por escrito ("Falta ouro: custa 4 e você tem 3", "Posicione os reforços primeiro"). Antes o motivo só aparecia ao passar o mouse, o que não existe no celular.
+- **Ponto dourado** no tema que tem pendência: pesquisa não escolhida, território sem obra, vaga de política, governador sem posto, proposta diplomática.
+- **Menos movimentos.** Declarar campanha, recrutar, festividades, impostos, rotas e as janelas de governo e diplomacia saíram de 3 a 4 movimentos com rolagem para 2 toques sem rolagem; Obras, Pesquisa e Vitórias, para 1.
+- **Painel mais curto.** Saíram a fileira de janelas e o bloco "Ações do império"; a aba Império fica com indicadores, relatório, conselheiro e guia.
+- Clique fora ou Esc fecha o menu; a caixa de batalha sobe para não cobrir a barra.
+- Tutorial atualizado: os passos de cada tema abrem o menu correspondente e iluminam os itens (33 passos).
+
+## v59 — 27/11/2026 · Rivais que reagem a quem domina o mapa (IA-20, IA-21)
+
+Até aqui cada rival jogava sozinho: quem saía na frente crescia sem resposta, e isso vale também para o jogador que dispara. Agora os rivais leem o mapa.
+
+- **Coalizão contra a potência dominante (IA-20).** Passada a abertura, quem tiver pelo menos 18% do mapa e 35% mais territórios que o segundo colocado vira a ameaça comum. Os rivais passam a mirar os territórios dela primeiro, procuram trégua entre si com mais frequência e aceitam mais fácil, e uma trégua antiga com ela (5 rodadas ou mais) pode ser rompida. Aliados dela ficam de fora.
+- **O jogador é avisado.** Um aviso aparece na hora, a crônica registra e o topo das ações explica o que muda: se é você quem domina, reforce as fronteiras; se é um rival, é a hora de atacá-lo junto com os outros.
+- **Capital guardada (IA-21).** O rival com a capital ameaçada põe os reforços nela antes de atacar.
+- **Celular:** a fileira de lentes do mapa esmaece no fim, mostrando que rola para o lado.
+- **Equilíbrio medido lado a lado (3 partidas por facção):** em Sengoku a distribuição de vencedores segue espalhada (7 clãs vencem, como antes). Em Regências os Farrapos continuam vencendo a maioria (13 de 15 antes, 11 a 13 de 15 depois): a coalizão não resolve esse cenário, cuja vantagem vem da posição inicial. Uma primeira versão, que proibia atacar a partir da capital ameaçada, travava as facções de um território só e foi descartada.
+
+## v58 — 27/11/2026 · Jogar no celular sem perder o mapa de vista (UI-32 a UI-34)
+
+Joguei turnos inteiros pela interface, no computador e numa tela de 390 px, anotando cada atrito. No computador o fluxo está redondo; os problemas reais estavam no celular e em duas telas comuns aos dois.
+
+- **Celular: mapa preso no alto (UI-32).** Antes, ao tocar num território, a ficha e as fronteiras ficavam abaixo da dobra: era preciso rolar e o mapa sumia. Agora o mapa ocupa a parte de cima e fica fixo; o painel rola por baixo dele, com as abas Império, Obras e Região sempre à vista. A barra do alto ficou em duas linhas estáveis (o estado do turno encurta com reticências) e o botão de atalhos de teclado some no toque.
+- **Tecnologias: o que dá para pesquisar vem primeiro (UI-33).** A tela abria com mais de vinte tecnologias já conhecidas antes da primeira pesquisável. As conhecidas agora ficam recolhidas numa linha por era ("22 já conhecidas"), que abre com um toque.
+- **O turno abre onde importa (UI-34).** A partir da segunda rodada, a sua vez começa em Império, Ações, com o relatório "Desde o seu último turno" e o conselheiro; no celular a tela rola até o relatório.
+- **Tutorial ajustado ao novo desenho:** no celular o foco iluminado não invade as abas nem a barra de ação, e o alvo nunca fica atrás do mapa.
+
+## v57 — 27/11/2026 · Tutorial guiado (UI-31)
+
+Um tutorial que ensina o jogo dentro do próprio jogo: a tela escurece e só a função explicada fica iluminada, com um cartão ao lado dizendo o que ela é e como usar.
+
+- **31 passos, a tela inteira.** Barra da partida, mapa, marcador de território, lentes, zoom, as três etapas do turno (Reforços, Ações e guerra, Remanejar), as abas Império, Obras e Região, os seis indicadores, Tecnologias, Governo e fé, Diplomacia, Vitórias, Personagens, Comércio, Conselheiro, relatório da rodada, cartas, filas de obras, ficha e fronteiras do território e como vencer.
+- **Onde abrir.** Botão "Tutorial guiado" na abertura de cada partida e botão "Tutorial" na barra do alto, a qualquer momento da sua vez.
+- **Não mexe na partida.** O tutorial só troca de aba para mostrar cada coisa; ao sair, aba, seleção e zoom voltam ao que estavam.
+- **Teclado e leitor de tela.** Setas ou Enter avançam, seta para a esquerda volta, Esc sai; o foco fica preso no cartão e cada passo é anunciado. Respeita a preferência por menos movimento.
+- **Celular.** O cartão nunca sai da tela nem cobre o que explica: quando falta espaço, a página rola o alvo para junto do cartão.
+- Os textos foram conferidos contra as regras do jogo (fila de 3 obras, 5 cartas, 8 portes, vitórias a partir de 1/3 da partida).
+- O manual (Regras) ainda descrevia os quatro pontinhos de porte, retirados na v54; foi corrigido.
+
+## v56 — 27/11/2026 · Mapa legível em qualquer zoom (UI-30)
+
+A v54 trocou os pontinhos por placas escuras com nome e porte. De perto ficava bom; com o mapa inteiro na tela, as caixas cobriam as províncias, "ALDEIA" se repetia dezenas de vezes e as cidades miúdas viravam ruído, sobretudo no celular. Esta versão corrige isso com níveis de detalhe.
+
+- **De longe:** só cores dos donos, tropas e nomes em texto com contorno, sem caixa. Nada cobre o formato das províncias.
+- **Porte só quando informa.** "Vila", "Cidade" e "Metrópole" aparecem sob o nome; "Aldeia", que é o ponto de partida de quase todo território, não aparece mais no mapa (continua no painel e na dica do território).
+- **Cidade só quando dá para ler.** O desenho da cidade e das melhorias de um território surge quando ele tem tamanho na tela para isso; antes disso não é desenhado.
+- Conferido no mapa inteiro, em zoom médio e de perto, em três cenários (Sengoku, Segunda Guerra, Guerras Púnicas), no desktop e em tela de 390 px.
+
+## v55 — 27/11/2026 · Relatório da rodada e abertura protegida (UI-29, D-18)
+
+- **Desde o seu último turno (UI-29).** Quando a vez volta para você, o topo das ações traz um relatório do que aconteceu enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, territórios ganhos, o que mudou no seu império (obras, pesquisa, fome, deserção) e, no mundo, o saldo de cada rival ("Clã Takeda: 4 → 7 territórios"), quem foi eliminado e as três maiores potências. Antes, tudo isso ficava enterrado na Crônica e o jogador voltava ao turno sem saber o que tinha mudado.
+- **Mapa mostra o que mudou.** Territórios seus que trocaram de mãos desde o último turno ficam com o marcador pulsando (ou com contorno fixo, para quem reduz animações).
+- **Abertura protegida (D-18).** Capitais não podem ser atacadas nas primeiras rodadas: 4 na partida curta, 8 nas demais (antes, só na primeira). Jogando o Sengoku pela interface, clãs de um território só eram eliminados na rodada 3, antes de qualquer decisão fazer efeito. O aviso aparece no relatório e no motivo de recusa do ataque.
+- **Placas sem sobreposição.** A placa que bateria em outra ou num marcador vizinho some até você aproximar o mapa. "Crescendo" virou uma seta ▲ ao lado do porte.
+
+## v54 — 27/11/2026 · Cidade integrada: placa, obras urbanas e caminhos (UI-28)
+
+- **Placa da cidade no lugar dos pontinhos (UI-28).** Os quatro pontinhos acima do número de tropas indicavam o porte da cidade (de 1 a 4), mas ninguém conseguia adivinhar isso. Saíram. Cada território tem agora uma placa com o nome e o porte por extenso (Aldeia, Vila, Cidade, Metrópole), com a borda na cor do dono; quando a cidade está a caminho do próximo porte, a placa diz "crescendo".
+- **Obras urbanas dentro da cidade.** Templo, feira, oficina, quartel, aqueduto, observatório, anfiteatro e maravilha aparecem como prédios entre as casas, dentro da muralha. A cidade alarga para recebê-los.
+- **Obras rurais ligadas por caminhos.** Campos, pasto, pesqueiro, mata, mina, porto e pista ficam espalhados pelo território, ligados ao portão da cidade por caminhos de terra. Um caminho desce do portão até a guarnição, onde chegam as estradas entre territórios.
+
+## v53 — 27/11/2026 · Cidades e paisagem de verdade no mapa (UI-27)
+
+- **Cidades no lugar dos ícones (UI-27).** Cada território povoado mostra uma cidade desenhada em volume sobre o terreno: casas, ruas de chão batido, árvores em volta e um marco no centro. A aldeia tem três casas; a metrópole, quinze, com muralha de pedra, torres e portão.
+- **Estilo por época e cenário.** Antiguidade com casas de terraço e templo em degraus; Idade Média com telhados de barro e torre de menagem; Sengoku com telhados escuros e castelo de vários andares; era da pólvora com ardósia; guerras mundiais com quarteirões de alvenaria; Guerra Fria com torres de vidro.
+- **Capital e muralha.** A capital hasteia bandeira. Castelo, forte ou muralha construídos no território viram a muralha da própria cidade, em vez de um ícone solto.
+- **Melhorias na paisagem.** Campos lavrados, pasto cercado com gado, pesqueiro com barco, serraria na mata, mina com entrada e minério, oficina com chaminé, feira de tendas, porto com navio, templo de colunas, aqueduto, observatório, acampamento militar, anfiteatro, pista de pouso e monumento dourado para as maravilhas. Tudo original, desenhado em vetor.
+- **Escala que cabe no território.** O tamanho de cada cidade segue a distância até o vizinho mais próximo, então nada invade a província ao lado em mapas apertados. Mapas com territórios pequenos (como a Europa no mapa-múndi) ganham zoom máximo maior, até 16 vezes.
+
+## v52 — 26/11/2026 · Conselheiro de turno, chance e risco nas fronteiras (UI-25, UI-26)
+
+- **Conselheiro de turno (UI-25).** No topo das ações do império, uma lista do que está parado ou esquecido neste turno, cada linha com o botão que resolve: pesquisa não escolhida, territórios sem obra, cívica que a cultura já paga, vaga de política livre, panteão disponível, governador sem território, grande figura à espera, vaga de rota comercial, proposta diplomática sem resposta e territórios em risco. A barra de ação mostra o número de pontos de atenção ao lado do botão de encerrar o turno, sem bloquear nada.
+- **Chance antes de atacar (UI-26).** Na aba Região, cada botão Atacar traz a chance de vencer atacando até o fim, já com os bônus de dado dos dois lados, em verde, amarelo ou vermelho. Não é mais preciso abrir a batalha para saber.
+- **Risco de perder.** Cada vizinho inimigo mostra o risco de ele tomar o seu território, e o cartão do território ganha a etiqueta "em risco" quando passa de 50%.
+- **Perdas esperadas.** O painel de batalha diz quantas tropas sobram, em média, quando o ataque vence.
+- **Diplomacia por escrito.** Cada facção tem um detalhe que diz o que cada proposta faz e, quando ela recusaria, o motivo. Antes isso só aparecia ao passar o mouse, o que não existe no celular.
+
+## v51 — 26/11/2026 · Aba Obras, governo em abas, personagens e criação em passos (UI-21 a UI-24)
+
+- **Aba Obras (UI-23).** O painel passa a ter três abas: Império, Obras e Região. As obras saíram do meio das ações do império e ganharam espaço próprio, com três seções:
+  - **Filas:** todos os territórios, com os ociosos no topo e em destaque, a fila de cada um, apressar e retirar. Não é mais preciso "Ordenar obras" antes.
+  - **Construir:** as obras por finalidade. Cada ficha mostra custo, manutenção, efeito, de onde ela vem e o que ela abre, e um botão por território onde cabe, já com o prazo em turnos. As bloqueadas dizem o que falta.
+  - **Cadeias:** a árvore de cada obra base até as que dependem dela, com a tecnologia exigida e a marca do que você tem, do que pode construir e do que falta.
+- **Governo, cultura e fé (UI-21).** A tela se divide em Governo, Políticas, Cívicas e Crenças. O governo atual fica no topo; cada outro governo mostra a diferença de vagas em relação ao atual e, se bloqueado, a cívica que falta com o custo. Políticas vêm agrupadas pelo tipo de vaga, com as vagas em uso, e as bloqueadas agora aparecem com o motivo. Cívicas mostram o que liberam, a que levam e em quantos turnos a cultura alcança o custo. Panteões e princípios da fé têm o efeito escrito, não só na dica.
+- **Personagens (UI-22).** Três seções: Líder, Grandes figuras (barra de progresso, de onde vêm os pontos e o que cada uma faz ao ser usada) e Governadores. Os governadores são nomeados ali mesmo, território por território, com a indicação de quando cada tipo vale mais.
+- **Criação da partida (UI-24).** Três passos numerados (facção, líder, ajustes) e um resumo que diz o que a dificuldade, a duração e os líderes rivais mudam.
+- O botão Obras saiu dos atalhos do Império (a aba faz esse papel; a tecla O continua valendo) e as sub-abas do Império cabem numa linha só.
+
+## v50 — 26/11/2026 · Painel por seções, fichas de construção, relevo e mar (UI-17 a UI-20, D-17, T-19)
+
+- **Correção: facção sem território continuava viva.** No caso relatado (Sengoku, Clã Miyoshi com 0 territórios e em guerra), a eliminação só era marcada em conquista direta. Quem perdia o último território por revolta, influência ou evento ficava "vivo" e impedia a vitória. Agora a checagem é geral e roda a cada turno.
+- **Motivo dos dados (UI-19).** Quando o ataque rola 2 ou 1 dado, o painel de batalha diz por quê e o que resolve: poucas tropas (1 fica de guarnição), desembarque pelo mar, longe do suprimento, pântano. A ofensiva contínua para sozinha quando os dados caem, e você decide se segue.
+- **Painel por seções (UI-17).** Império ganhou quatro sub-abas: Ações, Objetivo, Facções e Era e crônica. Região ganhou três: Fronteiras, Obras e Detalhes (terreno, jazidas, saúde e rendimento). Reforçar e recrutar ficam sempre acima das sub-abas.
+- **Fichas de construção (UI-20, C-300).** Na sub-aba Obras, as opções vêm agrupadas pela finalidade (zonas, comida, produção, ouro, saber, estabilidade, guerra, estradas e mar, cidade, maravilhas). Cada grupo explica quando vale a pena; cada ficha mostra custo, prazo neste território, manutenção, efeito e o que ela abre na cadeia. O que já existe no território aparece listado com o efeito. O catálogo completo segue os mesmos grupos.
+- **Rotas (T-19).** A tela de comércio mostra as vagas, o rendimento de cada rota ativa e um botão Fechar: fechar é grátis e libera a vaga na hora, para trocar por outra melhor. Lista até 30 rotas possíveis e explica o que cada tipo pede e rende.
+- **Guerra pelo mar (D-17).** Supremacia naval: com a frota pelo menos 2 travessias acima da do defensor, o desembarque rola 3 dados mesmo sem porto. Se a frota do defensor for maior que a sua, ele ganha +1 na defesa contra o desembarque. As fronteiras por mar e a linha da frota explicam travessias e regras na dica.
+- **Mapa em relevo (UI-18).** Cidades e construções deixaram o medalhão escuro: são desenhos com contorno, volume e sombra sobre o terreno, e a cidade cresce com o porte, de aldeia a metrópole.
+
+## v49 — 26/11/2026 · Abas Império e Região, fronteiras com ações (UI-15, UI-16)
+
+- **Diagnóstico das fronteiras.** Conferi as divisas dos 11 mapas contra a geometria: toda divisa desenhada está na lista de vizinhos. O que falhava era a influência, que recusava com uma frase genérica. No caso relatado (Uesugi no Sengoku), Aizu e Dewa é cidade-estado e os outros vizinhos custavam mais prestígio do que havia.
+- **Recusa com motivo.** A influência agora diz por que não vale: sem fronteira, capital, cidade-estado (só o suserano anexa) ou prestígio insuficiente, com o custo e o saldo. O ataque também: campanha não declarada, trégua, poucas tropas, sem frota, capital protegida na 1ª rodada.
+- **Painel em duas abas (UI-15).**
+  - **Império:** indicadores, alertas, pesquisa, objetivo, ações do império (campanha, festas, impostos, agitadores, câmbio, rotas, obras do império), cartas, tecnologia, facções e crônica.
+  - **Região:** o território selecionado. Clicar no mapa abre esta aba; Esc ou a tecla I voltam para Império.
+- **Fronteiras com ações (UI-16).** A aba Região lista todos os vizinhos, por terra e por mar, com dono, tropas e relação. Cada linha traz os botões que cabem: Atacar, Influenciar (com o custo) e Mover. Botão desligado explica o motivo na dica. Num território alheio, os vizinhos seus trazem "Atacar daqui". O nome do vizinho seleciona o território.
+- **Ações dentro da região.** Reforçar (+1 ou todas), recrutar e construir direto no território, com a fila logo abaixo. Recrutamento e obras abrem sozinhos; não é mais preciso "Ordenar obras" antes.
+- **Mapa.** As fronteiras do território selecionado ficam marcadas com contorno pontilhado. A seleção continua ao trocar de fase.
+- O clique no mapa (território seu, depois o vizinho) continua funcionando como antes.
+
+## v48 — 26/11/2026 · Painel de facções (UI-13)
+
+- Cada facção mostra uma barra de poder (a fatia dela nos territórios das facções), tropas, estabilidade e cartas.
+- A opinião sobre você aparece como número, com os motivos na dica: comércio, fé, fronteira, tratados e agravos.
+- Quem está segurando o objetivo ou passou de 75% de uma vitória ganha o aviso "⚠" em vermelho.
+- Relação, opinião e botões de diplomacia ficam numa segunda linha, e o nome não espreme mais.
+- A IA já usa influência e diplomacia. O contador antigo das simulações lia só as 80 últimas linhas da crônica, por isso marcava quase zero.
+
+## v47 — 26/11/2026 · Corrida ao objetivo (V-11)
+
+- **Antes:** no modo Curto, o objetivo era cumprido antes da rodada 20 e a partida acabava assim que a vitória liberava.
+- **Agora:** os turnos seguidos do objetivo só começam a contar quando a vitória libera. Ao cumprir o objetivo, a facção é anunciada a todos e vira alvo. A IA entra em campanha e mira a capital e os alvos dela.
+- O objetivo pede 60% do legado da duração (eram 50%). No modo Curto, é preciso segurá-lo por 3 turnos (eram 2).
+- **Simulações no modo Curto** (6 partidas por cenário, rodada final):
+
+  | Cenário | v45 | v47 |
+  |---|---|---|
+  | Sengoku | 20 a 30, quase tudo por objetivo | 22, 25, 30, 30, 31, 46 (objetivo, dominação, econômica, legado) |
+  | Vikings | 23 a 28, noruegueses 5 de 6 | 23, 28, 33, 35, 36, 37 (5 vencedores diferentes) |
+  | Queda do Ocidente | Ocidente 6 de 7 | 32 a 58; Ocidente 3, Oriente 3 (na bateria do `npm test`, ainda Ocidente 6 de 7) |
+
+## v46 — 26/11/2026 · Agitação saturada e cansaço do invadido (D-15, D-16)
+
+- **Causa encontrada:** nas Regências, o Império perdia cerca de 40 de estabilidade por rodada. Quatro rivais pagavam agitadores e usavam a carta de agitação na mesma rodada, cada um tirando 15. Além disso, cada província perdida somava 2 de cansaço de guerra.
+- **Agitação saturada (D-16):** na mesma rodada, só a primeira agitação contra uma facção (ação ou carta) vale inteira; as seguintes valem 1/3.
+- **Cansaço do invadido (D-15):** perder territórios soma cansaço só uma vez por rodada.
+- **Regências:** o Império volta a 3 tropas por província, porque com 4 o soldo não fechava e as tropas desertavam. Os Farrapos começam com estabilidade 60 (era 75).
+- **Simulações no modo Médio** (8 partidas): a Queda teve 4 vencedores diferentes, e a Secessão passou a terminar entre as rodadas 8 e 79, com mediana perto de 30. Nas Regências, o Império voltou a vencer algumas partidas (3 de 10), mas os Farrapos ainda levam a maioria. O cenário original tem 14 rodadas, e quem derrota o rival principal cedo leva o mapa.
+
+## v45 — 26/11/2026 · Equilíbrio de três cenários e última resistência (D-14)
+
+- **Última resistência (D-14).** A capital de quem tem até 2 territórios defende com +1. Facções de uma só província não caem mais no primeiro ataque.
+- **Queda do Ocidente.** As duas Romas não começam mais em trégua, então não formam aliança automática para vencer juntas. Roma Ocidental começa com 4 tropas na capital (era 6). Hunos, visigodos, vândalos e francos ganham 2 tropas cada.
+- **Regências.** O Império começa com 4 tropas por província (era 3) e estabilidade 50 (era 40). Farrapos começam com 5 tropas (eram 7). Cabanos, balaios e sabinos com 6 (eram 8, 7 e 8).
+- **Secessão.** União começa com 5 tropas por estado e Confederação com 6 (eram 3 e 4).
+- **Simulações no modo Médio** (6 partidas por cenário). A rodada em que cada partida acabou e quem venceu:
+
+  | Cenário | v43 | v45 |
+  |---|---|---|
+  | Queda do Ocidente | Ocidente vence 6 de 7 | 46 a 96; Ocidente 4, Oriente 2 |
+  | Regências | 9 a 83; Farrapos 4 de 5 | 8, 9, 11, 27, 72, 121; Farrapos 4, Império 1, Balaios 1 |
+  | Secessão | 8, 8, 10, 11, 43, 104 | 17, 21, 36, 38, 43, 121 |
+
+- **Ainda em aberto:** os Farrapos ainda vencem a maioria nas Regências, e duas partidas de Regências terminaram antes da rodada 12.
+
+## v44 — 26/11/2026 · Quadro de informações (UI-10, UI-13)
+
+- **Quadro do império.** Cabeçalho com líder, traço e governo. Seis indicadores em blocos: ouro líquido, saber, prestígio, estabilidade (com cansaço), felicidade (com cultura) e legado (com a meta). Cada um tem dica com a explicação.
+- **Alertas em destaque:** crise, instabilidade, cansaço de guerra, povo infeliz e ouro negativo aparecem num bloco próprio, com o que acontece.
+- **Pesquisa e atalhos:** linha da pesquisa atual com botão "Escolher pesquisa"; botões de tecnologias, governo, diplomacia, vitórias, personagens, obras e rotas, com o atalho de teclado na dica. Os poderes do líder ficam num bloco recolhível.
+- **Cartão do território.** Dono e relação com você em destaque; seis indicadores (tropas, porte, comida líquida com o consumo, produção, ouro, saber); fichas para capital, fortificação, ocupação, suprimento, movimento e recrutas; construções inativas marcadas.
+- **Ordem do painel:** império, território, fase, cartas, tecnologia, facções e crônica. A tecnologia virou um resumo com link para a árvore e as regras da era.
+
+## v43 — 26/11/2026 · Freios da conquista: desgaste da blitz e guerra defensiva (D-12, D-13)
+
+Segunda entrega da revisão. Nas simulações da v41, várias partidas acabavam por dominação antes da rodada 10, mesmo no modo Médio de 120 rodadas.
+
+- **Desgaste da blitz (D-12).** Os ataques continuam ilimitados.
+  - As 3 primeiras conquistas de cada turno são livres.
+  - A partir da 4ª, cada conquista custa estabilidade (4, depois 8, 12…) e deixa 1 tropa para trás.
+  - A barra de ação mostra quantas conquistas você já fez e o custo da próxima. A janela de batalha avisa antes do ataque.
+  - A IA para de avançar quando a estabilidade cairia abaixo de 45, salvo para tomar uma capital.
+- **Guerra defensiva (D-13).** Antes, a facção invadida acumulava cansaço de guerra e parava de atacar. Agora, quem perdeu território na rodada anterior contra-ataca.
+- **Regras e levantamento:** os dois freios entraram em "Freios da guerra" e no levantamento (D-12, D-13).
+- **Simulações no modo Médio** (4 a 6 partidas por cenário). Antes e depois, a rodada em que cada partida acabou:
+
+  | Cenário | v41 | v43 |
+  |---|---|---|
+  | Napoleônicas | 18, 41, 47, 53 | 44, 53, 54, 62 |
+  | Regências | 7, 9, 10, 34 | 9, 20, 23, 58, 67, 83 |
+  | Queda do Ocidente | 14, 26, 71, 105 | 84, 88, 105, 111 |
+  | Sengoku | 28, 60, 74, 82 | 36, 55, 56, 68 |
+  | Secessão | 6, 7, 14, 94 | 8, 8, 10, 11, 43, 104 |
+
+- **Modo Curto, todas as facções:** a Secessão passou da média de 7,5 para 16,5 rodadas.
+- **Ainda em aberto:**
+  - A Secessão continua decidida cedo, porque são só duas facções.
+  - O Império do Ocidente vence 6 de 7 na Queda.
+  - Os Farrapos vencem 4 de 5 nas Regências.
+  - No modo Curto, o objetivo costuma ser cumprido assim que a vitória é liberada, na rodada 20.
+
+## v42 — 26/11/2026 · Revisão de usabilidade: ação do turno sempre à vista
+
+Primeira entrega da revisão completa (UI-10 e UI-13 do levantamento, mais as regras de UX do projeto). A auditoria mediu contraste, alvos de toque, transbordo em 360 px, tempo de carga e erros de console nas telas de criação, abertura e turno.
+
+- **Barra de ação fixa.** A fase atual, o que falta fazer e o botão principal ("Ir para as ações", "Remanejar", "Encerrar turno") ficam sempre visíveis: no rodapé do painel no computador e no rodapé da tela no celular. Antes, o botão ficava abaixo da dobra.
+- **Atalhos de teclado.** Enter faz a ação da fase; Esc fecha janelas; 1 a 6 trocam a lente; + − 0 controlam o zoom; T, G, D, V, P, O, C, S e R abrem os painéis. A tecla ? e o botão ⌨ mostram a lista.
+- **Painéis recolhíveis.** Cartas, Tecnologia, Facções e Crônica abrem e fecham pelo título, com teclado também. No celular, Cartas, Tecnologia e Crônica começam fechados. A escolha fica salva no navegador.
+- **Celular.** O mapa ocupa 58% da tela e começa aproximado na sua capital.
+- **Acessibilidade (WCAG AA).**
+  - Foco do teclado visível em tudo.
+  - Botões com pelo menos 28 px de altura, e 40 px em telas de toque.
+  - Nenhum texto abaixo de 12 px.
+  - Nomes de facção com cor escura são clareados até o contraste 4,5:1, na abertura e nas batalhas.
+- **Tooltips:** na estabilidade, na rodada (quando a vitória é liberada) e nas linhas das facções.
+- **Medições:** a página carrega em cerca de 0,3 s, sem erros no console. A auditoria não achou nenhum texto com contraste abaixo do AA.
+
 ## v41 — 26/11/2026 · Líderes em todos os cenários (L3, L4 e L5)
 
 Partes L3 a L5 do levantamento dos líderes. Agora todas as 112 facções têm de 2 a 3 líderes.
