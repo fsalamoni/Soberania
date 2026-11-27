@@ -447,7 +447,11 @@ A infraestrutura faz três coisas: **liga** territórios numa rede (os bens circ
 | C-138 | Fábrica de munições (v66) | Rifles; distrito industrial; aço |  |  | +1 ataque saindo do território |
 | C-139 | Academia naval (v66) | Hidrografia; estaleiro |  |  | +1 travessia, +1 prestígio |
 | C-140 | Hospital militar (v66) | Medicina; quartel |  |  | +1 saúde, +1 estabilidade |
-| C-141 | Cais fluvial (v67) | Navegação; rio |  |  | +1 ouro; hidrovia: entra na rede de bens junto com os outros cais fluviais e portos |
+| C-141 | Cais fluvial (v67) | Pesca e barcos; rio |  |  | +1 ouro; hidrovia: entra na rede de bens junto com os outros cais fluviais e portos |
+| C-142 | Ponte (v68) | Construção civil; estrada; rio |  |  | +1 ouro; +1 território de alcance no remanejamento saindo daqui |
+| C-143 | Túnel (v68) | Dinamite; estrada; colina ou montanha |  |  | +1 ouro; tira o custo extra de relevo (L-11) das obras do território |
+| C-144 | Estação ferroviária (v68) | Ferrovia; ferrovia no território; nível 2 |  |  | +2 ouro; base de suprimento |
+| C-145 | Porto de contêineres (v68) | Computadores; porto; nível 3 |  |  | +3 ouro, +1 produção |
 
 ### Regras de rede e movimento
 

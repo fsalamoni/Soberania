@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v68 — 27/11/2026 · Ponte, túnel, estação ferroviária e porto de contêineres (C-142 a C-145)
+
+- **Ponte (C-142).** +1 ouro, e as tropas que saem do território no remanejamento andam 1 território a mais pela estrada. Exige estrada e rio. Tecnologia: Construção civil.
+- **Túnel (C-143).** +1 ouro, e as obras do território deixam de custar mais por causa do relevo. Exige estrada; só em colina ou montanha. Tecnologia: Dinamite.
+- **Estação ferroviária (C-144).** +2 ouro e base de suprimento, como o quartel e o porto. Exige ferrovia e nível 2. Tecnologia: Ferrovia.
+- **Porto de contêineres (C-145).** +3 ouro e +1 produção. Exige porto e nível 3. Tecnologia: Computadores.
+- O cais fluvial (C-141) passa a exigir Pesca e barcos, da primeira era, em vez da doutrina de navegação.
+- O catálogo mostra o requisito novo "só em colina ou montanha".
+
 ## v67 — 27/11/2026 · Rios desenhados no mapa e cais fluvial (MC-05, C-141)
 
 - **Os rios aparecem no mapa (MC-05).** Antes o rio era só uma informação do território. Agora cada território com rio mostra o curso d'água: ele nasce na divisa com o vizinho mais alto (montanha, depois colina), passa ao lado da cidade em meandros e deságua no litoral. O desenho fica sob o sombreado do relevo, como parte do terreno, e não sai dos limites do território. Passar o cursor sobre o rio diz o que ele permite construir.

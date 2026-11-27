@@ -988,7 +988,12 @@ Object.assign(STRUCT, {
   acn: { pc: 12, up: 1, need: 'stl', tech: 'hdg', nav: 1, y: { pre: 1 }, ic: '⚓', fx: 'Academia naval (C-139): +1 travessia marítima por turno e +1 prestígio. Exige estaleiro.', n: 'Academia Naval' },
   hml: { pc: 10, up: 1, need: 'qua', tech: 'mdc', hl: 1, y: { stab: 1 }, ag: .4, ic: '🏥', fx: 'Hospital militar (C-140): +1 saúde e +1 estabilidade. Exige quartel.', n: 'Hospital Militar' },
   // v67: transporte fluvial (C-141). O cais fluvial entra na rede de bens como um porto (netOf)
-  cfl: { pc: 6, tech: 'nav', rioReq: 1, y: { gold: 1 }, ag: .5, ic: '🛶', fx: 'Cais fluvial (C-141): +1 ouro e hidrovia. Liga o território à rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio.', n: { ant: 'Cais Fluvial', med: 'Cais Fluvial', pol: 'Cais Fluvial', mod: 'Terminal Hidroviário', fan: 'Cais Fluvial' } },
+  cfl: { pc: 6, tech: 'pesc', rioReq: 1, y: { gold: 1 }, ag: .5, ic: '🛶', fx: 'Cais fluvial (C-141): +1 ouro e hidrovia. Liga o território à rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio.', n: { ant: 'Cais Fluvial', med: 'Cais Fluvial', pol: 'Cais Fluvial', mod: 'Terminal Hidroviário', fan: 'Cais Fluvial' } },
+  // v68: transporte (C-142 a C-145). terReq = terreno do próprio território
+  pnt: { pc: 6, need: 'est', tech: 'civ', rioReq: 1, y: { gold: 1 }, ag: .3, ic: '🌉', fx: 'Ponte (C-142): +1 ouro, e as tropas que saem daqui no remanejamento andam 1 território a mais pela estrada. Exige estrada e rio.', n: 'Ponte' },
+  tun: { pc: 12, need: 'est', tech: 'din', terReq: 'mh', y: { gold: 1 }, ag: .3, ic: '🚇', fx: 'Túnel (C-143): +1 ouro, e as obras daqui deixam de custar mais por causa do relevo. Exige estrada; só em colina ou montanha.', n: 'Túnel' },
+  efv: { pc: 10, up: 1, need: 'frv', tech: 'frv', lv: 2, y: { gold: 2 }, ag: .3, ic: '🚉', fx: 'Estação ferroviária (C-144): +2 ouro e base de suprimento, como o quartel e o porto. Exige ferrovia.', n: 'Estação Ferroviária' },
+  pct: { pc: 14, up: 1, need: 'por', tech: 'cmp', lv: 3, y: { gold: 3, prod: 1 }, ic: '🏗', fx: 'Porto de contêineres (C-145): +3 ouro e +1 produção. Exige porto.', n: 'Porto de Contêineres' },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },
@@ -3152,7 +3157,7 @@ const CHEAP = { ped: ['for', 'tem', 'mar', 'cas', 'cat', 'aqu'], mad: ['por', 'o
 const STONE = ['for', 'tem', 'mon', 'pdr', 'cas', 'cat']; // Grandes Pirâmides (C-200)
 const pCost = (f, k, i) => {
   const g = real(f) ? goods(f) : new Set(), c = Object.entries(CHEAP).some(([d, ks]) => ks.includes(k) && g.has(d)), p = STONE.includes(k) && hasW(f, 'pir');
-  const t = i == null ? 1 : STRUCT[k].road ? ({ m: 2, w: 2, d: 1.5 }[G.ter[i]] || 1) : ({ m: 1.25, w: 1.25 }[G.ter[i]] || 1); // L-11; v26: relevo encarece obras
+  const t = i == null || nb(i, 'tun') ? 1 : STRUCT[k].road ? ({ m: 2, w: 2, d: 1.5 }[G.ter[i]] || 1) : ({ m: 1.25, w: 1.25 }[G.ter[i]] || 1); // L-11; v26: relevo encarece obras
   const gv = (STRUCT[k].road && pol(f, 'est') ? .5 : 1) * (k === 'cas' && gov(f) === 'feu' ? .75 : 1) * (STRUCT[k].wonder && gov(f) === 'abs' ? .75 : 1) * (gov(f) === 'pce' && ['zin', 'zen'].includes(STRUCT[k].need) ? .75 : 1) * (STRUCT[k].wonder ? 1 - ldv(f, 'MV') / 100 : 1); // v40: LD-MV // G-10 // G-22, G-05, G-07
   return Math.round(STRUCT[k].pc * G.len.k * (has(f, 'eng') ? .75 : 1) * (c ? .75 : 1) * (p ? .75 : 1) * t * gv);
 };
@@ -3189,7 +3194,7 @@ function canQueue(f, k, i) {
   if (!S.z && (S.coast && !coastal(i) || S.lv && G.lv[i] < S.lv)) return false;
   if (S.need && ![].concat(S.need).some(b => built(i, b))) return false;
   if (S.dep && !S.dep.some(d => G.dep[i].includes(d))) return false;
-  if (S.rioReq && !G.riv[i] || S.noRio && G.riv[i]) return false;
+  if (S.rioReq && !G.riv[i] || S.noRio && G.riv[i] || S.terReq && !S.terReq.includes(G.ter[i])) return false;
   if (S.needA && !built(i, S.needA)) return false;
   if (S.near && ![i, ...G.A[i]].some(j => S.near.includes(G.ter[j]))) return false;
   if (S.ww && owned(f).some(j => queued(j, k))) return false;
@@ -3567,7 +3572,7 @@ function defBonus(j, i) { const d = G.own[j]; return terrDef(j) + Math.max(0, (i
 const lastStand = j => { const d = G.own[j]; return real(d) && Fa(d).capI === j && owned(d).length <= 2 ? 1 : 0; };
 // D-07: distância, por território próprio, até a base de suprimento mais próxima (capital, quartel, porto ou depósito de suprimentos)
 function supplyDist(f) {
-  const dist = Array(G.N).fill(99), q = owned(f).filter(i => i === Fa(f).capI || nb(i, 'qua') || nb(i, 'por') || nb(i, 'dps'));
+  const dist = Array(G.N).fill(99), q = owned(f).filter(i => i === Fa(f).capI || nb(i, 'qua') || nb(i, 'por') || nb(i, 'dps') || nb(i, 'efv'));
   q.forEach(i => dist[i] = 0);
   for (let h = 0; h < q.length; h++) { const i = q[h]; for (const j of G.A[i]) if (G.own[j] === f && dist[j] > dist[i] + 1) { dist[j] = dist[i] + 1; q.push(j); } }
   return dist;
@@ -3575,7 +3580,7 @@ function supplyDist(f) {
 // L-04 e L-05: remanejamento. Vizinho seu sempre; pela estrada até 2 territórios (3 com pavimentada), todos com estrada;
 // de um porto seu para qualquer outro porto seu.
 function moveDests(f, i) {
-  const out = new Set(G.A[i].filter(j => G.own[j] === f)), r = road(i);
+  const out = new Set(G.A[i].filter(j => G.own[j] === f)), r = road(i) && road(i) + (nb(i, 'pnt') ? 1 : 0); // C-142
   if (r) {
     let fr = [i]; const seen = new Set([i]);
     for (let s = 0; s < r + 1; s++) fr = fr.flatMap(a => G.A[a].filter(b => (G.own[b] === f || pact(f, G.own[b], 'pas')) && !isSea(a, b) && road(b) && !seen.has(b) && seen.add(b)));
@@ -4425,7 +4430,7 @@ const SV = {
   won: SHD + bx(-5.6, 4.2, 8.4, 1.8, 3, '#d9ae42', '#f6da78', '#a8842a') + bx(-4, 2.6, 5.8, 1.8, 2.4, '#e0b84a', '#f8e08a', '#b08a2a') + bx(-2.4, 1, 3.2, 1.8, 1.8, '#e6c052', '#fbe79a', '#b8922e') + bx(-.9, -.6, 1, 3.6, .8, '#f0cf6a', '#fff2b8', '#c09a34') + '<path d="M-.1 -6.2l.5 1.2l1.3 .1l-1 .8l.3 1.3l-1.1 -.7l-1.1 .7l.3 -1.3l-1 -.8l1.3 -.1z" fill="#fff6c8" stroke="#b08a2a" stroke-width=".25"/>',
 };
 const SVN = { farm: 'Agricultura', past: 'Pecuária', fish: 'Pesca', wood: 'Floresta', mine: 'Mineração', ind: 'Indústria e ofícios', mkt: 'Comércio', port: 'Porto', tmpl: 'Fé e cultura', civ: 'Obras públicas', sci: 'Saber', mil: 'Exército', fort: 'Defesa', cult: 'Espetáculos', air: 'Aviação', won: 'Maravilha' };
-const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt rdg', mkt: 'mer car ban bol arm', port: 'por stl cia frl acn cfl', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm pco acq rsa rep ete', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil dps fmu hml', fort: 'for pal cas fab bkr btc', cult: 'anf tea etd', air: 'aer apt' };
+const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt rdg efv', mkt: 'mer car ban bol arm', port: 'por stl cia frl acn cfl pct', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm pco acq rsa rep ete pnt tun', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil dps fmu hml', fort: 'for pal cas fab bkr btc', cult: 'anf tea etd', air: 'aer apt' };
 const SVZ = { agr: 'farm', pec: 'past', pes: 'fish', flo: 'wood', min: 'mine', com: 'mkt', por: 'port', rel: 'tmpl', mil: 'mil', sci: 'sci' };
 const SVY = { food: 'farm', prod: 'ind', gold: 'mkt', sci: 'sci', pre: 'tmpl', stab: 'civ' };
 const svOf = k => { const S = STRUCT[k]; if (!S || S.road) return null; if (S.wonder) return 'won'; for (const c in SVK) if (SVK[c].split(' ').includes(k)) return c; return S.def ? 'fort' : S.air ? 'air' : S.rf || S.atk ? 'mil' : S.nav ? 'port' : SVZ[S.z] || SVY[Object.keys(S.y || {})[0]] || 'ind'; };
@@ -4809,6 +4814,7 @@ function reqText(k) {
   if (S.dep) r.push('jazida: ' + S.dep.map(d => DEP[d].n).join(', '));
   if (S.rioReq) r.push('rio');
   if (S.noRio) r.push('território sem rio');
+  if (S.terReq) r.push('só em ' + [...S.terReq].map(t => TERR[t].n.toLowerCase()).join(' ou '));
   if (S.needA) r.push('exige também ' + sName(S.needA) + ' no território');
   if (S.coast || S.sea) r.push('litoral');
   if (S.ter) r.push('terreno: ' + [...S.ter].map(t => TERR[t].n).join(', ') + (S.rio ? ' ou rio' : '') + (S.dz ? ' ou jazida da zona' : ''));
