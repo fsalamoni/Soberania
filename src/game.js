@@ -2283,7 +2283,7 @@ function buildMap() {
   h += '<g>' + m.terr.map((t, i) => `<path d="${t.d}" data-i="${i}" class="t"><title>${esc(t.n)}</title></path>`).join('') + '</g>' + (RL ? `<image id="relS" href="${RL.s}" x="0" y="0" width="${m.w}" height="${m.h}" preserveAspectRatio="none"/>` : '') + '<g id="rib"></g><g id="brd"></g>';
   const sl = seaEnds(m);
   h += '<g class="sealinks">' + m.sea.map(([a, b, w], k) => { const A = m.terr[a], C = m.terr[b], tt = `<title>Travessia por mar: ${esc(A.n)} e ${esc(C.n)}</title>`; if (!w) { const [x1, y1, x2, y2] = sl[k]; return `<g data-k="${k}">${tt}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="2.2"/><circle cx="${x2}" cy="${y2}" r="2.2"/></g>`; } const [L, R] = A.x < C.x ? [A, C] : [C, A]; return `<g data-k="${k}">${tt}<line x1="${L.x}" y1="${L.y}" x2="0" y2="${L.y}"/><line x1="${R.x}" y1="${R.y}" x2="${m.w}" y2="${R.y}"/></g>`; }).join('') + '</g>';
-  h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><g class="sv"></g><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><g class="pl"><rect class="plb" x="${-plW(t.n) / 2}" y="13.5" width="${plW(t.n)}" height="24" rx="4"/><text class="nm" y="23.5">${esc(t.n)}</text><text class="lvn" y="33.5"></text></g></g>`).join('') + '</g>';
+  h += '<g id="roads"></g><g id="hl"></g><g id="badges">' + m.terr.map((t, i) => `<g class="b" data-i="${i}"><g class="sv"></g><circle class="cap" r="14" hidden/><circle class="bc" r="10"/><text class="bn" y="4">0</text><text class="ic" x="13" y="-8"></text><g class="pl"><text class="nm" y="23">${esc(t.n)}</text><text class="lvn" y="32.5"></text></g></g>`).join('') + '</g>';
   svg.innerHTML = h; brdKey = ''; ribOn = false;
   P = [...svg.querySelectorAll('path.t')]; B = [...svg.querySelectorAll('g.b')]; NM = null;
   seaVia();
@@ -2292,14 +2292,13 @@ function buildMap() {
 // v53: distância de cada território ao vizinho mais próximo; dá a escala das cidades e o zoom máximo do mapa
 const nnD = () => G.m.nn || (G.m.nn = G.m.terr.map((t, i) => Math.min(...G.m.terr.map((o, j) => j === i ? 1e9 : Math.hypot(o.x - t.x, o.y - t.y)))));
 const zMax = () => Math.max(10, Math.min(16, G.m.w / (Math.min(...nnD()) * 7)));
-const plW = n => Math.max(n.length, 8) * 5.7 + 12; // largura da placa pelo tamanho do nome
 function upp() { const r = svg.getBoundingClientRect(); return r.width ? Math.max(vb.w / r.width, vb.h / r.height) : 1; }
 function setVB() {
   svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
   // v53: cada cidade cabe no próprio território: a escala segue a distância até o vizinho mais próximo
   const nn = nnD(); // v29: as construções crescem com o zoom
-  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); g.firstChild.setAttribute('transform', `scale(${Math.max(.5, Math.min(3.3, nn[i] / u / 100)).toFixed(2)})`); });
+  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(3.3, nn[i] / u / 100); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
@@ -2483,8 +2482,8 @@ function declutter(k) { // ponytail: caixas aproximadas pelo número de letras, 
   if (!NM || NM.length !== B.length || !NM[0].isConnected) NM = B.map(g => g.querySelector('.pl'));
   const me = G.player, pr = i => G.own[i] === me ? 0 : real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 2, box = [];
   G.m.terr.map((t, i) => i).sort((a, b) => pr(a) - pr(b)).forEach(i => {
-    const t = G.m.terr[i], w = (+NM[i].firstChild.getAttribute('width') / 2 + 2) * k, x = t.x, y = t.y + 25.5 * k;
-    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 26 * k) || G.m.terr.some((o, j) => j !== i && !B[j].hasAttribute('hidden') && Math.abs(o.x - x) < w + 11 * k && Math.abs(o.y - y) < 23 * k);
+    const t = G.m.terr[i], w = t.n.length * 3.1 * k, x = t.x, y = t.y + 25 * k;
+    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 21 * k) || G.m.terr.some((o, j) => j !== i && !B[j].hasAttribute('hidden') && Math.abs(o.x - x) < w + 11 * k && Math.abs(o.y - y) < 19 * k);
     NM[i].style.visibility = hit ? 'hidden' : ''; if (!hit) box.push([x, y, w]);
   });
 }
@@ -2537,7 +2536,7 @@ function renderMap() {
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
-    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.classList.toggle('chg', !!G.chg && G.turnF === G.player && G.chg.includes(i)); const pl = g.querySelector('.pl'); pl.classList.toggle('noc', !lv); pl.firstChild.setAttribute('stroke', F.c); const lt = lv ? pName(i) + (subOf(i) ? ' ▲' : '') : '', pw = Math.max(plW(G.m.terr[i].n), lt.length * 5.9 + 12); pl.lastChild.textContent = lt; pl.firstChild.setAttribute('x', -pw / 2); pl.firstChild.setAttribute('width', pw);
+    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.classList.toggle('chg', !!G.chg && G.turnF === G.player && G.chg.includes(i)); const pl = g.querySelector('.pl'); pl.lastChild.textContent = lv ? pName(i) + (subOf(i) ? ' ▲' : '') : ''; pl.classList.toggle('big', lv >= 2);
     P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? pName(i) : 'ermo'} · ${G.tr[i]} tropas`;
     const drawn = !['res', 'zon', 'ter'].includes(L), sv = drawn ? svHtml(i) : '', sg = g.querySelector('.sv'); if (sg.dataset.k !== sv) { sg.innerHTML = sv; sg.dataset.k = sv; } // v29
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : drawn ? [] : G.bld[i].map(k => STRUCT[k].ic);

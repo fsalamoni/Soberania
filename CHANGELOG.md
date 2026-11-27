@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v56 — 27/11/2026 · Mapa legível em qualquer zoom (UI-30)
+
+A v54 trocou os pontinhos por placas escuras com nome e porte. De perto ficava bom; com o mapa inteiro na tela, as caixas cobriam as províncias, "ALDEIA" se repetia dezenas de vezes e as cidades miúdas viravam ruído, sobretudo no celular. Esta versão corrige isso com níveis de detalhe.
+
+- **De longe:** só cores dos donos, tropas e nomes em texto com contorno, sem caixa. Nada cobre o formato das províncias.
+- **Porte só quando informa.** "Vila", "Cidade" e "Metrópole" aparecem sob o nome; "Aldeia", que é o ponto de partida de quase todo território, não aparece mais no mapa (continua no painel e na dica do território).
+- **Cidade só quando dá para ler.** O desenho da cidade e das melhorias de um território surge quando ele tem tamanho na tela para isso; antes disso não é desenhado.
+- Conferido no mapa inteiro, em zoom médio e de perto, em três cenários (Sengoku, Segunda Guerra, Guerras Púnicas), no desktop e em tela de 390 px.
+
 ## v55 — 27/11/2026 · Relatório da rodada e abertura protegida (UI-29, D-18)
 
 - **Desde o seu último turno (UI-29).** Quando a vez volta para você, o topo das ações traz um relatório do que aconteceu enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, territórios ganhos, o que mudou no seu império (obras, pesquisa, fome, deserção) e, no mundo, o saldo de cada rival ("Clã Takeda: 4 → 7 territórios"), quem foi eliminado e as três maiores potências. Antes, tudo isso ficava enterrado na Crônica e o jogador voltava ao turno sem saber o que tinha mudado.
