@@ -37,3 +37,9 @@ Pedido: a jogabilidade da v3 tinha pouca estratégia.
 - Economia (PIB, caixa, aprovação, rejeição, reputação), 7 recursos com mercado, 11 obras, energia suja/limpa/nuclear, religiões fictícias, diplomacia, agentes, níveis militares, 8 líderes e criador de líder.
 
 O código das versões 1 a 3 não foi preservado; este repositório começa na v4.
+
+## Publicação online · 27/11/2026
+
+- Endereço próprio do jogo: https://fsalamoni.github.io/Soberania/ (GitHub Pages).
+- Workflow `.github/workflows/pages.yml`: a cada push na `main` compila o `index.html` e publica, completando o cabeçalho (doctype, charset e viewport) que o formato de artifact omite. Também pode ser disparado à mão em Actions.
+- Não muda regras nem a versão do jogo.
