@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## v55 — 27/11/2026 · Relatório da rodada e abertura protegida (UI-29, D-18)
+
+- **Desde o seu último turno (UI-29).** Quando a vez volta para você, o topo das ações traz um relatório do que aconteceu enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, territórios ganhos, o que mudou no seu império (obras, pesquisa, fome, deserção) e, no mundo, o saldo de cada rival ("Clã Takeda: 4 → 7 territórios"), quem foi eliminado e as três maiores potências. Antes, tudo isso ficava enterrado na Crônica e o jogador voltava ao turno sem saber o que tinha mudado.
+- **Mapa mostra o que mudou.** Territórios seus que trocaram de mãos desde o último turno ficam com o marcador pulsando (ou com contorno fixo, para quem reduz animações).
+- **Abertura protegida (D-18).** Capitais não podem ser atacadas nas primeiras rodadas: 4 na partida curta, 8 nas demais (antes, só na primeira). Jogando o Sengoku pela interface, clãs de um território só eram eliminados na rodada 3, antes de qualquer decisão fazer efeito. O aviso aparece no relatório e no motivo de recusa do ataque.
+- **Placas sem sobreposição.** A placa que bateria em outra ou num marcador vizinho some até você aproximar o mapa. "Crescendo" virou uma seta ▲ ao lado do porte.
+
 ## v54 — 27/11/2026 · Cidade integrada: placa, obras urbanas e caminhos (UI-28)
 
 - **Placa da cidade no lugar dos pontinhos (UI-28).** Os quatro pontinhos acima do número de tropas indicavam o porte da cidade (de 1 a 4), mas ninguém conseguia adivinhar isso. Saíram. Cada território tem agora uma placa com o nome e o porte por extenso (Aldeia, Vila, Cidade, Metrópole), com a borda na cor do dono; quando a cidade está a caminho do próximo porte, a placa diz "crescendo".

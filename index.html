@@ -274,6 +274,9 @@ details.bq,details.rdet{margin:6px 0}details.bq>summary,details.rdet>summary{cur
 .b .pl{display:none;pointer-events:none}#map.names .pl{display:block}
 .b .plb{fill:#0b0e12d9;stroke-width:1.3}.b .pl.noc .plb{height:13px}
 .b .lvn{font:600 8px var(--f-body);text-anchor:middle;fill:#e6c15a;letter-spacing:.04em;text-transform:uppercase}
+.b.chg .bc{animation:chg 1.1s ease-in-out infinite alternate}@keyframes chg{to{stroke:#ffd166;stroke-width:4.5}}
+@media (prefers-reduced-motion:reduce){.b.chg .bc{animation:none;stroke:#ffd166;stroke-width:3.5}}
+.rep summary{cursor:pointer}.rep .rph{margin:.5rem 0 .15rem;font-weight:700}.rep .rph.bad{color:#ff9d8a}.rep .rph.good{color:#8fd694}.rep ul{margin:0}
 #map .sv .svr{fill:none;stroke:#d2b27c;stroke-width:1.7;stroke-linecap:round;stroke-dasharray:3.2 1.4}
 .ledger{margin:.4em 0}.ledger summary{cursor:pointer;font-size:.85em}.ledger table,.emp{border-collapse:collapse;font-size:.8em;width:100%}.ledger td,.emp td,.emp th{padding:2px 4px;border-bottom:1px solid #ffffff14;vertical-align:top;text-align:left}.ledger td.n,.ledger td:first-child{white-space:nowrap}.ledger .neg,.emp .neg{color:#e58b7c}.emp .tot td{font-weight:700;border-top:1px solid #ffffff40}.emp a{color:inherit}
 #rib path.rb{fill:none;stroke-width:7;stroke-opacity:.85;vector-effect:non-scaling-stroke;pointer-events:none}
@@ -1992,7 +1995,8 @@ function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; 
 // probe: a IA avalia ataques antes de declarar campanha
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
 const cqMax = f => Infinity; // v24: ataques ilimitados enquanto houver tropas (escolha do Flavio)
-const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round === 1 && real(G.own[j]) && Fa(G.own[j]).capI === j); // capitais protegidas na 1ª rodada
+const openR = () => Math.min(8, Math.ceil(G.rounds / 15)); // D-18
+const canAtk = (f, i, j, probe) => (probe || Fa(f).camp) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round <= openR() && real(G.own[j]) && Fa(G.own[j]).capI === j); // D-18: capitais protegidas na abertura
 // conjunto refeito quando a lista de tecnologias muda (push ou troca); a lista fica longa nos cenários modernos
 const has = (f, k) => { const F = Fa(f), t = F && F.tech; if (!t) return false; if (F.tS !== t || F.tN !== t.length) { F.tS = t; F.tN = t.length; F.tSet = new Set(t); } return F.tSet.has(k); };
 // nb: construção ativa (desativada por falta de ouro não conta); built: existe no território
@@ -2068,7 +2072,7 @@ function objLines(f) {
 }
 // pontos ao fim das rodadas: quem mais cresceu, não quem começou maior
 const score = f => { const F = Fa(f); return owned(f).length - (F.t0 || 0) + 2 * capsHeld(f) + 2 * (F.obj.hold || []).filter(n => G.own[G.ix[n]] === f).length + legacy(f); };
-function log(f, msg) { G.log.unshift([f, msg, G.round]); if (G.log.length > 80) G.log.pop(); }
+function log(f, msg) { G.logN = (G.logN || 0) + 1; G.log.unshift([f, msg, G.round]); if (G.log.length > 80) G.log.pop(); }
 
 // ---------- governo: recursos e ações ----------
 // ---------- parte 3: terreno, zonas, jazidas e povoamento (M-01 a M-10, M-20, M-21, Z-01 a Z-11, R-20 a R-62, S-02 a S-05) ----------
@@ -3038,6 +3042,33 @@ function advice() {
   for (const [i, p, w] of risk) add('⚠', `${tname(i)}${i === F.capI ? ' (capital)' : ''} em risco: ${tname(w)} tem ${G.tr[w]} tropas contra as suas ${G.tr[i]} e venceria ${Math.round(100 * p)}% das vezes.`, 'sel', 'Ver', i);
   return L;
 }
+// v55 (UI-29): relatório da rodada. Ao encerrar o turno o jogo guarda um retrato (repMark); quando a vez volta,
+// repBuild compara o retrato com o agora e separa a crônica em: seu império, contra você e o mundo.
+function repMark() { const me = G.player; G.rep0 = { n: G.logN || 0, mine: owned(me), cnt: Object.fromEntries(G.order.map(f => [f, owned(f).length])), alive: G.order.filter(f => Fa(f).alive) }; }
+function repBuild() {
+  const z = G.rep0, me = G.player; if (!z) return G.rep = null;
+  const L = G.log.slice(0, Math.min(80, (G.logN || 0) - z.n)).reverse(), my = fname(me), now = new Set(owned(me));
+  const lost = z.mine.filter(i => !now.has(i)), won = [...now].filter(i => !z.mine.includes(i));
+  const mine = L.filter(l => l[0] === me).map(l => l[1]);
+  const vs = L.filter(l => l[0] !== me && l[1].includes(my)).map(l => l[1]);
+  const conq = {}; L.forEach(l => { if (l[0] !== me && / conquista /.test(l[1]) && !l[1].includes(my)) conq[l[0]] = (conq[l[0]] || 0) + 1; });
+  const dl = f => owned(f).length - (z.cnt[f] || 0);
+  const world = G.order.filter(f => f !== me && Fa(f).alive && (dl(f) || conq[f])).sort((a, b) => Math.abs(dl(b)) - Math.abs(dl(a))).map(f => `${fname(f)}: ${z.cnt[f] || 0} → ${owned(f).length} território${owned(f).length === 1 ? '' : 's'}${conq[f] ? ` (${conq[f]} conquista${conq[f] > 1 ? 's' : ''})` : ''}.`);
+  z.alive.filter(f => !Fa(f).alive).forEach(f => world.unshift(`${fname(f)} foi eliminado.`));
+  L.forEach(l => { if (l[0] !== me && !l[1].includes(my) && /Alerta|alian|guerra a |paz com|maravilha|independ|Revolta em|coaliz/i.test(l[1]) && !/ conquista /.test(l[1])) world.push(l[1]); });
+  const top = G.order.filter(f => Fa(f).alive).sort((a, b) => owned(b).length - owned(a).length).slice(0, 3).map(f => `${fname(f)} ${owned(f).length}`).join(' · ');
+  G.chg = G.own.map((o, i) => i).filter(i => lost.includes(i) || won.includes(i));
+  G.rep = { r: G.round, lost: lost.map(i => `${tname(i)} agora é de ${real(G.own[i]) ? fname(G.own[i]) : 'rebeldes'}`), won: won.map(tname), mine, vs, world: world.slice(0, 7), top };
+}
+function reportHtml() {
+  const R = G.rep, opn = G.round <= openR() ? `<p class="hint opn">🛡 Abertura: nenhuma capital pode ser atacada até o fim da rodada ${openR()}. Use esse tempo para crescer e erguer defesas.</p>` : '';
+  if (!R || R.r !== G.round || G.turnF !== G.player) return opn;
+  const ul = (t, a, c) => a.length ? `<p class="rph ${c || ''}">${t}</p><ul>${a.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ul>` : '';
+  const quiet = !(R.lost.length + R.won.length + R.mine.length + R.vs.length + R.world.length);
+  return `<details class="advr rep" open><summary><b>Desde o seu último turno</b> <span class="hint">${R.lost.length ? `você perdeu ${R.lost.length} território(s)` : R.vs.length ? 'houve ações contra você' : quiet ? 'rodada calma' : 'veja o que mudou'}</span></summary>
+    ${ul('⚠ Territórios perdidos', R.lost, 'bad')}${ul('⚔ Contra você', R.vs, 'bad')}${ul('✓ Territórios ganhos', R.won, 'good')}${ul('🏛 No seu império', R.mine)}${ul('🌍 No mundo', R.world)}
+    ${quiet ? '<p class="hint">Nada de relevante aconteceu com você nem com os rivais.</p>' : ''}${opn}<p class="hint">Maiores potências em territórios: ${esc(R.top)}.</p></details>`;
+}
 function advisorHtml(L) {
   if (G.turnF !== G.player || G.over) return '';
   return `<div class="advr"><b>Conselheiro</b> <span class="hint">${L.length ? L.length + ' ponto(s) de atenção neste turno' : 'nada pendente'}</span>${L.length ? `<ul>${L.map(x => `<li><span>${x.ic} ${esc(x.t)}</span><button class="mini" data-a="adv" data-k="${x.k}"${x.i != null ? ` data-i="${x.i}"` : ''}>${x.lab}</button></li>`).join('')}</ul>` : '<p class="hint">✓ Pesquisa, obras, governo e fronteiras em ordem.</p>'}</div>`;
@@ -3171,7 +3202,7 @@ function atkWhy(f, i, j) {
   if (!Fa(f).camp) return 'Declare campanha para atacar.';
   if (G.tr[i] < 2) return `${tname(i)} precisa de 2 ou mais tropas para atacar.`;
   if (!seaOk(f, i, j)) return 'Sem frota disponível para atravessar o mar neste turno.';
-  if (G.round === 1 && real(d) && Fa(d).capI === j) return 'Capitais ficam protegidas na 1ª rodada.';
+  if (G.round <= openR() && real(d) && Fa(d).capI === j) return `Abertura: capitais ficam protegidas até o fim da rodada ${openR()}.`;
   return canAtk(f, i, j) ? '' : 'Ataque indisponível agora.';
 }
 // v24: sem pontos de ação. Com chave, a ação só vale 1 vez por turno (festas, impostos, agitadores, espião, enviado)
@@ -3628,7 +3659,7 @@ async function loop0() {
     const f = G.order[G.cur], F = Fa(f);
     if (F.alive && F.entered) {
       G.turnF = f; if (f === G.player && !G.auto) save(); beginTurn(f); if (G.over) return; render();
-      if (f === G.player && !G.auto) { if (G.evq.length) showChoice(); return; }
+      if (f === G.player && !G.auto) { repBuild(); render(); if (G.evq.length) showChoice(); return; }
       await aiTurn(f); if (G.over) return;
       finishTurn(f);
     }
@@ -3638,7 +3669,7 @@ async function loop0() {
 async function playerEnd() {
   if (G.turnF !== G.player || G.busy || G.over) return;
   if (G.pend) return toast('Ocupe o território conquistado primeiro.');
-  finishTurn(G.player); hideBattle(); await advance(); render(); loop();
+  repMark(); finishTurn(G.player); hideBattle(); await advance(); render(); loop();
 }
 
 // ---------- eventos ----------
@@ -4349,8 +4380,8 @@ function declutter(k) { // ponytail: caixas aproximadas pelo número de letras, 
   if (!NM || NM.length !== B.length || !NM[0].isConnected) NM = B.map(g => g.querySelector('.pl'));
   const me = G.player, pr = i => G.own[i] === me ? 0 : real(G.own[i]) && Fa(G.own[i]).capI === i ? 1 : 2, box = [];
   G.m.terr.map((t, i) => i).sort((a, b) => pr(a) - pr(b)).forEach(i => {
-    const t = G.m.terr[i], w = t.n.length * 3.1 * k, x = t.x, y = t.y + 23 * k;
-    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 13 * k) || G.m.terr.some((o, j) => j !== i && !B[j].hasAttribute('hidden') && Math.abs(o.x - x) < w + 11 * k && Math.abs(o.y - y + 4 * k) < 16 * k);
+    const t = G.m.terr[i], w = (+NM[i].firstChild.getAttribute('width') / 2 + 2) * k, x = t.x, y = t.y + 25.5 * k;
+    const hit = box.some(b => Math.abs(b[0] - x) < b[2] + w && Math.abs(b[1] - y) < 26 * k) || G.m.terr.some((o, j) => j !== i && !B[j].hasAttribute('hidden') && Math.abs(o.x - x) < w + 11 * k && Math.abs(o.y - y) < 23 * k);
     NM[i].style.visibility = hit ? 'hidden' : ''; if (!hit) box.push([x, y, w]);
   });
 }
@@ -4403,7 +4434,7 @@ function renderMap() {
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
-    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; const pl = g.querySelector('.pl'); pl.classList.toggle('noc', !lv); pl.firstChild.setAttribute('stroke', F.c); const lt = lv ? pName(i) + (subOf(i) ? ' · crescendo' : '') : '', pw = Math.max(plW(G.m.terr[i].n), lt.length * 5.9 + 12); pl.lastChild.textContent = lt; pl.firstChild.setAttribute('x', -pw / 2); pl.firstChild.setAttribute('width', pw);
+    const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.classList.toggle('chg', !!G.chg && G.turnF === G.player && G.chg.includes(i)); const pl = g.querySelector('.pl'); pl.classList.toggle('noc', !lv); pl.firstChild.setAttribute('stroke', F.c); const lt = lv ? pName(i) + (subOf(i) ? ' ▲' : '') : '', pw = Math.max(plW(G.m.terr[i].n), lt.length * 5.9 + 12); pl.lastChild.textContent = lt; pl.firstChild.setAttribute('x', -pw / 2); pl.firstChild.setAttribute('width', pw);
     P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? pName(i) : 'ermo'} · ${G.tr[i]} tropas`;
     const drawn = !['res', 'zon', 'ter'].includes(L), sv = drawn ? svHtml(i) : '', sg = g.querySelector('.sv'); if (sg.dataset.k !== sv) { sg.innerHTML = sv; sg.dataset.k = sv; } // v29
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : drawn ? [] : G.bld[i].map(k => STRUCT[k].ic);
@@ -4855,7 +4886,7 @@ function renderSide() {
     <p class="hint rs">${rt ? `🔬 ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : '<b class="warn">Nenhuma pesquisa escolhida.</b> <button class="mini pri" data-a="techs">Escolher pesquisa</button>'}</p>
     <div class="nav">${nv('techs', '🔬', 'Tecnologias', 'T')}${nv('govm', '🏛', 'Governo e fé', 'G')}${nv('dipl', '🤝', 'Diplomacia', 'D', G.offers.length || (G.dem && G.dem.to === me))}${nv('vicm', '🏆', 'Vitórias', 'V')}${nv('figm', '👤', 'Personagens', 'P', (F.gf || []).length)}${nv('routes', '🚢', 'Comércio', 'C')}</div>
     ${stabs('isub', isub, [['acoes', '⚙ Ações'], ['obj', '🎯 Objetivo'], ['facs', '👥 Facções'], ['cron', '📜 Crônica']])}
-    <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${advisorHtml(adv)}${guideHtml()}</div>`;
+    <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${reportHtml()}${advisorHtml(adv)}${guideHtml()}</div>`;
   const forces = `<p class="forces" title="Cada travessia leva um ataque ou um remanejamento pelo mar neste turno. Ganha-se 1 por ${sName('por')}, mais as de navegação e estaleiros. Frota 2 acima da do defensor: desembarque com 3 dados. Frota menor que a dele: ele defende com +1.">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
   let ph = '', abar = '', st = ''; // UI: a ação da fase fica na barra fixa (#actbar), sempre visível
   const K = ' title="Atalho: Enter"';
