@@ -442,6 +442,11 @@ A infraestrutura faz três coisas: **liga** territórios numa rede (os bens circ
 | C-133 | Roda d'água (v65) | Rodas d'água; oficina; rio |  |  |  | +2 produção |
 | C-134 | Represa (v65) | Dinamite; rio |  |  |  | +1 comida; impede enchente; exigida pela Hidrelétrica (C-111) |
 | C-135 | Estação de tratamento (v65) | Ecologia; saneamento; cidade |  |  |  | +1 saúde, −2 poluição |
+| C-136 | Depósito de suprimentos (v66) | Roda |  |  | base de suprimento (D-07) |
+| C-137 | Bateria costeira (v66) | Artilharia; litoral |  |  | +1 defesa contra ataque pelo mar |
+| C-138 | Fábrica de munições (v66) | Rifles; distrito industrial; aço |  |  | +1 ataque saindo do território |
+| C-139 | Academia naval (v66) | Hidrografia; estaleiro |  |  | +1 travessia, +1 prestígio |
+| C-140 | Hospital militar (v66) | Medicina; quartel |  |  | +1 saúde, +1 estabilidade |
 
 ### Regras de rede e movimento
 

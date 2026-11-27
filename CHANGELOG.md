@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v66 — 27/11/2026 · Quartel com nome único e obras militares novas (C-136 a C-140)
+
+- **Quartel existe com esse nome.** A obra mudava de nome por era (Acampamento, Quartel, Base Militar, Caserna), enquanto as regras, o manual e outras obras falavam sempre em "quartel". Agora se chama Quartel em todas as eras.
+- **Depósito de suprimentos (C-136).** Base de suprimento barata, sem manutenção, para manter os 3 dados de ataque longe da capital. Tecnologia: Roda.
+- **Bateria costeira (C-137).** +1 na defesa contra ataques vindos do mar. Tecnologia: Artilharia; exige litoral.
+- **Fábrica de munições (C-138).** +1 nos ataques que saem do território. Exige distrito industrial e aço na rede. Tecnologia: Rifles.
+- **Academia naval (C-139).** +1 travessia e +1 prestígio. Exige estaleiro. Tecnologia: Hidrografia, que passa a liberar uma obra.
+- **Hospital militar (C-140).** +1 saúde e +1 estabilidade. Exige quartel. Tecnologia: Medicina, que passa a liberar uma obra.
+- Manual e teste novo. O plano da análise ganhou uma seção de obras militares para as próximas partes.
+
 ## v65 — 27/11/2026 · Água: poço, açude, reservatório, roda d'água, represa e tratamento (C-130 a C-135)
 
 Parte 1 do plano da análise completa.

@@ -276,6 +276,12 @@ Object.assign(STRUCT, {
   rdg: { pc: 8, need: 'ofi', tech: 'rda', rioReq: 1, y: { prod: 2 }, ic: '🎡', fx: 'Roda d\'água (C-133): +2 produção. Exige oficina e rio.', n: 'Roda d\'Água' },
   rep: { pc: 16, tech: 'din', rioReq: 1, dry: 1, flood: 1, y: { food: 1 }, ag: .3, ic: '🌊', fx: 'Represa (C-134): +1 comida, acaba com as enchentes e protege da seca no território. É a base da Hidrelétrica. Exige rio.', n: 'Represa' },
   ete: { pc: 12, tech: 'ecol', need: 'san', lv: 3, hl: 1, plu: -2, ag: .8, ic: '♻', fx: 'Estação de tratamento (C-135): +1 saúde e −2 de poluição. Exige saneamento e cidade.', n: 'Estação de Tratamento' },
+  // v66: obras militares (C-136 a C-140). sup = base de suprimento; seaDef = +1 na defesa contra ataque pelo mar
+  dps: { pc: 5, tech: 'rod', sup: 1, ic: '📦', fx: 'Depósito de suprimentos (C-136): base de suprimento, como o quartel e o porto. Mantém os 3 dados de ataque longe da capital. Não recruta.', n: { ant: 'Depósito de Suprimentos', med: 'Depósito de Suprimentos', pol: 'Depósito de Suprimentos', mod: 'Centro Logístico', fan: 'Depósito de Suprimentos' } },
+  btc: { pc: 10, up: 1, tech: 'art', coast: 1, seaDef: 1, ag: .7, ic: '🎯', fx: 'Bateria costeira (C-137): +1 no maior dado de defesa contra ataques vindos do mar. Exige litoral.', n: 'Bateria Costeira' },
+  fmu: { pc: 12, up: 1, need: 'zin', tech: 'rif', good: ['aco'], atk: 1, ic: '💥', fx: 'Fábrica de munições (C-138): ataques saindo daqui somam +1 ao maior dado. Exige distrito industrial aqui e aço na rede.', n: 'Fábrica de Munições' },
+  acn: { pc: 12, up: 1, need: 'stl', tech: 'hdg', nav: 1, y: { pre: 1 }, ic: '⚓', fx: 'Academia naval (C-139): +1 travessia marítima por turno e +1 prestígio. Exige estaleiro.', n: 'Academia Naval' },
+  hml: { pc: 10, up: 1, need: 'qua', tech: 'mdc', hl: 1, y: { stab: 1 }, ag: .4, ic: '🏥', fx: 'Hospital militar (C-140): +1 saúde e +1 estabilidade. Exige quartel.', n: 'Hospital Militar' },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },
