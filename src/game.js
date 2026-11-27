@@ -1762,7 +1762,7 @@ async function loop0() {
     const f = G.order[G.cur], F = Fa(f);
     if (F.alive && F.entered) {
       G.turnF = f; if (f === G.player && !G.auto) save(); beginTurn(f); if (G.over) return; render();
-      if (f === G.player && !G.auto) { repBuild(); if (G.round > 1) { G.tab = 'imp'; G.isub = 'acoes'; } render(); if (G.round > 1 && innerWidth <= 820) { const e = $('.is-acoes .rep'); if (e) e.scrollIntoView({ block: 'start' }); else scrollTo(0, 0); } if (G.evq.length) showChoice(); return; }
+      if (f === G.player && !G.auto) { hegCheck(); repBuild(); if (G.round > 1) { G.tab = 'imp'; G.isub = 'acoes'; } render(); if (G.round > 1 && innerWidth <= 820) { const e = $('.is-acoes .rep'); if (e) e.scrollIntoView({ block: 'start' }); else scrollTo(0, 0); } if (G.evq.length) showChoice(); return; }
       await aiTurn(f); if (G.over) return;
       finishTurn(f);
     }
@@ -1890,6 +1890,19 @@ function tval(f, j) {
   return v;
 }
 const threat = (f, i) => G.A[i].reduce((s, j) => s + (real(G.own[j]) && hostile(f, j) ? G.tr[j] : 0), 0);
+// IA-20 (v59): hegemonia. Quem tem muito mais terra que o segundo vira a ameaça comum: os rivais priorizam atacá-la, fazem trégua entre si e podem romper a trégua com ela
+function hegemon() {
+  if (G.round <= openR()) return null;
+  const fs = G.order.filter(f => Fa(f).alive && Fa(f).entered).map(f => [f, owned(f).length]).sort((a, b) => b[1] - a[1]);
+  if (fs.length < 3) return null;
+  const [a, b] = fs; return a[1] >= 5 && a[1] >= 1.5 * b[1] && a[1] >= .22 * G.N ? a[0] : null;
+}
+function hegCheck() {
+  const h = hegemon();
+  if (h !== (G.heg || null)) { G.heg = h; if (h) { log(h, `${fname(h)} domina o mapa: os rivais passam a tratá-la como a maior ameaça e se unem contra ela.`); if (!G.auto) toast(h === G.player ? 'Você domina o mapa: os rivais se unem contra você.' : `${fname(h)} domina o mapa: os rivais se unem contra ela.`); } }
+  return h;
+}
+const hegB = (f, j) => G.heg && f !== G.heg && G.own[j] === G.heg && !allied(f, G.heg) ? 3 : 0;
 function bestAttack(f, minEdge, probe) {
   let best = null;
   for (const i of owned(f)) {
@@ -1899,7 +1912,7 @@ function bestAttack(f, minEdge, probe) {
       const edge = G.tr[i] - G.tr[j] - defBonus(j) - (isSea(i, j) ? 1 : 0);
       if (edge < minEdge) continue;
       const d = G.own[j], th = real(d) && Fa(d).hold > 0; // v47: quem está segurando o objetivo vira alvo, sobretudo a capital e os alvos dele
-      const s = tval(f, j) * (edge + 1) / (G.tr[j] + 1) + (G.bld[j].length ? 1 : 0) + (th ? 3 + (j === Fa(d).capI || (Fa(d).obj.hold || []).some(n => G.ix[n] === j) ? 4 : 0) : 0);
+      const s = tval(f, j) * (edge + 1) / (G.tr[j] + 1) + (G.bld[j].length ? 1 : 0) + hegB(f, j) + (th ? 3 + (j === Fa(d).capI || (Fa(d).obj.hold || []).some(n => G.ix[n] === j) ? 4 : 0) : 0);
       if (!best || s > best[2]) best = [i, j, s];
     }
   }
@@ -2046,16 +2059,17 @@ function aiGovern(f) {
 }
 async function aiTurn(f) {
   const F = Fa(f), g = G, wait = async ms => { if (!G.fast && !G.auto) await sleep(ms); live(g); };
-  aiBreakTruces(f); aiDiplo(f);
+  hegCheck(); aiBreakTruces(f); aiDiplo(f);
   aiCards(f, 'ref');
   const T = owned(f), border = T.filter(i => G.A[i].some(j => hostile(f, j)));
   if (!border.length) { G.tr[T[0]] += F.reinf; F.reinf = 0; }
   else {
     let stage = null, sv = -1;
-    for (const i of border) for (const j of G.A[i]) if (hostile(f, j) && seaOk(f, i, j)) { const s = tval(f, j) / (G.tr[j] + 2) + G.tr[i] * .05; if (s > sv) { sv = s; stage = i; } }
+    for (const i of border) for (const j of G.A[i]) if (hostile(f, j) && seaOk(f, i, j)) { const s = (tval(f, j) + hegB(f, j)) / (G.tr[j] + 2) + G.tr[i] * .05; if (s > sv) { sv = s; stage = i; } }
     if (stage == null) stage = border[0];
-    const hot = border.slice().sort((a, b) => (threat(f, b) - G.tr[b]) - (threat(f, a) - G.tr[a]))[0];
-    const k = F.passive ? 0 : Math.ceil(F.reinf * .65);
+    const capHot = border.includes(F.capI) && threat(f, F.capI) > G.tr[F.capI]; // IA-21: capital ameaçada recebe a guarda primeiro
+    const hot = capHot ? F.capI : border.slice().sort((a, b) => (threat(f, b) - G.tr[b]) - (threat(f, a) - G.tr[a]))[0];
+    const k = F.passive ? 0 : Math.ceil(F.reinf * (capHot ? .4 : .65));
     G.tr[stage] += k; G.tr[hot] += F.reinf - k; F.reinf = 0;
   }
   render(); await wait(250);
@@ -2114,7 +2128,8 @@ function aiBreakTruces(f) {
   for (const k of [...G.truce]) {
     const [a, b] = k.split('|'); if (a !== f && b !== f) continue;
     const o = a === f ? b : a; if (!Fa(o) || !Fa(o).alive) continue;
-    if (power(f) > 1.8 * power(o) && owned(f).some(i => G.A[i].some(j => G.own[j] === o)) && rnd() < .12) {
+    const vsHeg = o === G.heg && !allied(f, o) && G.round - (G.truceT[k] || G.round) >= 5 && rnd() < .15; // IA-20: trégua antiga com a potência dominante não segura a coalizão
+    if (owned(f).some(i => G.A[i].some(j => G.own[j] === o)) && (vsHeg || (power(f) > 1.8 * power(o) && rnd() < .12))) {
       G.truce.delete(k); Fa(f).stab = Math.max(0, Fa(f).stab - 15); betray(f, o);
       log(f, `${fname(f)} rompe a trégua com ${fname(o)}!`); if (o === G.player && !G.auto) toast(`${fname(f)} rompeu a trégua com você!`);
     }
@@ -2172,7 +2187,7 @@ function accept(o, f, k, rep) {
   const R = relOf(o, f), worst = R.why.filter(w => w[1] < 0).sort((x, y) => x[1] - y[1])[0], bad = worst ? `não confiamos em vocês: ${worst[0]}` : '';
   if (k === 'truce') {
     if (G.truce.has(tk(o, f))) return [false, 'já há trégua'];
-    const pa = power(f), pb = power(o); let p = pb < pa * .9 ? .8 : pb < pa * 1.3 ? .45 : .15; p += R.v / 200 + (rep ? .25 : 0);
+    const pa = power(f), pb = power(o); let p = pb < pa * .9 ? .8 : pb < pa * 1.3 ? .45 : .15; p += R.v / 200 + (rep ? .25 : 0) + (G.heg && o !== G.heg && f !== G.heg ? .25 : 0);
     if (owned(f).some(i => (Fa(o).obj.hold || []).includes(tname(i)))) p /= 2;
     return p >= .5 ? [true, ''] : [false, bad || 'vocês têm o que queremos'];
   }
@@ -2225,7 +2240,8 @@ function aiDiplo(f) {
   const F = Fa(f);
   for (const o of G.order) {
     if (o === f || !Fa(o).alive || !Fa(o).entered) continue;
-    if ((G.cool[f + '>' + o] || 0) > G.round || rnd() > .25) continue;
+    const pact2 = G.heg && f !== G.heg && o !== G.heg; // IA-20: diante de uma potência dominante, os outros se procuram
+    if ((G.cool[f + '>' + o] || 0) > G.round || rnd() > (pact2 ? .6 : .25)) continue;
     const opts = (G.truce.has(tk(f, o)) ? ['com', 'pas', 'pes', 'def', 'ali'] : ['truce']).filter(k => accept(f, o, k)[0] && accept(o, f, k)[0]);
     const human = o === G.player && !G.auto;
     if (opts.length && !human) { propose(f, o, opts[0]); continue; }
