@@ -259,7 +259,7 @@ Object.assign(STRUCT, {
   sil: { pc: 16, up: 2, need: 'qua', tech: 'msg', good: ['elt'], ic: '🎯', fx: 'Silo de mísseis (C-109): uma vez por turno, ataque à distância (até 3 territórios) mata 2 tropas inimigas. Custa 5 ouro.', n: 'Silo de Mísseis' },
   // energia (exigem zona energética no território)
   tcv: { pc: 10, need: 'zen', tech: 'ele', good: ['car'], mk: 'ene', plu: 2, ic: '🏭', fx: 'Termelétrica a carvão (C-110): energia, +2 de poluição.', n: 'Termelétrica a Carvão' },
-  hid: { pc: 14, need: 'zen', tech: 'ele', rioReq: 1, mk: 'ene', y: { prod: 1 }, ic: '💧', fx: 'Hidrelétrica (C-111): energia limpa e +1 produção. Exige rio.', n: 'Hidrelétrica' },
+  hid: { pc: 14, need: 'zen', needA: 'rep', tech: 'ele', rioReq: 1, mk: 'ene', y: { prod: 1 }, ic: '💧', fx: 'Hidrelétrica (C-111): energia limpa e +1 produção. Exige rio e uma Represa no território.', n: 'Hidrelétrica' },
   tgs: { pc: 10, need: 'zen', tech: 'ref', good: ['cmb'], mk: 'ene', plu: 1, ic: '🔥', fx: 'Termelétrica a gás (C-112): energia, +1 de poluição.', n: 'Termelétrica a Gás' },
   nuc: { pc: 20, need: 'zen', tech: 'fis', mk: 'ene', y: { prod: 2 }, ic: '☢', fx: 'Usina nuclear (C-113): energia e +2 produção; pequeno risco de acidente.', n: 'Usina Nuclear' },
   sol: { pc: 10, need: 'zen', tech: 'ren', mk: 'ene', y: { gold: 1 }, plu: -1, ic: '☀', fx: 'Parque solar e eólico (C-114): energia limpa, +1 ouro e −1 de poluição.', n: 'Parque Solar e Eólico' },
@@ -269,6 +269,13 @@ Object.assign(STRUCT, {
   tav: { pc: 16, road: 5, need: 'frv', tech: 'ele', good: ['ene'], lv: 3, y: { sci: 2, gold: 2 }, ic: '🚄', fx: 'Trem de alta velocidade (C-125): até 6 territórios; +2 saber e +2 ouro.', n: 'Trem de Alta Velocidade' },
   cnl: { pc: 14, tech: 'din', coast: 1, nav: 1, y: { gold: 1 }, ic: '⛴', fx: 'Canal (C-128): +1 travessia e +1 ouro.', n: 'Canal' },
   apt: { pc: 12, tech: 'avi', good: ['cmb'], lv: 3, y: { gold: 1 }, ic: '🛫', fx: 'Aeroporto (C-129): ponte aérea de tropas entre aeroportos seus no remanejamento e rota aérea de carga.', n: 'Aeroporto' },
+  // v65: água (C-130 a C-135). noRio = só onde não há rio; needA = exige também esta obra no território; ag = peso extra para a IA
+  pco: { pc: 3, tech: 'mnr', noRio: 1, hl: 1, dry: 1, ag: .9, ic: '🪣', fx: 'Poço (C-130): +1 saúde e protege o estoque de comida na seca. Só em território sem rio.', n: { ant: 'Poço', med: 'Poço', pol: 'Poço Artesiano', mod: 'Poço Artesiano', fan: 'Fonte da Aldeia' } },
+  acq: { pc: 8, need: 'faz', tech: 'irr', noRio: 1, dry: 1, y: { food: 2 }, ic: '🏞', fx: 'Açude (C-131): +2 comida e protege da seca. É a irrigação de quem não tem rio.', n: 'Açude' },
+  rsa: { pc: 10, tech: 'eng', lv: 2, hl: 1, dry: 1, y: { food: 1 }, ag: .6, ic: '🫙', fx: 'Reservatório (C-132): +1 comida, +1 saúde e protege da seca. Exige vila ou maior.', n: { ant: 'Reservatório', med: 'Reservatório', pol: 'Reservatório', mod: 'Caixa-d\'Água', fan: 'Cisterna Rúnica' } },
+  rdg: { pc: 8, need: 'ofi', tech: 'rda', rioReq: 1, y: { prod: 2 }, ic: '🎡', fx: 'Roda d\'água (C-133): +2 produção. Exige oficina e rio.', n: 'Roda d\'Água' },
+  rep: { pc: 16, tech: 'din', rioReq: 1, dry: 1, flood: 1, y: { food: 1 }, ag: .3, ic: '🌊', fx: 'Represa (C-134): +1 comida, acaba com as enchentes e protege da seca no território. É a base da Hidrelétrica. Exige rio.', n: 'Represa' },
+  ete: { pc: 12, tech: 'ecol', need: 'san', lv: 3, hl: 1, plu: -2, ag: .8, ic: '♻', fx: 'Estação de tratamento (C-135): +1 saúde e −2 de poluição. Exige saneamento e cidade.', n: 'Estação de Tratamento' },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },

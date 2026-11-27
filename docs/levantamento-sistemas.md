@@ -436,6 +436,12 @@ A infraestrutura faz três coisas: **liga** territórios numa rede (os bens circ
 | C-127 | Estaleiro | Porto + madeira (aço depois da era industrial) | 4 | — | Constrói navios; +1 travessia por turno | Navios de elite; reparo de frota |
 | C-128 | Canal | Engenharia hidráulica; liga dois mares ou rios | 6 | Une duas redes marítimas | Navios atravessam o território | Pedágio: +1 ouro por rota alheia que passa |
 | C-129 | Aeroporto | Aviação + combustível | 5 | Liga bens leves e eletrônicos a outros aeroportos | Ponte aérea: até 3 tropas entre aeroportos por turno | +2 turismo, +1 ouro; +1 alcance aéreo |
+| C-130 | Poço (v65) | Mineração; território sem rio |  |  |  | +1 saúde; protege da seca |
+| C-131 | Açude (v65) | Irrigação; fazenda; sem rio |  |  |  | +2 comida; protege da seca |
+| C-132 | Reservatório (v65) | Engenharia; vila |  |  |  | +1 comida, +1 saúde; protege da seca |
+| C-133 | Roda d'água (v65) | Rodas d'água; oficina; rio |  |  |  | +2 produção |
+| C-134 | Represa (v65) | Dinamite; rio |  |  |  | +1 comida; impede enchente; exigida pela Hidrelétrica (C-111) |
+| C-135 | Estação de tratamento (v65) | Ecologia; saneamento; cidade |  |  |  | +1 saúde, −2 poluição |
 
 ### Regras de rede e movimento
 

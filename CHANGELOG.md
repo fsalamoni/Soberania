@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## v65 — 27/11/2026 · Água: poço, açude, reservatório, roda d'água, represa e tratamento (C-130 a C-135)
+
+Parte 1 do plano da análise completa.
+
+- **Poço (C-130).** Só em território sem rio: +1 saúde. Tecnologia: Mineração.
+- **Açude (C-131).** Só sem rio, sobre uma fazenda: +2 comida. É a irrigação de quem não tem rio. Tecnologia: Irrigação.
+- **Reservatório (C-132).** Vila ou maior: +1 comida e +1 saúde. Tecnologia: Engenharia.
+- **Roda d'água (C-133).** Oficina e rio: +2 produção. A tecnologia Rodas d'água passa a liberar uma obra.
+- **Represa (C-134).** Com rio: +1 comida e fim das enchentes no território. **A Hidrelétrica passa a exigir uma Represa** no mesmo território. Tecnologia: Dinamite.
+- **Estação de tratamento (C-135).** Cidade com saneamento: +1 saúde e −2 de poluição. Tecnologia: Ecologia.
+- **Seca e enchente com prevenção.** Poço, açude, reservatório e represa protegem o estoque de comida na seca, como o celeiro; a represa impede a enchente. O aviso do evento diz qual obra teria evitado a perda.
+- A IA constrói as obras novas (peso próprio, e a represa vale mais quando falta energia).
+- **Correção.** O catálogo dizia "colina ou montanha" para toda obra que depende de terreno vizinho, mesmo as de selva e floresta (Seringal, Reserva Florestal, Parque Nacional). Agora mostra o terreno certo.
+- Hidrelétricas já construídas em partidas salvas continuam funcionando.
+
 ## v64 — 27/11/2026 · Foco de produção da IA só no Difícil; simulações com semente (P-14, IA-22)
 
 - **Dificuldade.** No Difícil, os impérios da IA também aproveitam a produção das regiões sem obra, sempre em comida. No Fácil e no Normal, só o jogador tem o foco. O resumo da escolha de dificuldade explica a diferença.

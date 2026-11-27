@@ -961,7 +961,7 @@ Object.assign(STRUCT, {
   sil: { pc: 16, up: 2, need: 'qua', tech: 'msg', good: ['elt'], ic: '🎯', fx: 'Silo de mísseis (C-109): uma vez por turno, ataque à distância (até 3 territórios) mata 2 tropas inimigas. Custa 5 ouro.', n: 'Silo de Mísseis' },
   // energia (exigem zona energética no território)
   tcv: { pc: 10, need: 'zen', tech: 'ele', good: ['car'], mk: 'ene', plu: 2, ic: '🏭', fx: 'Termelétrica a carvão (C-110): energia, +2 de poluição.', n: 'Termelétrica a Carvão' },
-  hid: { pc: 14, need: 'zen', tech: 'ele', rioReq: 1, mk: 'ene', y: { prod: 1 }, ic: '💧', fx: 'Hidrelétrica (C-111): energia limpa e +1 produção. Exige rio.', n: 'Hidrelétrica' },
+  hid: { pc: 14, need: 'zen', needA: 'rep', tech: 'ele', rioReq: 1, mk: 'ene', y: { prod: 1 }, ic: '💧', fx: 'Hidrelétrica (C-111): energia limpa e +1 produção. Exige rio e uma Represa no território.', n: 'Hidrelétrica' },
   tgs: { pc: 10, need: 'zen', tech: 'ref', good: ['cmb'], mk: 'ene', plu: 1, ic: '🔥', fx: 'Termelétrica a gás (C-112): energia, +1 de poluição.', n: 'Termelétrica a Gás' },
   nuc: { pc: 20, need: 'zen', tech: 'fis', mk: 'ene', y: { prod: 2 }, ic: '☢', fx: 'Usina nuclear (C-113): energia e +2 produção; pequeno risco de acidente.', n: 'Usina Nuclear' },
   sol: { pc: 10, need: 'zen', tech: 'ren', mk: 'ene', y: { gold: 1 }, plu: -1, ic: '☀', fx: 'Parque solar e eólico (C-114): energia limpa, +1 ouro e −1 de poluição.', n: 'Parque Solar e Eólico' },
@@ -971,6 +971,13 @@ Object.assign(STRUCT, {
   tav: { pc: 16, road: 5, need: 'frv', tech: 'ele', good: ['ene'], lv: 3, y: { sci: 2, gold: 2 }, ic: '🚄', fx: 'Trem de alta velocidade (C-125): até 6 territórios; +2 saber e +2 ouro.', n: 'Trem de Alta Velocidade' },
   cnl: { pc: 14, tech: 'din', coast: 1, nav: 1, y: { gold: 1 }, ic: '⛴', fx: 'Canal (C-128): +1 travessia e +1 ouro.', n: 'Canal' },
   apt: { pc: 12, tech: 'avi', good: ['cmb'], lv: 3, y: { gold: 1 }, ic: '🛫', fx: 'Aeroporto (C-129): ponte aérea de tropas entre aeroportos seus no remanejamento e rota aérea de carga.', n: 'Aeroporto' },
+  // v65: água (C-130 a C-135). noRio = só onde não há rio; needA = exige também esta obra no território; ag = peso extra para a IA
+  pco: { pc: 3, tech: 'mnr', noRio: 1, hl: 1, dry: 1, ag: .9, ic: '🪣', fx: 'Poço (C-130): +1 saúde e protege o estoque de comida na seca. Só em território sem rio.', n: { ant: 'Poço', med: 'Poço', pol: 'Poço Artesiano', mod: 'Poço Artesiano', fan: 'Fonte da Aldeia' } },
+  acq: { pc: 8, need: 'faz', tech: 'irr', noRio: 1, dry: 1, y: { food: 2 }, ic: '🏞', fx: 'Açude (C-131): +2 comida e protege da seca. É a irrigação de quem não tem rio.', n: 'Açude' },
+  rsa: { pc: 10, tech: 'eng', lv: 2, hl: 1, dry: 1, y: { food: 1 }, ag: .6, ic: '🫙', fx: 'Reservatório (C-132): +1 comida, +1 saúde e protege da seca. Exige vila ou maior.', n: { ant: 'Reservatório', med: 'Reservatório', pol: 'Reservatório', mod: 'Caixa-d\'Água', fan: 'Cisterna Rúnica' } },
+  rdg: { pc: 8, need: 'ofi', tech: 'rda', rioReq: 1, y: { prod: 2 }, ic: '🎡', fx: 'Roda d\'água (C-133): +2 produção. Exige oficina e rio.', n: 'Roda d\'Água' },
+  rep: { pc: 16, tech: 'din', rioReq: 1, dry: 1, flood: 1, y: { food: 1 }, ag: .3, ic: '🌊', fx: 'Represa (C-134): +1 comida, acaba com as enchentes e protege da seca no território. É a base da Hidrelétrica. Exige rio.', n: 'Represa' },
+  ete: { pc: 12, tech: 'ecol', need: 'san', lv: 3, hl: 1, plu: -2, ag: .8, ic: '♻', fx: 'Estação de tratamento (C-135): +1 saúde e −2 de poluição. Exige saneamento e cidade.', n: 'Estação de Tratamento' },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },
@@ -2564,8 +2571,8 @@ function events(f) {
   if (nomadOk() && st.length) ev.push('nom');
   const fl = G.faiths[f]; if (fl && G.fai.filter(x => x === f).length >= 12) ev.push('cis');
   const e = pick(ev);
-  if (e === 'seca') { const i = pick(T); if (!nb(i, 'cel')) { G.food[i] = Math.max(0, G.food[i] - 10); log(f, `Seca em ${tname(i)}: o estoque de comida cai.`); } else log(f, `Seca em ${tname(i)}, mas o celeiro segura a fome.`); }
-  else if (e === 'inun') { const i = pick(riv), k = ['faz', 'agr', 'arz'].find(k => G.bld[i].includes(k)); if (k) G.bld[i].splice(G.bld[i].indexOf(k), 1); G.food[i] += 10; log(f, `Enchente em ${tname(i)}${k ? ': ' + sName(k) + ' destruída' : ''}, mas o solo fica fértil (+10 comida).`); }
+  if (e === 'seca') { const i = pick(T); const w = G.bld[i].find(k => nb(i, k) && STRUCT[k].dry); if (!nb(i, 'cel') && !w) { G.food[i] = Math.max(0, G.food[i] - 10); log(f, `Seca em ${tname(i)}: o estoque de comida cai. Um celeiro, poço, açude ou reservatório teria evitado.`); } else log(f, `Seca em ${tname(i)}, mas ${w ? sName(w).toLowerCase() : 'o celeiro'} segura a fome.`); }
+  else if (e === 'inun') { const i = pick(riv); if (nb(i, 'rep')) { log(f, `O rio sobe em ${tname(i)}, mas a represa segura a enchente.`); } else { const k = ['faz', 'agr', 'arz'].find(k => G.bld[i].includes(k)); if (k) G.bld[i].splice(G.bld[i].indexOf(k), 1); G.food[i] += 10; log(f, `Enchente em ${tname(i)}${k ? ': ' + sName(k) + ' destruída' : ''}, mas o solo fica fértil (+10 comida). Uma represa evita a perda.`); } }
   else if (e === 'terr') { const i = pick(mt), ks = G.bld[i].filter(k => !STRUCT[k].wonder && !STRUCT[k].z), k = pick(ks); G.bld[i].splice(G.bld[i].indexOf(k), 1); log(f, `Terremoto em ${tname(i)} destrói ${sName(k)}.`); }
   else if (e === 'ouro') { const i = pick(gar); if (G.lv[i] < 4) G.lv[i]++; F.gold += 5; F.stab = Math.max(0, F.stab - 5); log(f, `Corrida do ouro em ${tname(i)}: gente e ouro chegam, e a ordem sofre.`); }
   else if (e === 'inv') { if (F.res) { F.sci += Math.ceil(techCost(TK[F.res], f) / 2); log(f, `Invenção inesperada em ${fname(f)} adianta a pesquisa.`); } }
@@ -3171,7 +3178,8 @@ function canQueue(f, k, i) {
   if (!S.z && (S.coast && !coastal(i) || S.lv && G.lv[i] < S.lv)) return false;
   if (S.need && ![].concat(S.need).some(b => built(i, b))) return false;
   if (S.dep && !S.dep.some(d => G.dep[i].includes(d))) return false;
-  if (S.rioReq && !G.riv[i]) return false;
+  if (S.rioReq && !G.riv[i] || S.noRio && G.riv[i]) return false;
+  if (S.needA && !built(i, S.needA)) return false;
   if (S.near && ![i, ...G.A[i]].some(j => S.near.includes(G.ter[j]))) return false;
   if (S.ww && owned(f).some(j => queued(j, k))) return false;
   return !reqF(f, k);
@@ -3997,7 +4005,7 @@ function aiBVal(f, k, i) {
   if (!S.z) { // parte 4: catálogo, avaliado pelos rendimentos e efeitos
     const W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8, pre: .5, stab: F.stab < 60 ? .7 : .2 };
     let v = Object.entries(S.y || {}).reduce((s, [r, a]) => s + a * W[r], 0) + (S.lg ? .6 : 0) + (S.ww ? 4.5 : 0) + (S.nav ? .8 : 0) + (S.rf ? 2.2 : 0)
-      + (S.vic ? 8 : 0) + (S.mk && !goods(f).has(S.mk) ? 2.5 : 0) + .5 * (S.hp || 0) + .4 * (S.cu || 0) + .5 * (S.hl || 0) + (S.sciLv ? .8 * G.lv[i] : 0) + (S.pm ? 1.5 : 0) + (S.sd ? .3 : 0) - .3 * Math.max(0, S.plu || 0); // parte 12
+      + (S.vic ? 8 : 0) + (S.mk && !goods(f).has(S.mk) ? 2.5 : 0) + .5 * (S.hp || 0) + .4 * (S.cu || 0) + .5 * (S.hl || 0) + (S.sciLv ? .8 * G.lv[i] : 0) + (S.pm ? 1.5 : 0) + (S.sd ? .3 : 0) - .3 * Math.max(0, S.plu || 0) + (S.ag || 0) + (k === 'rep' && !n && has(f, 'ele') && !goods(f).has('ene') ? 2.5 : 0); // parte 12; v65: ag e represa
     if (S.def) v += th >= G.tr[i] * .7 ? 2 * S.def : .2;
     if (S.atk) v += th ? 1.6 : .3;
     const near = !growMax(i) && G.food[i] >= growNeed(i) * .5;
@@ -4013,7 +4021,7 @@ function aiBVal(f, k, i) {
   const y = { ...S.y }, g = goods(f), W = { food: G.lv[i] < 4 ? .6 : .15, prod: .7, gold: 1, sci: .8, pre: .5, stab: .3 };
   if (k === 'agr' && G.riv[i]) y.food++;
   y[Object.keys(S.y)[0]] += Math.min(3, G.A[i].filter(j => G.own[j] === f && built(j, k)).length);
-  let v = { zin: 1.5, zen: 1.5, zcu: .4 * S.cu, ztu: .5 * S.hp }[k] || 0; // parte 12: zonas de base
+  let v = { zin: 1.5, zen: 1.5 + (built(i, 'rep') && !g.has('ene') ? 2 : 0), zcu: .4 * S.cu, ztu: .5 * S.hp }[k] || 0; // parte 12: zonas de base
   for (const d of G.dep[i]) if (DEP[d].z === S.z) { for (const [r, a] of Object.entries(DEP[d].y)) y[r] = (y[r] || 0) + a; if (!g.has(d)) v += DEP[d].lux ? 1.2 : d === 'fer' || d === 'cav' ? 1 : 0; }
   for (const [r, a] of Object.entries(y)) v += a * W[r];
   return v;
@@ -4367,7 +4375,7 @@ const SV = {
   won: SHD + bx(-5.6, 4.2, 8.4, 1.8, 3, '#d9ae42', '#f6da78', '#a8842a') + bx(-4, 2.6, 5.8, 1.8, 2.4, '#e0b84a', '#f8e08a', '#b08a2a') + bx(-2.4, 1, 3.2, 1.8, 1.8, '#e6c052', '#fbe79a', '#b8922e') + bx(-.9, -.6, 1, 3.6, .8, '#f0cf6a', '#fff2b8', '#c09a34') + '<path d="M-.1 -6.2l.5 1.2l1.3 .1l-1 .8l.3 1.3l-1.1 -.7l-1.1 .7l.3 -1.3l-1 -.8l1.3 -.1z" fill="#fff6c8" stroke="#b08a2a" stroke-width=".25"/>',
 };
 const SVN = { farm: 'Agricultura', past: 'Pecuária', fish: 'Pesca', wood: 'Floresta', mine: 'Mineração', ind: 'Indústria e ofícios', mkt: 'Comércio', port: 'Porto', tmpl: 'Fé e cultura', civ: 'Obras públicas', sci: 'Saber', mil: 'Exército', fort: 'Defesa', cult: 'Espetáculos', air: 'Aviação', won: 'Maravilha' };
-const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt', mkt: 'mer car ban bol arm', port: 'por stl cia frl', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil', fort: 'for pal cas fab bkr', cult: 'anf tea etd', air: 'aer apt' };
+const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt rdg', mkt: 'mer car ban bol arm', port: 'por stl cia frl', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm pco acq rsa rep ete', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil', fort: 'for pal cas fab bkr', cult: 'anf tea etd', air: 'aer apt' };
 const SVZ = { agr: 'farm', pec: 'past', pes: 'fish', flo: 'wood', min: 'mine', com: 'mkt', por: 'port', rel: 'tmpl', mil: 'mil', sci: 'sci' };
 const SVY = { food: 'farm', prod: 'ind', gold: 'mkt', sci: 'sci', pre: 'tmpl', stab: 'civ' };
 const svOf = k => { const S = STRUCT[k]; if (!S || S.road) return null; if (S.wonder) return 'won'; for (const c in SVK) if (SVK[c].split(' ').includes(k)) return c; return S.def ? 'fort' : S.air ? 'air' : S.rf || S.atk ? 'mil' : S.nav ? 'port' : SVZ[S.z] || SVY[Object.keys(S.y || {})[0]] || 'ind'; };
@@ -4750,9 +4758,11 @@ function reqText(k) {
   if (S.need) r.push('exige ' + [].concat(S.need).map(sName).join(' ou ') + ' no território');
   if (S.dep) r.push('jazida: ' + S.dep.map(d => DEP[d].n).join(', '));
   if (S.rioReq) r.push('rio');
+  if (S.noRio) r.push('território sem rio');
+  if (S.needA) r.push('exige também ' + sName(S.needA) + ' no território');
   if (S.coast || S.sea) r.push('litoral');
   if (S.ter) r.push('terreno: ' + [...S.ter].map(t => TERR[t].n).join(', ') + (S.rio ? ' ou rio' : '') + (S.dz ? ' ou jazida da zona' : ''));
-  if (S.near) r.push('colina ou montanha no território ou ao lado');
+  if (S.near) r.push([...S.near].map(t => TERR[t].n.toLowerCase()).join(' ou ') + ' no território ou ao lado');
   if (S.lv) r.push(LEVEL[S.lv].n.toLowerCase() + ' ou maior');
   const m = reqF(me, k); if (m) r.push('<b>' + esc(m) + '</b>');
   return r.join(' · ');
@@ -5149,6 +5159,7 @@ function rules() {
   <p><b>Duração.</b> Partida curta (60 rodadas), média (120) ou longa (250). Quanto mais longa, mais caras ficam obras e tecnologias e mais turnos o objetivo precisa ser mantido. Os eventos históricos se espalham pela primeira metade da partida.</p>
   <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (3, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida, e os turnos seguidos do objetivo só começam a contar aí; quem cumpre o objetivo é anunciado a todos e vira alvo. A dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
+  <p><b>Água.</b> Território sem rio pode ter Poço (+1 saúde) e Açude (+2 comida, a irrigação de quem não tem rio). O Reservatório dá comida e saúde nas vilas. Com rio, a Roda d'água soma produção à oficina e a Represa acaba com as enchentes e é exigida pela Hidrelétrica. Poço, açude, reservatório e represa protegem o estoque de comida na seca, como o celeiro. A Estação de tratamento tira poluição das cidades.</p>
   <p><b>Foco da produção.</b> Território com a fila vazia não desperdiça a produção ⚒: ela vira o foco escolhido em Região > Obras. Alimentação (comida para a região, sempre disponível), Riqueza (ouro, com Comércio), Ciência (saber, com Escrita), Cultura (com Alvenaria) ou Festividades (estabilidade, com Construção civil, até +3 por turno no império). Quando nada mais pode ser construído, o jogo deixa de pedir uma obra e mostra só o foco.</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido. Trocar de pesquisa não perde nada. A árvore mostra o que você sabe, o que pode pesquisar e, como silhueta, o passo seguinte; o resto aparece quando você chegar perto.</p>
