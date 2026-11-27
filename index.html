@@ -4362,7 +4362,9 @@ function buildMap() {
   // UI (celular): começa aproximado na capital do jogador, que o mapa inteiro fica miúdo em 360 px
   const cap = innerWidth <= 820 && G.player && G.F[G.player] && m.terr[G.F[G.player].capI];
   if (cap) { vb.w = m.w * .5; vb.h = m.h * .5; vb.x = Math.max(0, Math.min(m.w - vb.w, cap.x - vb.w / 2)); vb.y = Math.max(0, Math.min(m.h - vb.h, cap.y - vb.h / 2)); }
-  let h = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern>${terrDefs()}${svDefs()}</defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
+  // v69 (UI-38): chão da cidade se desfaz no terreno em vez de ficar num disco com sombra
+  const cg = Object.entries(CITY).map(([k, c]) => `<radialGradient id="cg_${k}"><stop offset="0" stop-color="${c.g}" stop-opacity=".95"/><stop offset=".6" stop-color="${c.g}" stop-opacity=".9"/><stop offset="1" stop-color="${c.g}" stop-opacity="0"/></radialGradient>`).join('');
+  let h = `<defs>${cg}<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern>${terrDefs()}${svDefs()}</defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
   if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
   const RL = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map]; // relevo real (maps/relevo.js)
   if (RL) h += `<image id="relc" href="${RL.c}" x="0" y="0" width="${m.w}" height="${m.h}" preserveAspectRatio="none"/>`;
@@ -4464,7 +4466,7 @@ function cityHtml(i, lv, wall, cap, urb = []) {
   const wf = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 0 ${2 * rx + 2.8} 0`, wb = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 1 ${2 * rx + 2.8} 0`;
   const wl = (d, f) => `<path d="${d}" fill="none" stroke="#4d4842" stroke-width="2.3" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="${f}" stroke-width="1.8" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="#e4dfd6" stroke-width=".7" stroke-dasharray=".9 .6" transform="translate(0,-2)"/>`, tw = (x, y) => bx(x - .9, y + .7, 1.8, 3.2, 1, '#b4aea6', '#ded8d0', '#857f77') + `<path d="M${x - .9} ${y - 2.5}v-.6h.6v.6h.6v-.6h.6v.6" fill="none" stroke="#b4aea6" stroke-width=".4"/>`;
   const trees = wall ? '' : [0, 1, 2, 3].map(k => tree((k % 2 ? 1 : -1) * (rx + .6 - k * .5), (k < 2 ? -1 : 1) * ry * .55, '#2f7a45', '#46a25e')).join('');
-  const h = `<g class="city" stroke="#17120d" stroke-width=".25" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="1" cy=".9" rx="${rx + 2.6}" ry="${ry + 2}" fill="#000" opacity=".28" stroke="none"/><ellipse rx="${rx + 1.6}" ry="${ry + 1.3}" fill="${C.g}" stroke="none" opacity=".92"/>`
+  const h = `<g class="city" stroke="#17120d" stroke-width=".25" stroke-linejoin="round" stroke-linecap="round"><ellipse rx="${rx + 4.2}" ry="${ry + 3}" fill="url(#cg_${st})" stroke="none"/>`
     + (wall ? wl(wb, '#8f8981') : trees)
     + B.filter(b => b[0] <= .1).map(b => b[1]).join('') + B.filter(b => b[0] > .1).map(b => b[1]).join('')
     + (wall ? `${wl(wf, '#a39d95')}${tw(-rx - 1.2, .2)}${tw(rx + 1.2, .2)}${tw(-rx * .55, ry + .4)}${tw(rx * .55, ry + .4)}<path d="M-.9 ${ry + 1.3}v-1.5a.9 .9 0 0 1 1.8 0v1.5z" fill="#221c18"/>` : '')
@@ -4612,6 +4614,7 @@ function renderMap() {
   civSee(); if (G.seen) svg.querySelectorAll('.sealinks > g').forEach(l => { const s = G.m.sea[+l.dataset.k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
   drawBorders(); ribbons();
+  { const rv = $('#rivers'); if (rv) rv.style.display = G.lens === 'rel' || G.lens === 'ter' ? '' : 'none'; } // v69: rios só nas lentes de relevo e terreno
   const hasRL = !!$('#relc'); if (hasRL) { $('#relc').style.display = G.lens === 'rel' ? '' : 'none'; $('#relS').style.display = G.lens === 'rel' ? 'none' : ''; }
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);

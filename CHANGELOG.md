@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## v69 — 27/11/2026 · Rios só nos mapas com relevo e cidade assentada no terreno (MC-05, UI-38)
+
+- **Rios só nas lentes Relevo e Terreno.** Na lente Dono, das cores das facções, e nas de Zonas, Recursos e Rede o rio não aparece mais. Pedido do Flavio.
+- **Cidade sem disco.** A cidade ficava sobre um disco claro com sombra, como uma peça pousada no mapa. Agora o chão da cidade se desfaz no terreno em volta, sem borda e sem sombra de disco.
+
 ## v68 — 27/11/2026 · Ponte, túnel, estação ferroviária e porto de contêineres (C-142 a C-145)
 
 - **Ponte (C-142).** +1 ouro, e as tropas que saem do território no remanejamento andam 1 território a mais pela estrada. Exige estrada e rio. Tecnologia: Construção civil.
