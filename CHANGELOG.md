@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## v72 — 27/11/2026 · Rios reais em todas as regiões de todos os mapas (MC-05, UI-38)
+
+- **Todos os rios do mundo real, em todas as regiões.** Antes só os territórios que a regra marca com rio (68 de 348) tinham rio desenhado. Agora 337 de 348 territórios dos 9 mapas mostram os seus rios reais. Pedido do Flavio.
+- **De onde vem o traçado.** Da Natural Earth, base aberta de rios do mundo na escala 1:10 milhões (domínio público), projetada igual a cada mapa: Reno, Danúbio, Tejo, Volga, Mississippi e afluentes, São Francisco, Tocantins, Xingu, Paraná, Congo, Níger, Ganges, Yangtzé e centenas de outros. A largura segue o porte do rio.
+- **Onde a base não chega, entra o relevo.** No Japão, que tem um só rio nessa base, e em regiões pequenas de rios curtos (Ceará, Paraíba, Sicília, Dinamarca), o rio é calculado pelo escoamento na elevação real, como na v71.
+- **Sem rio inventado.** Arábia, Líbia, Tripolitânia, Cirenaica e Groenlândia ficam sem rio. Rios reais que cruzam desertos, como o Nilo, aparecem. No mapa-múndi, Cuba e Taiwan são pequenos demais para a escala.
+- **Regra inalterada.** Quais territórios contam como "com rio" para bônus e obras não mudou. A dica ao passar o cursor aparece só nesses.
+- Em cada mapa entram os rios do porte que a escala comporta; se com isso um território ficaria vazio, entram os rios menores que ele tem de verdade.
+
 ## v71 — 27/11/2026 · Rios que seguem o relevo de verdade (MC-05, UI-38)
 
 - **O traçado dos rios agora sai da elevação real**, a mesma que desenha o relevo do mapa. Antes era uma curva inventada entre dois pontos do território, e por isso cortava serras. Pedido do Flavio.

@@ -1,10 +1,15 @@
-// Gera os rios de um mapa a partir da elevação real (AWS Terrain Tiles, formato terrarium, dados abertos):
+// Gera os rios de um mapa. Duas fontes, as duas de dados abertos:
+// 1) Natural Earth (rios e eixos de lagos na escala 1:10 milhões, domínio público): diz ONDE existe rio no mundo real e
+//    dá o traçado. Vale para todos os territórios do mapa, tenham ou não o 'r' de rio na regra.
+// 2) Elevação real (AWS Terrain Tiles, formato terrarium): onde a Natural Earth não tem rio na escala do território
+//    (quase todo o Japão, regiões pequenas de rios curtos), o rio é calculado pelo escoamento, menos em deserto e gelo:
 //   maps/relevo/<id>-v.json  { índice do território: [[traçado SVG, largura], ...] }
 // A água corre de verdade: o terreno é "enchido" a partir do mar (priority-flood), cada ponto escoa para o vizinho
 // mais baixo e a vazão se acumula rio abaixo. Em cada território sai o rio principal (o de maior vazão com bom
 // trecho dentro dele), os maiores afluentes e, se houver, um segundo rio. Por isso o traçado segue os vales do
 // mesmo relevo que o jogo desenha, engrossa rumo à foz e continua no território vizinho.
-// Uso: node rios.js <id> <pasta para guardar os ladrilhos> [world-atlas countries-50m.json]
+// Uso: NE=<ne_10m_rivers_lake_centerlines.geojson> node rios.js <id> <pasta para guardar os ladrilhos> [world-atlas countries-50m.json]
+// O relatório no fim lista onde a regra (GEO em src/geo.js) e o mundo real discordam.
 // Precisa de playwright (Chromium), curl e de d3-array, d3-geo e topojson-client em NODE_MODULES ou node_modules ao lado.
 const { chromium } = require('playwright'), fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const [, , ID, TILES, W50] = process.argv;
@@ -12,8 +17,11 @@ const NM = process.env.NODE_MODULES || path.join(__dirname, 'node_modules');
 const MAPS = JSON.parse(fs.readFileSync(path.join(__dirname, 'maps.json'), 'utf8')), m = MAPS[ID];
 const { PROJ } = require('./proj.js')(m);
 const S = 1.6; // pixels por unidade do mapa, igual ao relevo
-// só os territórios que o jogo marca com rio (o 'r' de GEO em src/geo.js) entram no arquivo
+// territórios que o jogo marca com rio (o 'r' de GEO em src/geo.js)
 const GEO = (() => { const s = fs.readFileSync(path.join(__dirname, '../src/geo.js'), 'utf8'), a = s.indexOf('const GEO = {'), e = s.indexOf('\n};', a); return new Function(s.slice(a, e + 3) + ' return GEO;')(); })()[ID] || {};
+// desertos e gelo sem rio perene: aqui o escoamento pelo relevo inventaria um rio que não existe (o Nilo e outros rios
+// reais que cruzam desertos vêm da Natural Earth e continuam aparecendo)
+const ARID = /^(Arábia|Líbia|Tripolitânia|Cirenaica|Groenlândia)$/;
 const WANT = m.terr.map(t => (GEO[t.n] || 'p').split(' ')[0].includes('r'));
 (async () => {
   if (!PROJ[ID]) throw new Error('sem projeção para ' + ID);
@@ -37,8 +45,11 @@ const WANT = m.terr.map(t => (GEO[t.n] || 'p').split(' ')[0].includes('r'));
   const miss = tiles.filter(t => !fs.existsSync(path.join(TILES, t.f)));
   if (miss.length) { const cfg = path.join(TILES, 'curl.cfg'); fs.writeFileSync(cfg, miss.map(t => `url = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${t.x}/${t.y}.png"\noutput = "${path.join(TILES, t.f)}"`).join('\n')); execFileSync('curl', ['-s', '-f', '--retry', '4', '--parallel', '--parallel-max', '8', '-K', cfg], { stdio: 'inherit' }); }
   console.log(ID, 'pixel', box.pm.toFixed(0) + ' m', 'zoom', z, 'ladrilhos', tiles.length, 'baixados', miss.length);
+  // rios reais dentro do quadro do mapa; em mapa de escala pequena entram só os rios maiores (scalerank baixo)
+  const cut = box.pm > 15000 ? 5 : box.pm > 7000 ? 7 : box.pm > 4800 ? 8 : 10, fine = box.pm < 2000;
+  const ne = []; if (process.env.NE) for (const f of JSON.parse(fs.readFileSync(process.env.NE, 'utf8')).features) { if (!f.geometry) continue; for (const L of f.geometry.type === 'MultiLineString' ? f.geometry.coordinates : [f.geometry.coordinates]) if (L.some(c => c[0] >= box.lon0 - 1 && c[0] <= box.lon1 + 1 && c[1] >= box.lat0 - 1 && c[1] <= box.lat1 + 1)) ne.push([f.properties.scalerank, L, f.properties.name || '']); }
   // 2) hidrologia
-  const out = await p.evaluate(async ({ m, tiles, z, projSrc, S, want }) => {
+  const out = await p.evaluate(async ({ m, tiles, z, projSrc, S, want, ne, cut, arid }) => {
     const proj = eval(projSrc), PW = Math.round(m.w * S), PH = Math.round(m.h * S), NP = PW * PH;
     const tx0 = Math.min(...tiles.map(t => t.x)), ty0 = Math.min(...tiles.map(t => t.y)), TW = (Math.max(...tiles.map(t => t.x)) - tx0 + 1) * 256, TH = (Math.max(...tiles.map(t => t.y)) - ty0 + 1) * 256;
     // mosaico de elevação, em faixas para não estourar o tamanho do canvas
@@ -97,7 +108,7 @@ const WANT = m.terr.map(t => (GEO[t.n] || 'p').split(' ')[0].includes('r'));
     const rivers = {}, stat = [];
     const cells = m.terr.map(() => []); for (let k = 0; k < NP; k++) if (ID[k] >= 0 && land[k]) cells[ID[k]].push(k);
     m.terr.forEach((t, i) => {
-      const C = cells[i]; if (!want[i] || C.length < 40) return;
+      const C = cells[i]; if (arid[i] && !want[i] || C.length < 40) return;
       // saídas: pixels do território cuja água vai para fora dele (mar ou vizinho)
       const leaves = k => { let n = dir[k]; for (let s = 0; s < 5 && n >= 0 && ID[n] === -2; s++) n = dir[n]; return n < 0 || ID[n] !== i; };
       const exits = C.filter(k => acc[k] >= T0 && leaves(k)).sort((a, c) => acc[c] - acc[a]).slice(0, 10);
@@ -119,10 +130,41 @@ const WANT = m.terr.map(t => (GEO[t.n] || 'p').split(' ')[0].includes('r'));
       const sec = cand.find(c => c !== main && c.sc >= main.sc * .45 && !c.P.some(k => used.has(k))); if (sec) add(sec);
       rivers[i] = out; stat.push(out.length);
     });
-    return { rivers, n: Object.keys(rivers).length, paths: stat.reduce((a, c) => a + c, 0) };
-  }, { m, tiles, z, projSrc: PROJ[ID], S, want: WANT });
+    // rios reais (Natural Earth): cada linha é cortada por território; no mar e fora do mapa ela some
+    const real = {}, len = m.terr.map(() => 0), big = m.terr.map(() => 0), names = m.terr.map(() => new Set());
+    const tid = q => { const x = Math.floor(q[0] * S), y = Math.floor(q[1] * S); return x < 0 || y < 0 || x >= PW || y >= PH ? -1 : ID[y * PW + x]; };
+    for (const [rank, L, name] of ne) {
+      let run = null, cur = -1, prev = null, prevT = -1;
+      const flush = () => { if (run && run.length >= 2) { let l = 0; for (let j = 1; j < run.length; j++) l += Math.hypot(run[j][0] - run[j - 1][0], run[j][1] - run[j - 1][1]); (real[cur] = real[cur] || []).push([run, rank, l, name]); } run = null; };
+      // pontos intermediários a cada ~1 unidade, para o corte por território não pular divisas
+      const pts = []; for (let j = 0; j < L.length; j++) { const a = proj(L[j]); if (!a) { pts.push(null); continue; } const b0 = j && proj(L[j - 1]); if (b0) { const n = Math.min(40, Math.ceil(Math.hypot(a[0] - b0[0], a[1] - b0[1]))); if (n > 60) pts.push(null); else for (let s = 1; s < n; s++) pts.push([b0[0] + (a[0] - b0[0]) * s / n, b0[1] + (a[1] - b0[1]) * s / n]); } pts.push(a); }
+      for (const q of pts) {
+        if (!q || (prev && Math.hypot(q[0] - prev[0], q[1] - prev[1]) > 30)) { flush(); prev = null; prevT = -1; if (!q) continue; }
+        let t = tid(q); if (t === -2) t = run ? cur : prevT >= 0 ? prevT : -2;
+        if (t < 0) { flush(); prev = q; prevT = -1; continue; }
+        if (!run) { cur = t; run = prev && prevT >= 0 ? [prev, q] : [q]; } else if (t !== cur) { run.push(q); flush(); cur = t; run = [prev, q]; } else run.push(q);
+        prev = q; prevT = t;
+      }
+      flush();
+    }
+    const wr = r => Math.max(.4, Math.min(1.7, 1.75 - .16 * r));
+    const outAll = {}, rep = [];
+    m.terr.forEach((t, i) => {
+      const area = cells[i].length / (S * S), need = Math.min(14, .45 * Math.sqrt(area)); let src = '';
+      // escala do território: a do mapa; se nela o território ficaria sem rio, desce até a escala em que os seus rios reais aparecem
+      if (real[i]) { let c = cut; const tot = k => real[i].reduce((s, r) => s + (r[1] <= k ? r[2] : 0), 0); while (c < 10 && tot(c) < need) c++; real[i] = real[i].filter(r => r[1] <= c); real[i].forEach(r => { len[i] += r[2]; if (r[1] <= cut - 3) big[i] += r[2]; if (r[3]) names[i].add(r[3]); }); }
+      if (real[i] && len[i] >= need) { src = 'real'; outAll[i] = real[i].map(([run, rank]) => { const Rr = rdp(run, .22).map(q => [Math.round(q[0] * 10), Math.round(q[1] * 10)]); if (Rr.length < 2) return null; let d = 'M' + Rr[0][0] / 10 + ' ' + Rr[0][1] / 10 + 'l'; for (let j = 1; j < Rr.length; j++) { const dx = (Rr[j][0] - Rr[j - 1][0]) / 10, dy = (Rr[j][1] - Rr[j - 1][1]) / 10; d += (j > 1 && dx >= 0 ? ' ' : '') + dx + (dy >= 0 ? ' ' : '') + dy; } return [d, +wr(rank).toFixed(2)]; }).filter(Boolean); }
+      else if (rivers[i]) { src = 'relevo'; outAll[i] = rivers[i]; }
+      rep.push({ n: t.n, flag: !!want[i], src, len: +len[i].toFixed(0), big: +big[i].toFixed(0), need: +need.toFixed(0), names: [...names[i]].slice(0, 4) });
+    });
+    return { rivers: outAll, n: Object.keys(outAll).length, paths: Object.values(outAll).reduce((a, c) => a + c.length, 0), rep };
+  }, { m, tiles, z, projSrc: PROJ[ID], S, want: WANT, ne, cut, arid: m.terr.map(t => ARID.test(t.n)) });
   const D = path.join(__dirname, 'relevo'), js = JSON.stringify(out.rivers); fs.mkdirSync(D, { recursive: true });
   fs.writeFileSync(path.join(D, ID + '-v.json'), js);
-  console.log(ID, 'territórios com rio', out.n + '/' + WANT.filter(Boolean).length, 'traçados', out.paths, (js.length / 1024).toFixed(0) + 'KB');
+  console.log(ID, 'territórios com rio desenhado', out.n + '/' + m.terr.length, '(regra:', WANT.filter(Boolean).length + ')', 'traçados', out.paths, (js.length / 1024).toFixed(0) + 'KB', 'rios reais lidos', ne.length);
+  console.log('  regra SEM rio, mundo real COM:', out.rep.filter(r => !r.flag && r.src === 'real').map(r => r.n + ' (' + r.names.join('/') + ')').join('; ') || 'nenhum');
+  console.log('  regra COM rio, sem rio real na escala (traçado pelo relevo):', out.rep.filter(r => r.flag && r.src !== 'real').map(r => r.n).join('; ') || 'nenhum');
+  console.log('  com rio GRANDE (escala <= ' + (cut - 3) + '):', out.rep.filter(r => r.big >= r.need).length, 'de', m.terr.length, '| desses, a regra já marca', out.rep.filter(r => r.big >= r.need && r.flag).length, '| regra marca sem rio grande:', out.rep.filter(r => r.flag && r.big < r.need).map(r => r.n).join('; '));
+  fs.writeFileSync(path.join(TILES, ID + '-relatorio.json'), JSON.stringify(out.rep));
   await b.close();
 })();

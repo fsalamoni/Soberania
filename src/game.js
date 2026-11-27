@@ -2393,8 +2393,9 @@ function drawRivers() {
   }
   // v71: com relevo real, o traçado vem da elevação (maps/rios.js): rio principal, afluentes e largura que cresce rumo à foz.
   // Primeiro todas as margens, depois toda a água, para os trechos e os rios vizinhos se emendarem sem costura.
-  const V = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map] && RELIEF[G.sc.map].v || {}, px = w => .9 + (w - .4) * 1.5, tip = i => `<title>Rio em ${esc(m.terr[i].n)}: permite irrigação, moinho, roda d'água, cais fluvial e represa</title>`;
-  const real = m.rv.filter(([i]) => V[i]), fake = m.rv.filter(([i]) => !V[i]);
+  const V = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map] && RELIEF[G.sc.map].v || {}, px = w => .9 + (w - .4) * 1.5, tip = i => G.riv[i] ? `<title>Rio em ${esc(m.terr[i].n)}: permite irrigação, moinho, roda d'água, cais fluvial e represa</title>` : '';
+  // v72: os rios reais aparecem em todos os territórios do mapa, não só nos que a regra marca com rio
+  const real = Object.keys(V).map(Number).filter(i => G.own[i] !== 'off').map(i => [i]), fake = m.rv.filter(([i]) => !V[i]);
   g.innerHTML = real.map(([i]) => V[i].map(([d, w]) => `<path class="rvk" d="${d}" stroke-width="${(px(w) + 1.3).toFixed(2)}"/>`).join('')).join('')
     + real.map(([i]) => V[i].map(([d, w]) => `<path class="rv" data-i="${i}" d="${d}" stroke-width="${px(w).toFixed(2)}">${tip(i)}</path>`).join('')).join('')
     + fake.map(([i, d]) => `<clipPath id="rvc${i}"><path d="${P[i].getAttribute('d')}"/></clipPath><g clip-path="url(#rvc${i})"><path class="rvk" d="${d}" stroke-width="3.2"/><path class="rv" data-i="${i}" d="${d}" stroke-width="1.9">${tip(i)}</path></g>`).join('');
