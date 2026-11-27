@@ -1249,7 +1249,7 @@ function finishWork(i, n) {
   if (STRUCT[x.k].ww) for (let j = 0; j < G.N; j++) { const n0 = G.q[j].length; G.q[j] = G.q[j].filter(y => y.k !== x.k); if (G.q[j].length < n0 && real(G.own[j])) log(G.own[j], `${fname(G.own[j])} perde a obra de ${sName(x.k)}: outra facção terminou primeiro.`); }
 }
 // v63 (P-14): foco de produção. Região sem obra na fila não perde a produção: ela vira o recurso do foco escolhido.
-// r = quantos ⚒ valem 1 unidade; tech = tecnologia que libera o foco. O foco padrão (e o da IA) é a alimentação.
+// r = quantos ⚒ valem 1 unidade; tech = tecnologia que libera o foco. O foco padrão é a alimentação. Vale só para o jogador (a IA segue como antes).
 const FOCO = {
   com: { ic: '🌾', n: 'Alimentação', un: 'comida', r: 3, d: 'Vira comida no estoque da região, que cresce de porte mais depressa e resiste à fome.' },
   our: { ic: '💰', n: 'Riqueza', un: 'ouro', r: 4, tech: 'com', d: 'Vira ouro no tesouro do império. A república mercantil rende 50% a mais.' },
@@ -1280,9 +1280,9 @@ function focoBox(i) {
 }
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
-  if (real(f)) Fa(f).fesN = 0;
+  const foc = f === G.player; if (foc) Fa(f).fesN = 0; // P-14 só para o jogador: com a IA, as simulações mostraram bem mais vitórias por domínio
   for (const i of owned(f)) {
-    if (real(f) && !G.q[i].length) { focoApply(f, i); continue; } // P-14: fila vazia, a produção segue o foco
+    if (foc && !G.q[i].length) { focoApply(f, i); continue; } // P-14: fila vazia, a produção segue o foco
     let p = prodOf(i) + supNet(i, 'prod') + (G.q[i].length ? ldv(f, 'OB') : 0);
     while (p > 0 && G.q[i].length) {
       const x = G.q[i][0], use = Math.min(p, pCost(f, x.k, i) - x.p);

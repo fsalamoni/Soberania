@@ -412,7 +412,7 @@ Hoje uma construção fica pronta na hora. A proposta é que cada território te
 | P-11 | Manutenção | Cada construção custa 0 a 3 ouro por turno; sem ouro, a mais cara desativa | Impede construir tudo em todo lugar e dá peso à economia |
 | P-12 | Demolição | Desfazer uma construção devolve 25% do custo em produção e libera a vaga da zona | Permite reconverter uma região (ex.: fim de uma mina esgotada) |
 | P-13 | Esgotamento | Minas e poços têm reserva (ex.: 30 turnos); o garimpo esgota mais rápido | Gera expansão, guerra por jazidas e reconversão |
-| P-14 | Foco de produção (v63) | Com a fila vazia, `produce()` chama `focoApply()`: a produção ⚒ do território vira comida (÷3), ouro (÷4, Comércio), saber (÷5, Escrita), cultura (÷4, Alvenaria) ou estabilidade (÷6, Construção civil, teto de +3 por turno). Escolha por território em `G.foc`; IA sempre em comida | Acaba com a produção desperdiçada e com o pedido de obra quando nada pode ser construído |
+| P-14 | Foco de produção (v63) | Com a fila vazia, `produce()` chama `focoApply()`: a produção ⚒ do território vira comida (÷3), ouro (÷4, Comércio), saber (÷5, Escrita), cultura (÷4, Alvenaria) ou estabilidade (÷6, Construção civil, teto de +3 por turno). Escolha por território em `G.foc`; só para o jogador (com a IA, as simulações deram bem mais vitórias por domínio) | Acaba com a produção desperdiçada e com o pedido de obra quando nada pode ser construído |
 
 ### Fila na tela
 
