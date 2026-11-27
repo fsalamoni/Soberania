@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v57 — 27/11/2026 · Tutorial guiado (UI-31)
+
+Um tutorial que ensina o jogo dentro do próprio jogo: a tela escurece e só a função explicada fica iluminada, com um cartão ao lado dizendo o que ela é e como usar.
+
+- **31 passos, a tela inteira.** Barra da partida, mapa, marcador de território, lentes, zoom, as três etapas do turno (Reforços, Ações e guerra, Remanejar), as abas Império, Obras e Região, os seis indicadores, Tecnologias, Governo e fé, Diplomacia, Vitórias, Personagens, Comércio, Conselheiro, relatório da rodada, cartas, filas de obras, ficha e fronteiras do território e como vencer.
+- **Onde abrir.** Botão "Tutorial guiado" na abertura de cada partida e botão "Tutorial" na barra do alto, a qualquer momento da sua vez.
+- **Não mexe na partida.** O tutorial só troca de aba para mostrar cada coisa; ao sair, aba, seleção e zoom voltam ao que estavam.
+- **Teclado e leitor de tela.** Setas ou Enter avançam, seta para a esquerda volta, Esc sai; o foco fica preso no cartão e cada passo é anunciado. Respeita a preferência por menos movimento.
+- **Celular.** O cartão nunca sai da tela nem cobre o que explica: quando falta espaço, a página rola o alvo para junto do cartão.
+- Os textos foram conferidos contra as regras do jogo (fila de 3 obras, 5 cartas, 8 portes, vitórias a partir de 1/3 da partida).
+- O manual (Regras) ainda descrevia os quatro pontinhos de porte, retirados na v54; foi corrigido.
+
 ## v56 — 27/11/2026 · Mapa legível em qualquer zoom (UI-30)
 
 A v54 trocou os pontinhos por placas escuras com nome e porte. De perto ficava bom; com o mapa inteiro na tela, as caixas cobriam as províncias, "ALDEIA" se repetia dezenas de vezes e as cidades miúdas viravam ruído, sobretudo no celular. Esta versão corrige isso com níveis de detalhe.

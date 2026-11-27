@@ -244,6 +244,15 @@ details.bq,details.rdet{margin:6px 0}details.bq>summary,details.rdet>summary{cur
 #log li span{flex:1}
 #log em{color:var(--mute);font-style:normal;font-size:11px}
 #credit{font-size:11px;color:var(--mute)}
+/* v57 (UI-31): tutorial guiado. O furo iluminado é uma caixa com sombra enorme em volta */
+#tut{position:fixed;inset:0;z-index:20}
+.tuth{position:fixed;border-radius:10px;box-shadow:0 0 0 200vmax #04070bd1;outline:2px solid var(--brass);outline-offset:2px;pointer-events:none;transition:left .22s,top .22s,width .22s,height .22s}
+.tuth.none{outline:0}
+.tutc{position:fixed;width:max-content;background:var(--deck);color:var(--text);border:1px solid var(--brass);border-radius:12px;padding:14px 16px 12px;box-shadow:0 12px 40px #000c;line-height:1.5}
+.tutc h3{font-size:19px;color:var(--brass);margin:2px 0 6px}.tutc p{margin:0 0 8px;font-size:14.5px}.tutc .kick{font-size:12px;color:var(--mute);margin:0}
+.tutc .row{display:flex;gap:8px;align-items:center;margin-top:10px}.tutc .sp{flex:1}.tutc button{min-height:40px}
+.tutp{height:4px;background:var(--line);border-radius:2px;overflow:hidden}.tutp i{display:block;height:100%;background:var(--brass)}
+@media (prefers-reduced-motion:reduce){.tuth{transition:none}}
 #modal{position:fixed;inset:0;background:#000a;display:grid;place-items:center;padding:16px;z-index:10}
 .mbox{background:var(--deck);border:1px solid var(--brass);border-radius:12px;padding:20px 22px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto}
 .mbox h2{font-size:30px;color:var(--brass);margin-bottom:6px}
@@ -334,7 +343,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   <p class="note">Os cenários de fantasia são mundos originais criados para o jogo, inspirados no gênero da fantasia épica. Fronteiras históricas são aproximadas a partir de mapas atuais.</p>
 </div>
 <div id="game" hidden>
-  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="keys" title="Atalhos de teclado (?)" aria-label="Atalhos de teclado">⌨</button><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
+  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="keys" title="Atalhos de teclado (?)" aria-label="Atalhos de teclado">⌨</button><button data-a="tut" title="Tutorial guiado: passa por toda a tela, uma função de cada vez">Tutorial</button><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="lgd" hidden></div>
@@ -343,6 +352,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
+<div id="tut" hidden><div class="tuth"></div><div class="tutc" role="dialog" aria-modal="true" aria-labelledby="tutT" aria-live="polite"></div></div>
 <script>
 const MAPS = __MAPS__;
 const RELIEF = __RELIEF__;
