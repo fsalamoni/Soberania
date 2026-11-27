@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## v54 — 27/11/2026 · Cidade integrada: placa, obras urbanas e caminhos (UI-28)
+
+- **Placa da cidade no lugar dos pontinhos (UI-28).** Os quatro pontinhos acima do número de tropas indicavam o porte da cidade (de 1 a 4), mas ninguém conseguia adivinhar isso. Saíram. Cada território tem agora uma placa com o nome e o porte por extenso (Aldeia, Vila, Cidade, Metrópole), com a borda na cor do dono; quando a cidade está a caminho do próximo porte, a placa diz "crescendo".
+- **Obras urbanas dentro da cidade.** Templo, feira, oficina, quartel, aqueduto, observatório, anfiteatro e maravilha aparecem como prédios entre as casas, dentro da muralha. A cidade alarga para recebê-los.
+- **Obras rurais ligadas por caminhos.** Campos, pasto, pesqueiro, mata, mina, porto e pista ficam espalhados pelo território, ligados ao portão da cidade por caminhos de terra. Um caminho desce do portão até a guarnição, onde chegam as estradas entre territórios.
+
 ## v53 — 27/11/2026 · Cidades e paisagem de verdade no mapa (UI-27)
 
 - **Cidades no lugar dos ícones (UI-27).** Cada território povoado mostra uma cidade desenhada em volume sobre o terreno: casas, ruas de chão batido, árvores em volta e um marco no centro. A aldeia tem três casas; a metrópole, quinze, com muralha de pedra, torres e portão.
