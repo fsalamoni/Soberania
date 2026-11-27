@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v70 — 27/11/2026 · Mais obras militares (C-146 a C-149)
+
+- **Torre de vigia (C-146).** +1 no maior dado de defesa com 3 ou mais tropas no território. Tecnologia: Alvenaria.
+- **Estação de radar (C-147).** +1 no maior dado de defesa. Exige aeródromo. Tecnologia: Radar.
+- **Abrigo antiaéreo (C-148).** +1 saúde e +1 estabilidade. Nível 2. Tecnologia: Aviação.
+- **Memorial de guerra (C-149).** +1 prestígio e +1 estabilidade. Exige quartel e nível 2. Tecnologia: Arqueologia.
+- Equilíbrio da v68 conferido com uma segunda semente: as vitórias por conquista foram de 33 para 28 (semente 65), depois de terem ido de 24 para 32 (semente 66). A variação é da semente, não da estação ferroviária.
+
 ## v69 — 27/11/2026 · Rios só nos mapas com relevo e cidade assentada no terreno (MC-05, UI-38)
 
 - **Rios só nas lentes Relevo e Terreno.** Na lente Dono, das cores das facções, e nas de Zonas, Recursos e Rede o rio não aparece mais. Pedido do Flavio.

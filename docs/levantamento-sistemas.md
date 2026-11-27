@@ -452,6 +452,10 @@ A infraestrutura faz três coisas: **liga** territórios numa rede (os bens circ
 | C-143 | Túnel (v68) | Dinamite; estrada; colina ou montanha |  |  | +1 ouro; tira o custo extra de relevo (L-11) das obras do território |
 | C-144 | Estação ferroviária (v68) | Ferrovia; ferrovia no território; nível 2 |  |  | +2 ouro; base de suprimento |
 | C-145 | Porto de contêineres (v68) | Computadores; porto; nível 3 |  |  | +3 ouro, +1 produção |
+| C-146 | Torre de vigia (v70) | Alvenaria |  |  | +1 defesa com 3 ou mais tropas |
+| C-147 | Estação de radar (v70) | Radar; aeródromo |  |  | +1 defesa |
+| C-148 | Abrigo antiaéreo (v70) | Aviação; nível 2 |  |  | +1 saúde, +1 estabilidade |
+| C-149 | Memorial de guerra (v70) | Arqueologia; quartel; nível 2 |  |  | +1 prestígio, +1 estabilidade |
 
 ### Regras de rede e movimento
 

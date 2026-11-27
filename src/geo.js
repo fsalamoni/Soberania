@@ -289,6 +289,11 @@ Object.assign(STRUCT, {
   tun: { pc: 12, need: 'est', tech: 'din', terReq: 'mh', y: { gold: 1 }, ag: .3, ic: '🚇', fx: 'Túnel (C-143): +1 ouro, e as obras daqui deixam de custar mais por causa do relevo. Exige estrada; só em colina ou montanha.', n: 'Túnel' },
   efv: { pc: 10, up: 1, need: 'frv', tech: 'frv', lv: 2, y: { gold: 2 }, ag: .3, ic: '🚉', fx: 'Estação ferroviária (C-144): +2 ouro e base de suprimento, como o quartel e o porto. Exige ferrovia.', n: 'Estação Ferroviária' },
   pct: { pc: 14, up: 1, need: 'por', tech: 'cmp', lv: 3, y: { gold: 3, prod: 1 }, ic: '🏗', fx: 'Porto de contêineres (C-145): +3 ouro e +1 produção. Exige porto.', n: 'Porto de Contêineres' },
+  // v70: mais obras militares (C-146 a C-149), só com campos que já existiam (def, defMin, hl, y)
+  tvg: { pc: 5, up: 1, tech: 'alv', def: 1, defMin: 3, ag: .3, ic: '🗼', fx: 'Torre de vigia (C-146): +1 no maior dado de defesa com 3 ou mais tropas no território.', n: { ant: 'Torre de Vigia', med: 'Torre de Vigia', pol: 'Posto de Observação', mod: 'Posto de Observação', fan: 'Torre de Vigia' } },
+  rdr: { pc: 12, up: 1, need: 'aer', tech: 'radr', def: 1, ag: .3, ic: '📡', fx: 'Estação de radar (C-147): alerta antecipado, +1 no maior dado de defesa. Exige aeródromo.', n: 'Estação de Radar' },
+  aaa: { pc: 8, up: 1, tech: 'avi', lv: 2, hl: 1, y: { stab: 1 }, ag: .3, ic: '🛡', fx: 'Abrigo antiaéreo (C-148): +1 saúde e +1 estabilidade.', n: 'Abrigo Antiaéreo' },
+  mem: { pc: 10, need: 'qua', tech: 'arqe', lv: 2, y: { pre: 1, stab: 1 }, ic: '🕯', fx: 'Memorial de guerra (C-149): +1 prestígio e +1 estabilidade. Exige quartel.', n: 'Memorial de Guerra' },
   // maravilhas industriais e modernas (C-210 a C-215)
   gcn: { pc: 50, ww: 1, tech: 'din', coast: 1, nav: 1, y: { gold: 3 }, ic: '🌊', fx: 'Grande Canal Marítimo (C-210): +1 travessia e +3 ouro.', n: 'Grande Canal Marítimo' },
   exu: { pc: 45, ww: 1, tech: 'edp', y: { pre: 2 }, ic: '🎡', fx: 'Exposição Universal (C-211): +2 prestígio por turno e tecnologias industriais 20% mais baratas.', n: 'Exposição Universal' },
