@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v60 — 27/11/2026 · Barra de comandos: tudo a um toque, com explicação (UI-35)
+
+O painel tinha virado uma rolagem longa. Para declarar campanha era preciso estar na aba Império, na seção Ações, e rolar por baixo do conselheiro e do guia: numa tela de 1000 px de altura o botão ficava fora da vista. As janelas (tecnologias, governo, diplomacia) estavam numa fileira, as ações noutra, bem abaixo, sem dizer o que faziam a não ser passando o mouse.
+
+- **Barra de comandos fixa sob o mapa**, sempre visível, em qualquer aba e também no celular: Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias.
+- **Um toque abre o tema; cada item se explica.** Nome, custo, o que faz e, quando não dá para usar, o motivo por escrito ("Falta ouro: custa 4 e você tem 3", "Posicione os reforços primeiro"). Antes o motivo só aparecia ao passar o mouse, o que não existe no celular.
+- **Ponto dourado** no tema que tem pendência: pesquisa não escolhida, território sem obra, vaga de política, governador sem posto, proposta diplomática.
+- **Menos movimentos.** Declarar campanha, recrutar, festividades, impostos, rotas e as janelas de governo e diplomacia saíram de 3 a 4 movimentos com rolagem para 2 toques sem rolagem; Obras, Pesquisa e Vitórias, para 1.
+- **Painel mais curto.** Saíram a fileira de janelas e o bloco "Ações do império"; a aba Império fica com indicadores, relatório, conselheiro e guia.
+- Clique fora ou Esc fecha o menu; a caixa de batalha sobe para não cobrir a barra.
+- Tutorial atualizado: os passos de cada tema abrem o menu correspondente e iluminam os itens (33 passos).
+
 ## v59 — 27/11/2026 · Rivais que reagem a quem domina o mapa (IA-20, IA-21)
 
 Até aqui cada rival jogava sozinho: quem saía na frente crescia sem resposta, e isso vale também para o jogador que dispara. Agora os rivais leem o mapa.

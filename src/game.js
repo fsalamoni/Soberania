@@ -1108,7 +1108,7 @@ function eraCrisis() {
 }
 // UI-12: guia em camadas. Primeiro o turno básico; depois comércio, diplomacia, governo e vitórias
 const GUIDE = [
-  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Em Ações, declare campanha (não custa nada) para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
+  [['ref', 'Posicione os reforços clicando nos seus territórios'], ['camp', 'Na barra sob o mapa, abra Militar e declare campanha (não custa nada) para poder atacar'], ['atk', 'Clique num território seu e depois num vizinho inimigo'], ['obra', 'Clique num território seu e ponha uma obra na fila'], ['res', 'Escolha uma pesquisa'], ['end', 'Encerre o turno']],
   [['routes', 'Abra Comércio e veja onde cabem rotas'], ['dipl', 'Abra Diplomacia e veja o que cada facção aceita'], ['govm', 'Abra Governo e fé'], ['vicm', 'Abra Vitórias e veja quem está perto de vencer']],
   [['lens', 'Troque a lente do mapa (Relevo, Terreno, Recursos…) e leia a legenda'], ['empire', 'Numa região sua, abra o Rendimento da região e depois o Resumo do império'], ['techs', 'Abra a Árvore de tecnologias e veja o que está por descobrir'], ['sup', 'Numa região sua, abra Abastecimento e mande comida ou produção a outra']],
 ];
@@ -3002,7 +3002,6 @@ function renderSide() {
     </div>
     ${al.length ? `<div class="alert">${al.map(esc).join('<br>')}</div>` : ''}
     <p class="hint rs">${rt ? `🔬 ${esc(tName(rt.k))} ${pbar(F.sci, techCost(rt, me))} ${F.sci}/${techCost(rt, me)}` : '<b class="warn">Nenhuma pesquisa escolhida.</b> <button class="mini pri" data-a="techs">Escolher pesquisa</button>'}</p>
-    <div class="nav">${nv('techs', '🔬', 'Tecnologias', 'T')}${nv('govm', '🏛', 'Governo e fé', 'G')}${nv('dipl', '🤝', 'Diplomacia', 'D', G.offers.length || (G.dem && G.dem.to === me))}${nv('vicm', '🏆', 'Vitórias', 'V')}${nv('figm', '👤', 'Personagens', 'P', (F.gf || []).length)}${nv('routes', '🚢', 'Comércio', 'C')}</div>
     ${stabs('isub', isub, [['acoes', '⚙ Ações'], ['obj', '🎯 Objetivo'], ['facs', '👥 Facções'], ['cron', '📜 Crônica']])}
     <div class="is-obj"><div class="obj"><b>Objetivo</b> ${esc(objText(F))}${facFaith(me) ? ` <span class="hint">· fé ${esc(G.faiths[facFaith(me)].n)}</span>` : ''}<ul>${objLines(me).map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${esc(t)}</li>`).join('')}</ul></div>${news().length ? '<div class="news"><b>Notícias</b><ul>' + news().map(l => '<li>' + esc(l[1]) + '</li>').join('') + '</ul></div>' : ''}</div><div class="is-acoes">${reportHtml()}${advisorHtml(adv)}${guideHtml()}</div>`;
   const forces = `<p class="forces" title="Cada travessia leva um ataque ou um remanejamento pelo mar neste turno. Ganha-se 1 por ${sName('por')}, mais as de navegação e estaleiros. Frota 2 acima da do defensor: desembarque com 3 dados. Frota menor que a dele: ele defende com +1.">⚓ Frota: ${my ? F.navLeft : navOf(me)} travessia(s)${G.air ? ` · ✈ ${esc(G.air.n)}: ${my ? F.planes : planesOf(me)}` : ''}</p>`;
@@ -3023,23 +3022,8 @@ function renderSide() {
     const noPA = F.pa < 1, tc = troopCost(me);
     const Bt = (a, k, label, title, dis, on) => `<button class="ab2 ${on ? 'on' : ''}" data-a="${a}" data-k="${k}" title="${esc(title)}" ${dis ? 'disabled' : ''}>${label}</button>`;
     // parte 4: só aparecem as obras que cabem em algum território seu agora; o catálogo mostra o resto
-    ph = `<h4>Ações do império</h4>
-      <p class="hint">Valem para o império inteiro. Construções ficam na aba Obras. Para recrutar, atacar ou influenciar num lugar específico, clique no território: a aba Região mostra as ações e as fronteiras dele. Sem limite de ações; festas, impostos, agitadores, espiões e enviados valem 1 vez por turno.</p>
-      <div class="grp"><b>⚔ Militar</b><div class="row">
-        ${Bt('act', 'camp', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'Libera ataques e aviação neste turno, quantos quiser enquanto houver tropas. Cada turno em campanha soma cansaço de guerra.', F.camp, F.camp)}
-        ${Bt('act', 'rec', F.recOn ? `Comprar tropas <small>${tc}💰</small>` : `Recrutar <small>${tc}💰/tropa</small>`, `Abre o recrutamento: compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, !F.recOn && (noPA || F.gold < tc), G.mode === 'rec')}
-<button class="ab2" data-a="merc" title="1 tropa já na capital, sem gastar ação (1 vez por turno)." ${F.merc === G.round || F.gold < 2 * tc || G.turnF !== me ? 'disabled' : ''}>Mercenários <small>${2 * tc}💰</small></button>
-        ${F.camp && G.air && F.planes ? Bt('air', '', `✈ ${esc(G.air.n)} (${F.planes})`, 'Bombardeie um alvo ao alcance. Não gasta ação.', false, G.mode === 'air') : ''}</div></div>
-      <div class="grp"><b>🤝 Sociedade</b><div class="row">
-        ${Bt('act', 'fest', `Festividades <small>${ECON.fest}💰</small>`, '+15 de estabilidade e +4 de felicidade por 2 turnos. Gasta 5 de comida da capital.', noPA || F.gold < ECON.fest, false)}
-        ${Bt('act', 'infl', 'Influenciar <small>⭐</small>', 'Anexe um território neutro ou rebelde vizinho sem lutar. Custa as tropas dele + 1 de prestígio.', noPA, G.mode === 'infl')}
-        ${Bt('act', 'agit', `Agitadores <small>${ECON.agit}⭐</small>`, 'Uma facção rival perde 15 de estabilidade.', noPA || F.pre < ECON.agit, G.mode === 'agit')}
-        ${Bt('act', 'colo', 'Colonos <small>3💰</small>', 'Uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1 nível.', noPA || F.gold < 3 || !coloPair(me), false)}</div></div>
-      <div class="grp"><b>💰 Economia</b><div class="row">
-        ${Bt('act', 'tax', 'Impostos', `+${Math.ceil(owned(me).length / 2)} de ouro agora, −8 de estabilidade.`, noPA, false)}
-        ${Bt('act', 'trade', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', !F.tradeOn && noPA, F.tradeOn)}<button class="ab2" data-a="routes">Rotas ${myRoutes(me).length}/${routeMax(me)}</button></div></div>
-      ${forces}`;
-    st = `<b>2 · Ações</b> · ${F.camp ? `campanha: ${F.cq} conquista(s) no turno${blitzCost(me) ? ` · <span title="Desgaste da blitz: a partir da ${ECON.blitz + 1}ª conquista no turno, cada uma custa estabilidade crescente e 1 tropa">a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa</span>` : ` · as ${ECON.blitz} primeiras não têm desgaste`}` : 'obras, pesquisa e sociedade; declare campanha para atacar'}`;
+    ph = `<h4>Etapa 2: ações</h4><p class="hint">Os comandos ficam na barra sob o mapa: Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias. Cada um diz o que faz e quanto custa. Para agir num lugar específico (atacar, recrutar, construir), clique no território: a aba Região mostra as ações e as fronteiras dele.</p>${forces}`;
+    st = `<b>2 · Ações</b> · ${F.camp ? `campanha: ${F.cq} conquista(s) no turno${blitzCost(me) ? ` · <span title="Desgaste da blitz: a partir da ${ECON.blitz + 1}ª conquista no turno, cada uma custa estabilidade crescente e 1 tropa">a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa</span>` : ` · as ${ECON.blitz} primeiras não têm desgaste`}` : 'use a barra de comandos sob o mapa; em Militar, declare campanha para atacar'}`;
     abar = `<button class="ghost" data-a="end" title="Pula o remanejamento">Encerrar turno</button><button class="pri" data-a="toMov"${K}>Remanejar →</button>`;
   } else {
     const left = G.mv.reduce((s, v) => s + (v || 0), 0);
@@ -3050,6 +3034,7 @@ function renderSide() {
   $('#phase').innerHTML = ph;
   if (adv.length && my && !G.over) st += ` · <button class="lnk warn" data-a="advgo" title="${esc(adv.map(x => x.t).join(' '))}">⚠ ${adv.length} ponto(s) de atenção</button>`;
   $('#actbar').innerHTML = `<span class="st">${st}</span><span class="bt">${abar}</span>`;
+  renderCmd(adv);
   let inf = '';
   if (G.sel != null) {
     const i = G.sel, o = G.own[i], O = Fa(o), t = G.m.terr[i], co = capOwner(i);
@@ -3146,7 +3131,7 @@ function rules() {
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Perder territórios soma cansaço uma vez por rodada, e só a primeira agitação da rodada contra uma facção pega inteira (as outras valem 1/3).Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel ou de um porto custa 1 dado.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
-  <p><b>2. Ações.</b> Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
+  <p><b>2. Ações.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>
   <li><b>⚔ Campanha</b> libera os ataques e a aviação no turno, quantos você quiser enquanto houver tropas. Não custa nada, mas cada turno em campanha soma cansaço de guerra.</li>
   <li><b>⚔ Recrutar</b> abre a compra de tropas por ouro, na capital ou num quartel. Elas chegam no início do próximo turno.</li>
@@ -3207,8 +3192,51 @@ function startScenario(id, fid, diff, quiet, len, ld = 0, rl = false) {
 
 // ---------- cliques ----------
 // v57 (UI-31): tutorial guiado. Escurece a tela, ilumina a função ensinada e explica em um cartão ao lado.
+// UI-35 (v60): barra de comandos sob o mapa. Tudo o que o jogador pode fazer no império fica a um toque, agrupado por tema;
+// cada item diz o que faz, quanto custa e, quando está indisponível, o motivo por escrito
+let cmdOpen = null, cmdAdv = [];
+function cmdGroups() {
+  const me = G.player, F = Fa(me), my = G.turnF === me && !G.over, tc = troopCost(me), noPA = F.pa < 1;
+  const ph = G.over ? 'Partida encerrada.' : !my ? 'Aguarde a sua vez.' : G.phase === 'ref' ? 'Posicione os reforços primeiro.' : G.phase !== 'atk' ? 'Só na etapa 2, Ações.' : '';
+  const A = (k, ic, n, cost, d, why, on, a) => ({ a: a || 'act', k, ic, n, cost, d, why: on ? '' : ph || why || '', on });
+  const M = (a, ic, n, d, dot) => ({ a, k: '', ic, n, d, dot: !!dot, why: G.over ? 'Partida encerrada.' : '' });
+  const gold = c => F.gold < c ? `Falta ouro: custa ${c} e você tem ${F.gold}.` : '', pa = noPA ? 'Sem ações disponíveis neste turno.' : '';
+  const pend = ks => cmdAdv.some(x => ks.includes(x.k));
+  return [
+    ['mil', '⚔', 'Militar', [
+      A('camp', '⚔', F.camp ? 'Campanha declarada' : 'Declarar campanha', 'grátis', 'Libera os ataques deste turno. Depois, clique num território seu e num vizinho inimigo. Cada turno em campanha soma cansaço de guerra.', '', F.camp),
+      A('rec', '🪖', F.recOn ? 'Comprar tropas' : 'Recrutar', tc + '💰 por tropa', `Compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, F.recOn ? '' : pa || gold(tc), G.mode === 'rec'),
+      A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
+      ...(F.camp && G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', '', G.mode === 'air', 'air')] : [])]],
+    ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works'])],
+    ['tec', '🔬', 'Pesquisa', null, 'techs', !F.res && !G.over],
+    ['gov', '🏛', 'Governo', [
+      M('govm', '🏛', 'Governo e fé', 'Forma de governo, políticas, cívicas e crenças.', pend(['pol', 'civ', 'fe'])),
+      M('figm', '👤', 'Personagens', 'Líder, grandes figuras e governadores dos territórios.', pend(['gvr', 'fig'])),
+      A('fest', '🎉', 'Festividades', ECON.fest + '💰', '+15 de estabilidade e +4 de felicidade por 2 turnos. Gasta 5 de comida da capital.', pa || gold(ECON.fest)),
+      A('colo', '🧳', 'Colonos', '3💰', 'Uma cidade sua perde 1 nível e uma aldeia sua vizinha sobe 1 nível.', pa || gold(3) || (coloPair(me) ? '' : 'Precisa de uma cidade sua ao lado de uma aldeia sua.'))]],
+    ['dip', '🤝', 'Diplomacia', [
+      M('dipl', '🤝', 'Relações e acordos', 'Trégua, comércio, pesquisa, defesa mútua e aliança com cada facção.', G.offers.length || (G.dem && G.dem.to === me)),
+      A('infl', '⭐', 'Influenciar', 'prestígio', 'Anexe um território neutro ou rebelde vizinho sem lutar. Custa as tropas dele + 1 de prestígio.', pa, G.mode === 'infl'),
+      A('agit', '🔥', 'Agitadores', ECON.agit + '⭐', 'Uma facção rival perde 15 de estabilidade.', pa || (F.pre < ECON.agit ? `Falta prestígio: custa ${ECON.agit} e você tem ${F.pre}.` : ''), G.mode === 'agit')]],
+    ['eco', '💰', 'Economia', [
+      M('routes', '🚢', `Comércio e rotas ${myRoutes(me).length}/${routeMax(me)}`, 'Abra rotas entre mercados e portos para ganhar ouro, produção e bens.'),
+      A('tax', '🧾', 'Impostos', 'grátis', `+${Math.ceil(owned(me).length / 2)} de ouro agora, −8 de estabilidade.`, pa),
+      A('trade', '⚖', F.tradeOn ? 'Câmbio aberto' : 'Câmbio', 'grátis', 'Troque recursos 2 por 1 (3 por 2 com a tecnologia de comércio) quantas vezes quiser no turno.', F.tradeOn ? '' : pa, F.tradeOn)]],
+    ['vic', '🏆', 'Vitórias', null, 'vicm', false],
+  ];
+}
+function renderCmd(adv) {
+  if (adv) cmdAdv = adv;
+  const box = $('#cmd'); if (!box || !G || !G.player || !Fa(G.player)) return;
+  const gs = cmdGroups(), open = gs.find(g => g[0] === cmdOpen && g[3]);
+  const item = x => `<button class="cmi${x.on ? ' on' : ''}" role="menuitem" data-a="${x.a}"${x.k ? ` data-k="${x.k}"` : ''} ${x.why || (x.k === 'camp' && x.on) ? 'disabled' : ''}><span class="ci">${x.ic}</span><span class="ct"><b>${esc(x.n)}${x.dot ? ' •' : ''}</b>${x.cost ? ` <small>${x.cost}</small>` : ''}<span class="cd">${esc(x.d)}</span>${x.why ? `<span class="cw">⚠ ${esc(x.why)}</span>` : x.on ? '<span class="cok">✓ ativo neste turno</span>' : ''}</span></button>`;
+  box.innerHTML = (open ? `<div class="cmdm" role="menu" aria-label="${open[2]}"><p class="cmh">${open[1]} ${open[2]}</p>${open[3].map(item).join('')}</div>` : '') +
+    `<div class="cbar" role="toolbar" aria-label="Comandos do império">${gs.map(([g, ic, n, its, a, dot]) => { const d = its ? its.some(x => x.dot) : dot, on = its && its.some(x => x.on); return `<button class="cb${cmdOpen === g ? ' open' : ''}${on ? ' on' : ''}" data-a="${its ? 'cmd' : a}" data-g="${g}"${its ? ` aria-haspopup="menu" aria-expanded="${cmdOpen === g}"` : ''} title="${n}${its ? ': abre as opções' : ''}"><span class="ci">${ic}</span><span>${n}</span>${d ? '<i class="cdot"></i>' : ''}</button>`; }).join('')}</div>`;
+}
 // Cada passo: [alvo (seletor ou função), título, texto, preparo opcional]. O tutorial não muda a partida: só troca abas e devolve tudo ao sair.
-const tutTab = (tab, sub) => () => { G.tab = tab; if (tab === 'imp') G.isub = sub || 'acoes'; if (tab === 'obr') G.osub = sub || 'fil'; if (tab === 'reg') { G.sel = Fa(G.player).capI; G.rsub = sub || 'fro'; } render(); };
+const tutTab = (tab, sub) => () => { cmdOpen = null; G.tab = tab; if (tab === 'imp') G.isub = sub || 'acoes'; if (tab === 'obr') G.osub = sub || 'fil'; if (tab === 'reg') { G.sel = Fa(G.player).capI; G.rsub = sub || 'fro'; } render(); };
+const tutCmd = g => () => { tutTab('imp')(); cmdOpen = g; renderCmd(); };
 const tutFit = () => { vb = { x: 0, y: 0, w: G.m.w, h: G.m.h }; setVB(); };
 const TUT = [
   [null, 'Bem-vindo a Soberania', 'Você comanda uma nação num mapa histórico: cresce, constrói, negocia e, quando precisar, guerreia. Este tutorial passa por toda a tela, uma função de cada vez. A parte iluminada é a que está sendo explicada. Use Avançar e Voltar, as setas do teclado, ou Esc para sair. Nada do que você vê aqui altera a sua partida.'],
@@ -3222,12 +3250,14 @@ const TUT = [
   ['#ptabs', 'As três abas do painel', 'Império reúne o que vale para a nação inteira. Obras mostra todas as filas de construção num lugar só. Região mostra o território que você selecionou no mapa. O atalho I alterna entre Império e Região.', tutTab('imp')],
   ['#me .fh', 'A sua nação e o seu líder', 'O nome da facção, o líder com o traço dele e o governo atual. Em Poderes do líder você vê os bônus que valem a partida inteira. Cada líder puxa para um estilo de jogo: conquista, comércio, ciência ou fé.', tutTab('imp')],
   ['#me .kpis', 'Os seis indicadores', 'Ouro paga tropas, obras e manutenção; se faltar, soldados desertam. Saber alimenta a pesquisa. Prestígio é a moeda da diplomacia e da influência. Estabilidade baixa causa revoltas. Felicidade negativa corta 10% do ouro e do saber. Legado soma ciência, obras e cultura e é um dos caminhos para vencer. O número pequeno é o ganho por turno; toque num indicador para ver de onde ele vem.', tutTab('imp')],
-  ['#me .nav [data-a=techs]', 'Tecnologias', 'Escolha sempre uma pesquisa: sem ela, o saber do turno se perde. Cada tecnologia libera obras, unidades, governos ou bônus, e a árvore mostra o que leva a quê. A pesquisa anda sozinha de um turno para o outro.', tutTab('imp')],
-  ['#me .nav [data-a=govm]', 'Governo e fé', 'Quatro abas: o Governo define bônus e limites do império (trocar custa turnos de anarquia); as Políticas ocupam vagas e ajustam economia e exército; as Cívicas são avanços da sociedade; a Fé reúne as crenças. Cada opção mostra o requisito e o motivo quando está bloqueada.', tutTab('imp')],
-  ['#me .nav [data-a=dipl]', 'Diplomacia', 'Para cada facção: a opinião dela sobre você, o poder e as propostas possíveis, como trégua, acordo comercial, pacto de pesquisa, defesa mútua e aliança. O jogo diz por escrito o que cada proposta faz e por que ela seria recusada. Um vizinho forte e hostil merece um acordo antes de uma guerra.', tutTab('imp')],
-  ['#me .nav [data-a=vicm]', 'Vitórias', 'Mostra todos os caminhos para vencer e o quanto você e os rivais avançaram em cada um: além do objetivo do cenário, do legado e da dominação, há vitórias próprias, cada uma com a sua barra de progresso. Quem passa de 75% em alguma vira alvo de todos. Consulte antes de decidir no que investir.', tutTab('imp')],
-  ['#me .nav [data-a=figm]', 'Personagens', 'O líder, as grandes figuras que surgem com o tempo e os governadores. Nomeie um governador para cada território importante: ele melhora a produção ou a ordem de onde está.', tutTab('imp')],
-  ['#me .nav [data-a=routes]', 'Comércio', 'Abra rotas entre os seus territórios e com outras facções para ganhar ouro, produção e bens. Cada mercado, porto e banco permite uma rota, e abrir uma custa ouro. Rotas marítimas pedem porto e, sem frota, podem sofrer com piratas. Guerra ou perda de uma das pontas desfaz a rota.', tutTab('imp')],
+  ['#cmd', 'Barra de comandos', 'Tudo o que você pode fazer no império fica nesta barra, sempre à vista sob o mapa. Um toque abre o tema; cada item diz o que faz, quanto custa e, se estiver apagado, o motivo. Um ponto dourado avisa que há algo pendente naquele tema.', tutCmd(null)],
+  ['#cmd .cmdm', 'Militar', 'Declarar campanha libera os ataques do turno e não custa nada, mas cada turno em campanha cansa o povo. Recrutar compra tropas que chegam no turno seguinte. Mercenários chegam na hora e custam o dobro.', tutCmd('mil')],
+  ['#cmd [data-g=obr]', 'Obras', 'Abre a lista de tudo o que dá para construir, separada por finalidade, e mostra em qual território cada obra cabe e em quantos turnos fica pronta.', tutCmd(null)],
+  ['#cmd [data-g=tec]', 'Pesquisa', 'Escolha sempre uma pesquisa: sem ela, o saber do turno se perde. Cada tecnologia libera obras, unidades, governos ou bônus, e a árvore mostra o que leva a quê. A pesquisa anda sozinha de um turno para o outro.', tutCmd(null)],
+  ['#cmd .cmdm', 'Governo', 'Governo e fé reúne a forma de governo (trocar custa turnos de anarquia), as políticas, as cívicas e as crenças, cada uma com o requisito e o motivo quando está bloqueada. Em Personagens você nomeia governadores para os territórios importantes. Festividades sobem a estabilidade; Colonos transferem população entre territórios vizinhos.', tutCmd('gov')],
+  ['#cmd .cmdm', 'Diplomacia', 'Em Relações e acordos você vê a opinião de cada facção e propõe trégua, acordo comercial, pacto de pesquisa, defesa mútua e aliança; o jogo diz por escrito o que cada proposta faz e por que seria recusada. Influenciar anexa um vizinho neutro sem luta. Agitadores derrubam a estabilidade de um rival.', tutCmd('dip')],
+  ['#cmd .cmdm', 'Economia', 'Comércio e rotas: cada mercado, porto e banco permite uma rota, que rende ouro, produção e bens; guerra ou perda de uma ponta desfaz a rota. Impostos dão ouro na hora e custam estabilidade. O Câmbio troca um recurso por outro.', tutCmd('eco')],
+  ['#cmd [data-g=vic]', 'Vitórias', 'Mostra todos os caminhos para vencer e o quanto você e os rivais avançaram em cada um: além do objetivo do cenário, do legado e da dominação, há vitórias próprias, cada uma com a sua barra de progresso. Quem passa de 75% em alguma vira alvo de todos. Consulte antes de decidir no que investir.', tutCmd(null)],
   ['#me .stabs', 'Seções do império', 'Ações traz o que fazer neste turno. Objetivo detalha a meta do cenário e o que falta. Facções compara poder, opinião e ameaça de cada rival. Crônica guarda tudo o que aconteceu na partida.', tutTab('imp')],
   ['.is-acoes .advr:not(.rep)', 'Conselheiro', 'A lista do que está parado ou esquecido neste turno: pesquisa não escolhida, território sem obra, vaga de política livre, governador sem posto, fronteira em risco. Cada linha tem o botão que resolve. Zere a lista antes de encerrar o turno.', tutTab('imp', 'acoes')],
   ['.is-acoes .rep', 'Desde o seu último turno', 'A partir da segunda rodada, este quadro abre o seu turno com o que mudou enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, o que aconteceu no seu império e o saldo de cada rival. O território que mudou de mãos pisca no mapa.', tutTab('imp', 'acoes')],
@@ -3238,7 +3268,7 @@ const TUT = [
   ['#info .kpis', 'Aba Região: a ficha do território', 'Tropas, porte e o que o território rende por turno em comida, produção, ouro e saber. A sobra de comida faz o território crescer em oito portes, de Aldeia a Megalópole, desde que haja moradia e emprego; portes maiores abrem mais zonas para construir. Com fome, ele encolhe.', tutTab('reg', 'fro')],
   ['#info .stabs', 'Fronteiras, Obras e Detalhes', 'Fronteiras lista os vizinhos com as ações possíveis. Obras mostra o que existe e o que dá para construir neste território. Detalhes traz terreno, jazidas, rede de estradas e explicações de cada número.', tutTab('reg', 'fro')],
   ['#info .rs', 'Fronteiras: atacar, influenciar e mover', 'Para cada vizinho você vê o dono, as tropas e o que pode fazer. Atacar mostra a chance de vencer, já com os bônus dos dois lados. Influenciar tenta trazer um território neutro sem luta, gastando prestígio. Mover leva tropas para um território seu. Quando uma ação não é possível, o motivo aparece escrito.', tutTab('reg', 'fro')],
-  ['#actbar', 'Etapa 2: Ações e guerra', 'Depois dos reforços vêm as ações. Para atacar, declare campanha, que não custa nada mas cansa o povo se a guerra se arrasta. Selecione um território seu com mais de uma tropa e depois o vizinho inimigo. Os dados decidem: terreno, muralhas e capitais ajudam quem defende. Nas primeiras rodadas as capitais ficam protegidas. Conquistar demais num turno só desgasta a estabilidade. Nesta etapa você também recruta tropas com ouro, que chegam no turno seguinte.', tutTab('imp', 'acoes')],
+  ['#actbar', 'Etapa 2: Ações e guerra', 'Depois dos reforços vêm as ações. Para atacar, abra Militar na barra de comandos e declare campanha, que não custa nada mas cansa o povo se a guerra se arrasta. Selecione um território seu com mais de uma tropa e depois o vizinho inimigo. Os dados decidem: terreno, muralhas e capitais ajudam quem defende. Nas primeiras rodadas as capitais ficam protegidas. Conquistar demais num turno só desgasta a estabilidade. Nesta etapa você também recruta tropas com ouro, que chegam no turno seguinte.', tutTab('imp', 'acoes')],
   ['#actbar', 'Etapa 3: Remanejar e encerrar', 'No fim do turno, mova tropas entre territórios vizinhos seus: cada tropa anda uma vez e sempre fica ao menos uma para guardar o lugar. Tropas que ficam paradas se entrincheiram e defendem melhor. Depois, Encerrar turno passa a vez aos rivais. As obras e a pesquisa avançam sozinhas.', tutTab('imp', 'acoes')],
   ['#me .stabs [data-k=obj]', 'Como vencer', 'Cumpra o objetivo da sua facção e segure-o por alguns turnos seguidos, ou alcance a meta de legado, ou elimine os rivais. Objetivo e legado só valem depois do primeiro terço da partida, então os primeiros turnos são para crescer. Se as rodadas acabarem, vence quem mais cresceu. Você perde se ficar sem territórios.', tutTab('imp', 'acoes')],
   ['#top [data-a=tut]', 'Ajuda sempre à mão', 'Este tutorial pode ser reaberto aqui a qualquer momento. O botão do teclado lista os atalhos, Regras traz o manual completo e o Guia na seção Ações acompanha os seus primeiros turnos. Boa partida.'],
@@ -3252,7 +3282,7 @@ function tutStart() {
 }
 function tutEnd() {
   if (!tut) return; const t = tut; tut = null; $('#tut').hidden = true;
-  G.tab = t.tab; G.isub = t.isub; G.osub = t.osub; G.rsub = t.rsub; G.sel = t.sel; vb = t.vb; render(); setVB();
+  G.tab = t.tab; G.isub = t.isub; G.osub = t.osub; G.rsub = t.rsub; G.sel = t.sel; cmdOpen = null; vb = t.vb; render(); setVB();
   try { localStorage.setItem('sob-tut', '1'); } catch (e) { /* armazenamento bloqueado: o tutorial só não fica marcado como visto */ }
   if (t.foc && t.foc.focus) t.foc.focus();
 }
@@ -3289,6 +3319,7 @@ function tutPlace(el, again) {
 }
 addEventListener('resize', () => { if (tut) tutShow(); });
 document.addEventListener('click', e => {
+  if (cmdOpen && !e.target.closest('[data-a=cmd]')) setTimeout(() => { cmdOpen = null; renderCmd(); }, 0); // qualquer clique fora fecha o menu de comandos
   const fh = e.target.closest('h4.fh4'); if (fh && !e.target.closest('button')) return foldToggle(fh);
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a;
@@ -3333,6 +3364,8 @@ document.addEventListener('click', e => {
   else if (a === 'empire') empireModal();
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; render(); }
+  else if (a === 'cmd') { cmdOpen = cmdOpen === el.dataset.g ? null : el.dataset.g; renderCmd(); }
+  else if (a === 'cmdObr') { G.tab = 'obr'; G.osub = 'con'; render(); if (innerWidth <= 820) $('#works').scrollIntoView({ block: 'start' }); }
   else if (a === 'selObr') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'obr'; render(); }
   else if (a === 'advgo') { G.tab = 'imp'; G.isub = 'acoes'; render(); const e = $('.advr'); if (e) e.scrollIntoView({ block: 'nearest' }); }
   else if (a === 'adv') { const k = el.dataset.k; if (k === 'sel') { G.sel = +el.dataset.i; G.tab = 'reg'; G.rsub = 'fro'; render(); } else if (k === 'works') { G.tab = 'obr'; G.osub = 'fil'; render(); } else if (['civ', 'pol', 'fe'].includes(k)) { gsub = k; govModal(); } else if (k === 'gvr' || k === 'fig') { fsub = k; figModal(); } else if (k === 'techs') techModal(); else if (k === 'dipl') diploModal(); else if (k === 'routes') routesModal(); }
@@ -3385,6 +3418,7 @@ document.addEventListener('keydown', e => {
   }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h4.fh4')) { e.preventDefault(); return foldToggle(e.target); }
   const mo = !$('#modal').hidden;
+  if (e.key === 'Escape' && cmdOpen) { cmdOpen = null; renderCmd(); return; }
   if (e.key === 'Escape') { if (mo) { const b = $('#modal [data-m]:last-of-type'); if (b) b.click(); return; } if (G && !G.busy && !G.pend) { hideBattle(); G.sel = null; G.card = null; G.mode = null; G.tab = 'imp'; render(); } return; }
   if (mo || !G || $('#game').hidden) return;
   if (e.key.toLowerCase() === 'i') { G.tab = G.tab === 'reg' ? 'imp' : 'reg'; return render(); } // v49: alterna Império e Região

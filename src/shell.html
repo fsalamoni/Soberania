@@ -132,7 +132,19 @@ path.t.off{fill:#1b222b!important;fill-opacity:1;cursor:default}
 @keyframes flow{to{stroke-dashoffset:-16}}
 @media (prefers-reduced-motion:reduce){#roads .rt{animation:none}}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#000c;border:1px solid var(--brass);padding:7px 14px;border-radius:8px;font-size:13px;max-width:90%;text-align:center}
-#battle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
+/* v60 (UI-35): barra de comandos sob o mapa */
+#cmd{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);max-width:calc(100% - 16px);z-index:2}
+.cbar{display:flex;gap:2px;padding:4px;background:#0f1924f5;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px #0009;overflow-x:auto;scrollbar-width:none}
+.cb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:66px;min-height:48px;padding:5px 6px 4px;font-size:11.5px;background:transparent;border:1px solid transparent;border-radius:9px;color:var(--text);white-space:nowrap}
+.cb .ci{font-size:18px;line-height:1.1}.cb:hover{background:#ffffff12}.cb.open{border-color:var(--brass);background:#ffffff14}.cb.on{color:var(--brass)}
+.cdot{position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--brass);box-shadow:0 0 0 2px #0f1924}
+.cmdm{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:min(400px,calc(100vw - 16px));max-height:min(60vh,420px);overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:8px;background:#0f1924fa;border:1px solid var(--brass);border-radius:12px;box-shadow:0 12px 32px #000b}
+.cmh{margin:0 2px 2px;font:700 13px var(--f-display);color:var(--brass);letter-spacing:.04em;text-transform:uppercase}
+.cmi{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;padding:8px 10px;border-radius:9px;background:#17212d;border:1px solid var(--line);color:var(--text);font-size:13.5px;line-height:1.35}
+.cmi .ci{font-size:20px;line-height:1.2;width:24px;text-align:center;flex:none}.cmi .ct{display:block;min-width:0}.cmi small{color:var(--brass);font-weight:600;margin-left:4px}
+.cmi .cd,.cmi .cw,.cmi .cok{display:block;font-size:12.5px;color:var(--mute)}.cmi .cw{color:#ffb86b}.cmi .cok{color:#8fd694}
+.cmi:hover:not(:disabled){border-color:var(--brass)}.cmi.on{border-color:var(--good)}.cmi:disabled{opacity:1;cursor:not-allowed}.cmi:disabled b,.cmi:disabled .ci,.cmi:disabled .cd{opacity:.55}
+#battle{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));background:#17212df2;border:1px solid var(--brass);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px #0009}
 #battle.top{top:12px;bottom:auto}
 .bh{font-size:15px;text-align:center}
 .bh span{font-weight:700;background:var(--deck2);padding:1px 7px;border-radius:10px}
@@ -329,6 +341,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   #side{padding-bottom:120px}
   #side>section,#side h4,#side .rbox,#side .advr{scroll-margin-top:calc(44dvh + 56px)}
   #top [data-a=keys]{display:none}
+  #cmd{bottom:6px}.cb{min-width:50px;padding:4px 3px 3px;font-size:10.5px}.cmdm{max-height:calc(44dvh - 84px)}#battle{bottom:68px}
   #actbar{position:fixed;left:0;right:0;bottom:0;margin:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:5}
   #lens button{font-size:12px}
 }
@@ -354,7 +367,7 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="lgd" hidden></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button></div>
-    <div id="toast" hidden></div><div id="battle" hidden></div></main>
+    <div id="cmd" aria-label="Barra de comandos"></div><div id="toast" hidden></div><div id="battle" hidden></div></main>
   <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p><div id="actbar" role="region" aria-label="Ação do turno" aria-live="polite"></div></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
