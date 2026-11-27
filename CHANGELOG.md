@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## v74 — 27/11/2026 · Gestão do turno pela barra de baixo, painel sob demanda, região que só produz e formato para tablet (UI-39, P-14)
+
+Pedido do Flavio: a gestão estava repetida, tudo ficava na lateral com rolagem enorme, a barra de baixo quase não era usada e região sem obra cobrava uma escolha mesmo quando a ideia era só produzir.
+
+- **Construir deixou de ser obrigação.** Escolher um foco (alimentação, riqueza, ciência, cultura ou festividades) numa região sem obra agora é uma decisão: ela passa a só produzir e some dos avisos do conselheiro, do ponto na barra e do destaque nas filas. Em Obras há um botão para deixar todas as regiões sem obra só produzindo, e cada linha tem os dois caminhos lado a lado: Escolher obra ou Só produzir. Dá para desfazer na ficha da região. Território conquistado volta a pedir a decisão.
+- **O painel lateral abre só quando você pede.** Ele começa fechado e o mapa ocupa a tela. Abre ao tocar num território ou pela barra de baixo: etapas do turno, Obras, Império e Cartas. No lugar das três abas há um título e um ✕. Esc fecha.
+- **Indicadores sempre à vista, uma vez só.** Ouro, saber, prestígio, estabilidade, felicidade e legado saíram do painel e ficam numa faixa no topo. A barra parou de repetir esses números: Governo mostra a forma de governo, Economia as rotas, Império o avanço do objetivo.
+- **Barra como centro.** Vitórias virou Império e reúne caminhos de vitória, objetivo e líder, facções e crônica. Militar ganhou Cartas. Novidades do turno e pendências aparecem na barra também no celular. Com um território seu selecionado, a barra oferece pôr todos os reforços nele.
+- **Menos repetição.** O aviso de pesquisa parada aparecia em quatro lugares e agora fica na barra e no conselheiro. O título do território não se repete. Distribuir reforços não abre o painel a cada toque.
+- **Menos rolagem.** Na ficha da região, cada obra ocupa uma linha com nome, custo, prazo, efeito resumido e o botão Construir; tocar abre o texto inteiro. O foco fica recolhido quando há fila. Medido no cenário napoleônico, primeiro turno, computador: Obras da França de 2023 para 1377 px de altura; filas do império de 1574 para 1197 px. Ainda rolam, mas bem menos.
+- **Formato para tablet.** Pedido do Flavio. Deitado (821 a 1180 px de largura): o cabeçalho cabe em uma linha, o painel fica um pouco mais estreito e o mapa ganha a altura que o cabeçalho quebrado tomava. Em pé (600 a 820 px): mapa em metade da tela com o painel embaixo, barra com o estado de cada tema por escrito, etapas numeradas, indicadores com nome e menus centralizados. Conferido em 768 × 1024 e 1024 × 768, com toque.
+- Corrigido: no celular, com o painel aberto, a página ficava mais larga que a tela e cortava texto à direita. As caixas da ficha da região ocupam a largura toda.
+- Tutorial, regras e testes acompanham as mudanças. Nada muda para a IA nem no equilíbrio.
+
 ## v73 — 27/11/2026 · Rio grande de verdade vira regra do jogo (MC-05)
 
 - **Mais territórios com rio na regra, pelo mundo real.** Escolha do Flavio. Passa a contar como "com rio" todo território cortado por um rio de grande porte real. Eram 68 de 348, agora são 148. Os 68 antigos continuam.

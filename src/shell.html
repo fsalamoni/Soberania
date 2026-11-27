@@ -329,6 +329,14 @@ button.mini{padding:4px 9px;font-size:12.5px;min-height:28px}
 .cturn .te{flex:none;min-height:36px;padding:4px 14px;font-size:14px;white-space:nowrap}
 @media (min-width:821px){#map{height:calc(100% - 138px)}} /* o mapa termina acima da barra: nenhum território fica coberto */
 .rbox.foco .cats{margin:6px 0}.rbox.foco .mini small{color:var(--brass);font-weight:600}.rbox.foco .mini:disabled{opacity:.55}
+#res{order:9;flex-basis:100%;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}#res:empty{display:none}
+.rc{display:inline-flex;align-items:baseline;gap:5px;padding:2px 9px;border:1px solid var(--line);border-radius:999px;background:var(--deck2);font-size:13px;white-space:nowrap;cursor:help}.rc small{font-size:12px;color:var(--mute)}.rc b{font-family:var(--f-display);font-size:15px;letter-spacing:.02em}.rc i{font-style:normal;font-size:12px;color:var(--good)}.rc i.neg{color:#f0a39e}.rc.warn{border-color:#e8c15a}.rc.bad{border-color:#f0a39e}.rc:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+details.fic>summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;cursor:pointer;list-style:none}details.fic>summary::-webkit-details-marker{display:none}details.fic .fh2{display:flex;flex-direction:column;min-width:0}details.fic .fx1{grid-column:1/-1;font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}details.fic .fx1::after{content:" ▾"}details.fic[open] .fx1{display:none}details.fic>summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+details.foco>summary{cursor:pointer;list-style:none}details.foco>summary::-webkit-details-marker{display:none}details.foco>summary h5{margin:0}details.foco>summary h5::after{content:" ▾";color:var(--mute)}details.foco[open]>summary h5::after{content:" ▴"}
+#works .rbox{padding-top:8px;padding-bottom:8px}#works .rbox .hint{margin:2px 0 6px}
+#info div.rs{display:block}
+#ptabs .ptt{flex:1;min-width:0;align-self:center;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 2px 8px}#ptabs button{flex:none;min-width:36px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;color:var(--text)}
+@media (max-width:820px){#game{grid-template-columns:minmax(0,1fr)}#game.noside{height:100dvh;min-height:0;grid-template-rows:auto minmax(0,1fr)}#game.noside #map{height:calc(100% - 118px)}.rc small{display:none}.rc{padding:1px 7px;gap:4px}}
 #game.noside{grid-template-columns:minmax(0,1fr) 0}#game.noside #side{display:none}
 .nbl .why{display:block;flex-basis:100%;font-size:12px;color:#ffb86b}
 #credit{font-size:12px}.warn{color:var(--warn)}
@@ -359,10 +367,15 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   #side{padding-bottom:150px}
   #side>section,#side h4,#side .rbox,#side .advr{scroll-margin-top:calc(44dvh + 56px)}
   #top [data-a=keys]{display:none}
-  #cmd{position:fixed;left:0;right:0;bottom:0;transform:none;max-width:none;z-index:6}.cturn{margin:0;border-radius:0;border-width:2px 0 0;padding:6px 8px}.cbar{border-radius:0;border-width:1px 0 0;justify-content:space-between;padding-bottom:calc(4px + env(safe-area-inset-bottom))}.ts{font-size:12px;padding:4px 6px;gap:4px}.ts i{display:none}.ts.done i{display:inline-grid;width:16px;height:16px;font-size:10px}.cturn .te{padding:4px 10px;font-size:13px}.cturn .lnk.warn,.sdt{display:none}.cturn .cth{font-size:12px}
+  #cmd{position:fixed;left:0;right:0;bottom:0;transform:none;max-width:none;z-index:6}.cturn{margin:0;border-radius:0;border-width:2px 0 0;padding:6px 8px}.cbar{border-radius:0;border-width:1px 0 0;justify-content:space-between;padding-bottom:calc(4px + env(safe-area-inset-bottom))}.ts{font-size:12px;padding:4px 6px;gap:4px}.ts i{display:none}.ts.done i{display:inline-grid;width:16px;height:16px;font-size:10px}.cturn .te{padding:4px 10px;font-size:13px}.sdt{display:none}.cturn .cth{font-size:12px}
   .cb{min-width:0;padding:4px 3px 3px;font-size:10.5px}.cb .cs,.cb.bus .cl{display:none}.cb.bus{min-width:34px;justify-content:center}.cmdm{left:8px;right:8px;width:auto;transform:none;max-height:min(58dvh,440px)}#battle{bottom:8px}
   #lens button{font-size:12px}
 }
+#works>h4:first-child{display:none}
+/* tablet deitado (821 a 1180 px): cabeçalho em uma linha e painel um pouco mais estreito */
+@media (min-width:821px) and (max-width:1180px){#game{grid-template-columns:minmax(0,1fr) 320px}#top{gap:8px;padding:6px 10px}#scT,#top [data-a=keys]{display:none}#top button{padding:5px 10px;font-size:13px}#top h1{font-size:18px}}
+/* tablet em pé (600 a 820 px): mapa maior, barra com o estado de cada tema, listas em duas colunas */
+@media (min-width:600px) and (max-width:820px){#game{grid-template-rows:auto 50dvh auto}#ptabs{top:50dvh}#side>section,#side h4,#side .rbox,#side .advr{scroll-margin-top:calc(50dvh + 56px)}.cb{font-size:12px;padding:5px 4px 4px}.cb .cs{display:block}.ts{font-size:13.5px}.ts i{display:inline-grid}.cturn .cth{font-size:13.5px}.rc small{display:inline}.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}#works .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.cmdm{left:50%;right:auto;width:min(560px,calc(100% - 16px));transform:translateX(-50%)}}
 </style>
 <div id="setup" hidden>
   <header class="brand"><h1>SOBERANIA</h1><p>Estratégia por eras. Escolha um momento da história ou um mundo de fantasia, comande uma facção, conquiste com dados e mantenha seu povo sob controle.</p></header>
@@ -380,13 +393,13 @@ details.pw summary{cursor:pointer;font-size:12.5px;color:var(--brass);margin-top
   <p class="note">Os cenários de fantasia são mundos originais criados para o jogo, inspirados no gênero da fantasia épica. Fronteiras históricas são aproximadas a partir de mapas atuais.</p>
 </div>
 <div id="game" hidden>
-  <header id="top"><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="keys" title="Atalhos de teclado (?)" aria-label="Atalhos de teclado">⌨</button><button data-a="tut" title="Tutorial guiado: passa por toda a tela, uma função de cada vez">Tutorial</button><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
+  <header id="top"><div id="res" role="group" aria-label="Indicadores do império"></div><h1>SOBERANIA</h1><span id="scT"></span><span id="round"></span><span id="turn"></span><span class="sp"></span><label class="chk"><input type="checkbox" id="fast"> IA rápida</label><button data-a="keys" title="Atalhos de teclado (?)" aria-label="Atalhos de teclado">⌨</button><button data-a="tut" title="Tutorial guiado: passa por toda a tela, uma função de cada vez">Tutorial</button><button data-a="rules">Regras</button><button data-a="save">Salvar</button><button data-a="menu">Menu</button></header>
   <main id="mapw"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="lens" role="group" aria-label="Lentes do mapa"><button data-a="lens" data-l="own">Dono</button><button data-a="lens" data-l="rel" title="Relevo: terreno desenhado; impérios só pela faixa da fronteira">Relevo</button><button data-a="lens" data-l="ter">Terreno</button><button data-a="lens" data-l="zon">Zonas</button><button data-a="lens" data-l="res">Recursos</button><button data-a="lens" data-l="net">Rede</button></div>
     <div id="lgd" hidden></div>
     <div id="zoom"><button data-a="zin" aria-label="Aproximar">+</button><button data-a="zout" aria-label="Afastar">−</button><button data-a="zfit" aria-label="Mapa inteiro">⤢</button><button data-a="side" class="sdt" aria-label="Esconder ou mostrar o painel lateral" title="Esconde ou mostra o painel lateral. Ele reabre quando você escolhe algo na barra ou um território.">◨</button></div>
     <div id="cmd" aria-label="Barra de comandos"></div><div id="toast" hidden></div><div id="battle" hidden></div></main>
-  <aside id="side" class="t-imp"><nav id="ptabs" role="tablist" aria-label="Painel"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>
+  <aside id="side" class="t-imp" aria-label="Painel de detalhes"><nav id="ptabs" aria-label="Painel aberto"></nav><section id="me"></section><section id="phase"></section><section id="info"></section><section id="works"></section><section id="cards"></section><section id="tech"></section><section id="facs"></section><section id="cron"><h4>Crônica</h4><ul id="log"></ul></section><p id="credit"></p></aside>
 </div>
 <div id="modal" hidden><div class="mbox"></div></div>
 <div id="tut" hidden><div class="tuth"></div><div class="tutc" role="dialog" aria-modal="true" aria-labelledby="tutT" aria-live="polite"></div></div>

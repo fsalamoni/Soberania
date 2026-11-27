@@ -51,12 +51,13 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('#modal [data-m="0"]');
   await p.waitForFunction(() => window.__sob.G.turnF === 'fa', null, { timeout: 30000 });
   await p.screenshot({ path: shot('reforcos') });
-  await p.evaluate(() => { const G = window.__sob.G; G.sel = G.ix['Rio Grande do Sul']; G.tr[G.sel] += 10; });
+  await p.evaluate(() => { const G = window.__sob.G; G.sel = G.ix['Rio Grande do Sul']; G.tr[G.sel] += 10; window.__sob.render(); });
+  ok(await p.evaluate(() => document.querySelector('#game').classList.contains('noside') && !!document.querySelector('#actbar [data-a=all]')), 'v74: o painel começa fechado e a barra traz o atalho dos reforços');
   await p.click('[data-a=all]');
   await p.evaluate(() => window.__sob.render()); // v62: com os reforços distribuídos a etapa de ataques abre sozinha
   // governo (v5): abre as obras (1 ação), põe mercado e oficina na fila, escolhe pesquisa (sem ação) e declara campanha
   await p.evaluate(() => { window.__sob.G.F.fa.gold = 60; window.__sob.G.F.fa.sci = 5; window.__sob.render(); });
-  await p.click('#ptabs [data-k=obr]');
+  await p.click('#cmd [data-g=obr]');
   const bldVia = k => p.evaluate(k => { const G = window.__sob.G; G.osub = 'con'; bcat = sCat(k); render(); document.querySelector(`#works [data-a=bldAt][data-k=${k}][data-i="${G.ix['Rio Grande do Sul']}"]`).click(); }, k);
   await bldVia('mer');
   ok(await p.evaluate(() => { const F = window.__sob.G.F.fa; return F.bldOn && F.pa === 99; }), 'abrir obras não gasta ação (v24: sem limite)');
@@ -88,8 +89,8 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('[data-a=lens][data-l=own]');
   await p.evaluate(() => { window.__sob.G.rsub = 'det'; window.__sob.render(); }); // v50: jazidas e saúde ficam na sub-aba Detalhes
   ok(await p.evaluate(() => /Jazidas/.test(document.querySelector('#info').textContent)), 'painel mostra jazidas do território');
-  ok(await p.evaluate(() => /Saúde/.test(document.querySelector('#info').textContent) && /Felicidade/.test(document.querySelector('#me').textContent)), 'painel mostra saúde, estabilidade local e felicidade');
-  await p.click('#ptabs [data-k=obr]');
+  ok(await p.evaluate(() => /Saúde/.test(document.querySelector('#info').textContent) && /Felicidade/.test(document.querySelector('#res').textContent)), 'painel mostra saúde, estabilidade local e felicidade');
+  await p.click('#cmd [data-g=obr]');
   await p.screenshot({ path: shot('obras-imperio') });
   ok(await p.evaluate(() => { const G = window.__sob.G, vis = s => { const e = document.querySelector(s); return !!e && e.offsetParent !== null; }; G.osub = 'fil'; render(); const a = vis('#works') && !vis('#phase') && document.querySelectorAll('#works .rbox').length === owned(G.player).length; G.osub = 'cad'; render(); const b = document.querySelectorAll('#works ul.chain li').length > 20; G.osub = 'con'; render(); const c = document.querySelectorAll('#works .fic').length > 0 && !document.querySelector('#phase [data-k=obras]'); G.osub = 'fil'; G.tab = 'imp'; render(); return a && b && c; }), 'aba Obras: filas, construir e cadeias, fora das ações do império');
   await p.click('#cmd [data-a=techs]');
@@ -117,7 +118,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('#modal [data-m="0"]');
   ok(await p.evaluate(() => { const G = window.__sob.G, i = G.A.findIndex((a, k) => a.some(j => !G.seaK.has(k * 1e4 + j))), j = G.A[i].find(j => !G.seaK.has(i * 1e4 + j)); return /^M[^C]+C/.test(roadD(i, j)) && Object.keys(RELIEF.japao.r).length > 40; }), 'estradas com traçado curvo (e contornando serras no Japão)');
   ok(await p.evaluate(() => { const G = window.__sob.G, c = G.F[G.player].capI; return !!document.querySelector(`g.b[data-i="${c}"] .sv .city`) && Object.keys(STRUCT).every(k => STRUCT[k].road || SV[svOf(k)]); }), 'construções desenhadas em volta da capital, todas com desenho');
-  await p.evaluate(() => document.querySelector('[data-a=vicm]').click()); // sem rolar a página
+  await p.evaluate(() => vicModal()); // sem rolar a página
   ok(await p.evaluate(() => /Ciência/.test(document.querySelector('#modal').textContent) && /Fé/.test(document.querySelector('#modal').textContent)), 'painel de vitórias com o progresso');
   await p.click('#modal [data-m="0"]');
   await p.click('#cmd [data-g=gov]'); await p.click('.cmdm [data-a=govm]');
@@ -178,6 +179,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   await p.click('[data-a=zfit]');
   await p.screenshot({ path: shot('cartas') });
   const r0 = await p.evaluate(() => window.__sob.G.F.fa.reinf);
+  await p.evaluate(() => { cmdOpen = 'mil'; renderCmd(); document.querySelector('.cmdm [data-a=cardsGo]').click(); }); // v74: as cartas abrem pela barra
   await p.click('[data-a=card][data-h="0"]');
   const r1 = await p.evaluate(() => window.__sob.G.F.fa.reinf);
   ok(r1 === r0 + 4, `carta de reforço rende 4 (${r0} -> ${r1})`);
@@ -234,7 +236,7 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   // v43: desgaste da blitz e guerra defensiva
   ok(await p.evaluate(() => { const G = window.__sob.G, f = G.player, F = G.F[f], c0 = F.cq; F.cq = 2; const a = blitzCost(f); F.cq = 3; const b = blitzCost(f); F.cq = 5; const c = blitzCost(f); F.cq = c0; return a === 0 && b === ECON.blitzS && c === 3 * ECON.blitzS; }), 'desgaste da blitz começa na 4ª conquista e cresce');
   // v44: quadro do império e cartão do território; v45: última resistência
-  ok(await p.evaluate(() => { window.__sob.render(); return document.querySelectorAll('#me .kpis .kp').length === 6; }), 'quadro do império mostra 6 indicadores');
+  ok(await p.evaluate(() => { window.__sob.render(); return document.querySelectorAll('#res .rc').length === 6 && !document.querySelector('#me .kpis'); }), 'os 6 indicadores do império ficam no topo, sem repetição no painel (UI-39)');
   ok(await p.evaluate(() => { const G = window.__sob.G; G.sel = G.F[G.player].capI; window.__sob.render(); return !!document.querySelector('#info .kpis .kp') && /Comida/.test(document.querySelector('#info').textContent); }), 'cartão do território mostra rendimentos');
   ok(await p.evaluate(() => { const G = window.__sob.G, f = G.order.find(o => G.F[o].alive && G.F[o].capI != null && owned(o).length > 2); return !f || lastStand(G.F[f].capI) === 0; }), 'última resistência só vale para quem tem até 2 territórios');
   // v46: agitação saturada; v47: objetivo anunciado e alvo; v48: painel de facções
@@ -242,7 +244,8 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, o = G.order.find(x => x !== G.player), h0 = G.F[o].hold; G.F[o].hold = 1; window.__sob.render(); const t = threatOf(o) && /segurando o objetivo/.test(document.querySelector('#facs').textContent); G.F[o].hold = h0; window.__sob.render(); return t; }), 'quem segura o objetivo aparece como ameaça no painel de facções');
   ok(await p.evaluate(() => document.querySelectorAll('#facs .pbar').length > 0 && !!document.querySelector('#facs .op')), 'painel de facções tem barra de poder e opinião');
   // v49: abas Império e Região, fronteiras com ações e motivo da recusa de influência
-  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player; onTerr(G.F[me].capI); const reg = document.querySelector('#side').classList.contains('t-reg') && document.querySelectorAll('#info .nbl li').length === G.A[G.sel].filter(j => G.own[j] !== 'off').length; document.querySelector('#ptabs [data-k=imp]').click(); return reg && document.querySelector('#side').classList.contains('t-imp'); }), 'clicar no mapa abre a aba Região com todas as fronteiras; a aba Império volta');
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player; const r0 = G.F[me].reinf; G.F[me].reinf = 0; onTerr(G.F[me].capI); G.F[me].reinf = r0; const reg = document.querySelector('#side').classList.contains('t-reg') && document.querySelectorAll('#info .nbl li').length === G.A[G.sel].filter(j => G.own[j] !== 'off').length; const g = document.querySelector('#game'), open = !g.classList.contains('noside'); document.querySelector('#ptabs [data-a=side]').click(); const shut = g.classList.contains('noside'); document.querySelector('#actbar [data-a=tstep]').click(); return reg && open && shut && !g.classList.contains('noside') && document.querySelector('#side').classList.contains('t-imp'); }), 'clicar no mapa abre o painel do território com as fronteiras; o ✕ fecha e a barra reabre no turno (UI-39)');
+  ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, T = owned(me), q0 = T.map(i => G.q[i]), f0 = G.foc; T.forEach(i => { G.q[i] = []; }); G.foc = {}; const i = T.find(j => semObra(me, j)); if (i == null) { T.forEach((j, n) => { G.q[j] = q0[n]; }); G.foc = f0; return 'skip'; } const n0 = T.filter(j => semObra(me, j)).length, a0 = advice().some(x => x.k === 'works'); G.tab = 'obr'; G.osub = 'fil'; sideOpen(); render(); document.querySelector(`#works [data-a=foco][data-i="${i}"]`).click(); const one = T.filter(j => semObra(me, j)).length === n0 - 1 && G.foc[i] === 'com'; document.querySelector('#works [data-a=focoIdle]')?.click(); const none = !T.some(j => semObra(me, j)) && !advice().some(x => x.k === 'works') && !document.querySelector('#works .rbox.idle') && !document.querySelector('#cmd [data-g=obr] .cdot'); G.sel = i; G.tab = 'reg'; G.rsub = 'obr'; render(); document.querySelector('#info [data-a=focoOff]').click(); const back = semObra(me, i); T.forEach((j, n) => { G.q[j] = q0[n]; }); G.foc = f0; G.tab = 'imp'; render(); return a0 && one && none && back; }), 'v74: região com foco escolhido só produz e sai dos avisos de obra; dá para desfazer (P-14)');
   ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, far = [...Array(G.N).keys()].find(j => G.own[j] === 'neu' && !G.A[j].some(i => G.own[i] === me)); return far == null || /fronteira/.test(inflWhy(me, far)); }), 'influência recusada diz que falta fronteira');
   ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, F = G.F[me], nb = owned(me).flatMap(i => G.A[i]).find(j => (G.own[j] === 'neu' || G.own[j] === 'reb') && !capOwner(j) && !csOf(j)); if (nb == null) return true; const p0 = F.pre; F.pre = 99; const ok = canInfl(me, nb); F.pre = 0; const w = inflWhy(me, nb); F.pre = p0; return ok && /Prestígio/.test(w); }), 'influência vale para qualquer neutro na fronteira e avisa quando falta prestígio');
   // v50: sub-abas, fichas, motivo dos dados, supremacia naval, relevo e eliminação sem território
@@ -281,6 +284,12 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { tutStart(); if (!tut) return false; document.querySelector('.tuth').style.transition = 'none'; /* sem a animação do foco, a medida vale no mesmo instante */ let bad = 0; for (let i = 0; i < TUT.length; i++) { const h = document.querySelector('.tuth').getBoundingClientRect(), c = document.querySelector('.tutc').getBoundingClientRect(), none = document.querySelector('.tuth').classList.contains('none'); if (c.left < 0 || c.top < 0 || c.right > innerWidth || c.bottom > innerHeight) bad++; if (!none && h.height < 300 && !(c.top >= h.bottom || c.bottom <= h.top || c.right <= h.left || c.left >= h.right)) bad++; if (i < TUT.length - 1) tutGo(1); } tutEnd(); document.querySelector('.tuth').style.transition = ''; return !bad && !tut; }), 'tutorial no celular: o cartão cabe na tela e não cobre o que explica (UI-31)');
   ok(await p.evaluate(() => { const st = e => getComputedStyle(document.querySelector(e)); techModal(); const m = document.querySelector('#modal'), kn = m.querySelector('details.known'), a = !!kn && !kn.open && [...m.querySelectorAll('.tech:not(.own)')].some(e => !e.closest('details')); m.hidden = true; return a && st('#mapw').position === 'sticky' && st('#ptabs').position === 'sticky' && st('#top [data-a=keys]').display === 'none'; }), 'celular: mapa e abas presos no alto; tecnologias conhecidas recolhidas (UI-32, UI-33)');
   await p.screenshot({ path: shot('phone-sengoku') });
+  // tablet (v74, UI-39): em pé e deitado, nada passa da largura da tela e o cabeçalho deitado cabe em uma linha de botões
+  for (const [w, h, nm] of [[768, 1024, 'em pé'], [1024, 768, 'deitado']]) {
+    await p.setViewportSize({ width: w, height: h }); await p.waitForTimeout(200);
+    ok(await p.evaluate(([w, land]) => { const g = document.querySelector('#game'), q = s => document.querySelector(s); document.querySelector('#actbar [data-a=tstep]').click(); const open = !g.classList.contains('noside') && document.documentElement.scrollWidth <= w, bs = [...document.querySelectorAll('#top button')].filter(e => e.offsetParent), row = !land || new Set(bs.map(e => Math.round(e.getBoundingClientRect().top))).size === 1, bar = q('#cmd').getBoundingClientRect(), fit = bar.left >= 0 && bar.right <= w + 1 && document.querySelectorAll('#res .rc').length === 6; q('#ptabs [data-a=side]').click(); return open && row && fit && g.classList.contains('noside') && document.documentElement.scrollWidth <= w; }, [w, w > h]), 'tablet ' + nm + ': painel, barra e indicadores cabem na tela (UI-39)');
+    await p.screenshot({ path: shot('tablet-' + (w > h ? 'deitado' : 'em-pe')) });
+  }
   console.log(errs.length ? errs.join('\n') : 'sem erros');
   await b.close();
 })();
