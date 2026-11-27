@@ -2261,12 +2261,16 @@ function buildMap() {
   seaVia();
   setVB();
 }
+// v53: distância de cada território ao vizinho mais próximo; dá a escala das cidades e o zoom máximo do mapa
+const nnD = () => G.m.nn || (G.m.nn = G.m.terr.map((t, i) => Math.min(...G.m.terr.map((o, j) => j === i ? 1e9 : Math.hypot(o.x - t.x, o.y - t.y)))));
+const zMax = () => Math.max(10, Math.min(16, G.m.w / (Math.min(...nnD()) * 7)));
 function upp() { const r = svg.getBoundingClientRect(); return r.width ? Math.max(vb.w / r.width, vb.h / r.height) : 1; }
 function setVB() {
   svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
-  const zs = Math.min(2.4, Math.sqrt(G.m.w / vb.w)); // v29: as construções crescem com o zoom
-  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); g.firstChild.setAttribute('transform', `scale(${zs.toFixed(2)})`); });
+  // v53: cada cidade cabe no próprio território: a escala segue a distância até o vizinho mais próximo
+  const nn = nnD(); // v29: as construções crescem com o zoom
+  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); g.firstChild.setAttribute('transform', `scale(${Math.max(.5, Math.min(3.3, nn[i] / u / 100)).toFixed(2)})`); });
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
@@ -2285,47 +2289,81 @@ const TMARK = {
 };
 // v29: construções desenhadas em volta do centro do território. Cada construção cai numa classe visual
 // (fazenda, mina, porto…); mesma classe repetida vira um ícone só com o número.
+// v53 (UI-27): paisagem em volume. Tudo é desenhado em projeção oblíqua (frente, topo e lado com luz vinda da esquerda),
+// como maquete sobre o terreno. bx = bloco; hs = casa de telhado em duas águas; pg = pedaço de chão inclinado.
+const bx = (x, y, w, h, d, f, t, s) => `<path d="M${x} ${y}v${-h}h${w}v${h}z" fill="${f}"/><path d="M${x} ${y - h}l${d} ${-d * .6}h${w}l${-d} ${d * .6}z" fill="${t}"/><path d="M${x + w} ${y - h}l${d} ${-d * .6}v${h}l${-d} ${d * .6}z" fill="${s}"/>`;
+const hs = (x, y, w, h, d, r, wl, wd, rf, rd) => `<path d="M${x} ${y}v${-h}h${w}v${h}z" fill="${wl}"/><path d="M${x + w} ${y}v${-h}l${d / 2} ${-r}l${d / 2} ${r - d * .6}v${h}z" fill="${wd}"/><path d="M${x - .35} ${y - h}h${w + .7}l${d / 2 - .35} ${-r}h${-w}z" fill="${rf}"/><path d="M${x + d / 2 - .1} ${y - h - r}h${w}" stroke="${rd}" stroke-width=".45" fill="none"/>`;
+const pg = (x, y, w, d, f) => `<path d="M${x} ${y}l${d} ${-d * .6}h${w}l${-d} ${d * .6}z" fill="${f}"/>`;
+const SHD = '<ellipse cx=".8" cy="4.3" rx="6.2" ry="1.9" fill="#000" opacity=".3" stroke="none"/>';
+const tree = (x, y, c1, c2) => `<path d="M${x} ${y}v-1.2" stroke="#5a3d22" stroke-width=".5"/><path d="M${x - 1.5} ${y - 1}l1.5 -2.6l1.5 2.6z" fill="${c1}"/><path d="M${x - 1.1} ${y - 2.4}l1.1 -2.2l1.1 2.2z" fill="${c2}"/>`;
 const SV = {
-  cid1: '<path d="M-3 4V0L0 -2.6L3 0V4Z" fill="#c9a26a"/><path d="M-3.8 .4L0 -3.2L3.8 .4" fill="none" stroke="#7a4a22" stroke-width="1.1"/>',
-  cid2: '<path d="M-5 4V0L-2.6 -2L-.2 0V4Z M.6 4V-1.2L3 -3.4L5.2 -1.2V4Z" fill="#d6b07a"/><path d="M-5.6 .4L-2.6 -2.6L.4 .4M0 -.8L3 -4L5.8 -.8" fill="none" stroke="#8a3a22" stroke-width="1"/>',
-  cid3: '<path d="M-5.4 4V.5L-3.4 -1.2L-1.4 .5V4ZM3 4V0L4.6 -1.4L5.8 0V4Z" fill="#d6b07a"/><path d="M-1.4 4V-4.4H.4V-5.6H1.4V-4.4H3V4Z" fill="#e8dcc0"/><path d="M-5.8 .7L-3.4 -1.6L-1 .7" fill="none" stroke="#8a3a22" stroke-width=".9"/>',
-  cid4: '<path d="M-5.4 4V-1H-3V4ZM-2.6 4V-5H.6V4ZM1 4V-2.6H3V4ZM3.4 4V-.4H5.6V4Z" fill="#cfd6de"/><path d="M-1.8 -3.6H-.2M-1.8 -2H-.2M-1.8 -.4H-.2M-4.8 .4H-3.6M1.5 -1.2H2.5" stroke="#4a5a6a" stroke-width=".7"/>',
-  farm: '<path d="M-4.8 3.8L-2.2 -3.4H2.2L4.8 3.8Z" fill="#d4b84a"/><path d="M-.9 -3.4L-2.3 3.8M.9 -3.4L2.3 3.8M0 -3.4V3.8" stroke="#7d6a1e" stroke-width=".6"/>',
-  past: '<path d="M-4.6 -.6H4.6M-4.6 2.2H4.6M-3.6 -2.8V3.6M0 -2.8V3.6M3.6 -2.8V3.6" stroke="#c8965a" stroke-width="1.1"/>',
-  fish: '<path d="M-4.8 1H4.8L3.2 3.6H-3.2Z" fill="#a8743e"/><path d="M0 1V-4.6L3.8 .2Z" fill="#f2f2f2"/><path d="M0 1V-4.6" stroke="#5a3a1a" stroke-width=".6"/>',
-  wood: '<path d="M-2 -4.8L-5 1.2H1Z M2.4 -3.2L-.4 2.2H5.2Z" fill="#4fa05a"/><path d="M-2 1.2V4M2.4 2.2V4" stroke="#6b4a2a" stroke-width="1"/>',
-  mine: '<path d="M-5.2 4L-1 -3.6L1.6 -.2L3 -1.8L5.4 4Z" fill="#9a9088"/><path d="M-2.2 4V1.8A1.5 1.5 0 0 1 .8 1.8V4Z" fill="#1a1410"/>',
-  ind: '<path d="M-5 4V-.6L-2 1.4V-.6L1 1.4V-4.6H3.2V4Z" fill="#a89c92"/><path d="M1.6 -4.8q1-1.6 2.8-1.1" stroke="#ddd" fill="none" stroke-width=".7"/>',
-  mkt: '<path d="M-4.8 -1L-3.8 -4.2H3.8L4.8 -1Z" fill="#e0bc4c"/><path d="M-2.2 -4.2L-2.7 -1M0 -4.2V-1M2.2 -4.2L2.7 -1" stroke="#a83a2a" stroke-width="1.1"/><rect x="-4" y="-1" width="8" height="5" fill="#c9a26a"/><rect x="-1.4" y="1.2" width="2.8" height="2.8" fill="#4a3220"/>',
-  port: '<path d="M0 -3.6V3.6M-2 -1.8H2M-4 .8q.4 3.2 4 3.2t4-3.2" fill="none" stroke="#9fd0ee" stroke-width="1.2" stroke-linecap="round"/><circle cy="-4.6" r="1" fill="none" stroke="#9fd0ee" stroke-width=".9"/>',
-  tmpl: '<path d="M-3.6 4V-.4L0 -3.2L3.6 -.4V4Z" fill="#dccbf2"/><circle cy="-4.6" r="1.2" fill="#f0c94a"/><rect x="-1" y="1" width="2" height="3" fill="#5a3f7a"/>',
-  civ: '<path d="M-5 -2.2H5V4H3.4V1.2A1.6 1.6 0 0 0 .8 1.2V4H-.8V1.2A1.6 1.6 0 0 0 -3.4 1.2V4H-5Z" fill="#ddd0b4"/><path d="M-5 -2.2H5" stroke="#9a8a6a" stroke-width=".8"/>',
-  sci: '<path d="M-4.6 4V.2H4.6V4Z" fill="#cddce4"/><path d="M-3.6 .2A3.6 3.6 0 0 1 3.6 .2Z" fill="#6fc0c8"/><path d="M.4 -1.4L4 -4.6" stroke="#2f4f5a" stroke-width="1.1"/>',
-  mil: '<path d="M-5 4L0 -2.6L5 4Z" fill="#c8584a"/><path d="M0 -2.6V-5.6" stroke="#ddd" stroke-width=".6"/><path d="M0 -5.6H2.8L2.1 -4.8L2.8 -4H0" fill="#f0d060"/><path d="M0 4L-1.3 1.4H1.3Z" fill="#3a1a14"/>',
-  fort: '<path d="M-4 4V-3.2H-2.6V-2H-1.4V-3.2H1.4V-2H2.6V-3.2H4V4Z" fill="#b4aea6"/><path d="M-1.1 4V1.3A1.1 1.1 0 0 1 1.1 1.3V4Z" fill="#2a2420"/>',
-  cult: '<ellipse rx="4.8" ry="3.2" cy=".5" fill="#d0a870"/><ellipse rx="3" ry="1.8" cy=".7" fill="#8a6a3a"/><ellipse rx="1.6" ry=".9" cy=".9" fill="#e0c8a0"/>',
-  air: '<path d="M-.6 -5H.6V-1.6L5 .5V1.7L.6 .6V3L2 4V4.9L0 4.3L-2 4.9V4L-.6 3V.6L-5 1.7V.5L-.6 -1.6Z" fill="#e4e8f0"/>',
-  won: '<path d="M0 -5L1.2 -1.6H4.8L1.9 .6L3 4.2L0 2L-3 4.2L-1.9 .6L-4.8 -1.6H-1.2Z" fill="#f2c94c" stroke="#7a5a10" stroke-width=".4"/>',
+  farm: SHD + pg(-6, 4.2, 5, 3, '#cdb648') + pg(-.8, 4.2, 5, 3, '#7fae4a') + pg(-4.2, 2.4, 5, 3, '#9cc25a') + pg(1, 2.4, 4.4, 3, '#d9c260') + '<path d="M-5 3.6l3 -1.8M-3.8 3.6l3 -1.8M-2.6 3.6l3 -1.8M2 1.8l3 -1.8M3.2 1.8l3 -1.8" stroke="#8a7a22" stroke-width=".3" fill="none"/>' + hs(2.4, -.2, 2.4, 1.3, 1.3, 1, '#e6d8b6', '#b9a680', '#a8563a', '#7a3a26'),
+  past: SHD + pg(-6, 4.2, 9, 4.6, '#86b55a') + '<path d="M-6 4.2l4.6 -2.76h9l-4.6 2.76z" fill="none" stroke="#6b4a2a" stroke-width=".55"/><path d="M-6 4.2v-1.2M-1.4 1.44v-1.2M3 4.2v-1.2M7.6 1.44v-1.2" stroke="#6b4a2a" stroke-width=".5"/>' + '<ellipse cx="-1" cy="2.6" rx="1.1" ry=".7" fill="#f2ead8"/><ellipse cx="2.2" cy="2" rx="1.1" ry=".7" fill="#8a5a3a"/><ellipse cx="3.6" cy="3.2" rx="1" ry=".65" fill="#f2ead8"/>',
+  fish: SHD + pg(-6, 4.2, 9, 4.4, '#3f86b0') + '<path d="M-4 2.8q1 -.6 2 0t2 0M0 4q1 -.6 2 0t2 0" stroke="#9fd0ee" stroke-width=".3" fill="none"/>' + bx(-5.6, 3.4, 3.4, .5, 2.6, '#8a5f33', '#b88a55', '#6b4726') + '<path d="M0 2.4h5l-1 1.5h-3z" fill="#7a4a26"/><path d="M2.4 2.4v-5" stroke="#4a3018" stroke-width=".4"/><path d="M2.6 -2.4l2.8 4.2h-2.8z" fill="#f4efe2"/>',
+  wood: SHD + pg(-6, 4.2, 9, 4.2, '#5f8f4a') + tree(-3.6, 3.4, '#2f7a45', '#3f9a58') + tree(-.6, 1.8, '#2a6f3f', '#3a8f52') + tree(2.6, 3, '#2f7a45', '#46a25e') + tree(4.8, 1.2, '#2a6f3f', '#3a8f52') + '<circle cx="-.2" cy="3.8" r=".7" fill="#b98a55"/><circle cx="1.1" cy="3.8" r=".7" fill="#a87a48"/><circle cx=".45" cy="2.9" r=".7" fill="#c49a66"/>',
+  mine: SHD + '<path d="M-6 4.2L-2.6 -3.4L.6 -.4L2.6 -2.6L6.6 4.2Z" fill="#8f877e"/><path d="M-2.6 -3.4L.6 -.4L-.8 4.2H-6Z" fill="#a9a198"/><path d="M-2.6 -3.4l1 1.2l-.9 .5l.8 1" stroke="#f1eee8" stroke-width=".4" fill="none"/>' + '<path d="M-.6 4.2V2A1.6 1.6 0 0 1 2.6 2V4.2Z" fill="#16110d"/><path d="M-.9 4.2V1.9M2.9 4.2V1.9M-1.1 1.9H3.1" stroke="#7a5630" stroke-width=".55"/>' + bx(3.4, 4.4, 1.8, .9, .8, '#6b5a48', '#c9a23a', '#4d4034'),
+  ind: SHD + bx(-5.6, 4.2, 6, 3, 2.4, '#b9a28c', '#d6c4ae', '#8c7864') + '<path d="M-5.6 1.2l1.5 -1.4v1.4l1.5 -1.4v1.4l1.5 -1.4v1.4l1.5 -1.4v1.4" fill="#8f7d6a"/><rect x="-4.6" y="2.2" width="1.2" height="2" fill="#3a2c20"/><rect x="-2.4" y="2" width="1.6" height="1" fill="#f2d98a"/>' + bx(1.6, 3.2, 1.5, 6.4, 1, '#9a5a44', '#bd7860', '#6f3d2d') + '<circle cx="3.2" cy="-4.6" r="1.1" fill="#e6e2da" opacity=".85" stroke="none"/><circle cx="4.5" cy="-5.6" r=".8" fill="#e6e2da" opacity=".6" stroke="none"/>',
+  mkt: SHD + pg(-6, 4.2, 9, 4.2, '#c2ad84') + '<path d="M-5 3.4l2 -3.4l2 3.4z" fill="#d9483a"/><path d="M-1 3.4l-2 -3.4l1.6 -1l2 3.4z" fill="#a8342a"/><path d="M-4 3.4l1 -3.4M-2 3.4l-1 -3.4" stroke="#f4efe2" stroke-width=".45"/>' + '<path d="M.6 4l2 -3.4l2 3.4z" fill="#e0b83c"/><path d="M4.6 4l-2 -3.4l1.6 -1l2 3.4z" fill="#b08a22"/><path d="M1.6 4l1 -3.4M3.6 4l-1 -3.4" stroke="#fff6d8" stroke-width=".45"/>' + bx(-1.6, 4.4, 1.3, .9, .8, '#a8743e', '#c9955a', '#7a5228'),
+  port: SHD + pg(-6.4, 4.4, 10, 4.6, '#3f86b0') + bx(-6, 3.6, 5, .5, 2.8, '#8a5f33', '#b88a55', '#6b4726') + hs(-5.4, 1.2, 2.8, 1.5, 1.4, 1.1, '#e6d8b6', '#b9a680', '#7a5a8a', '#52386a') + '<path d="M.4 2.6h5.6l-1.1 1.7h-3.4z" fill="#6b3f22"/><path d="M3 2.6v-6.2" stroke="#3a2412" stroke-width=".45"/><path d="M3.2 -3.2l3 4.8h-3z" fill="#f4efe2"/><path d="M2.8 -2.6l-2.2 4.2h2.2z" fill="#e2dccb"/><path d="M3 -3.6h1.6l-.5 .5l.5 .5H3" fill="#d9483a"/>',
+  tmpl: SHD + bx(-5.4, 4.2, 8.4, .9, 2.6, '#cfc6b6', '#eee7da', '#a59c8c') + '<path d="M-4.6 3.3v-4M-2.8 3.3v-4M-1 3.3v-4M.8 3.3v-4M2.6 3.3v-4" stroke="#f6f1e6" stroke-width=".9"/>' + '<path d="M-5.4 -.7L-1 -3.8L3.4 -.7Z" fill="#e6dccb"/><path d="M3.4 -.7L-1 -3.8l2.4 -1.5l4.6 3.1z" fill="#b5533a"/><path d="M3.4 -.7l2.6 -1.6v4l-2.6 1.6z" fill="#b9af9e"/><circle cx="-1" cy="-1.9" r=".7" fill="#f0c94a"/>',
+  civ: SHD + bx(-6, -.6, 10.4, 1.1, 1.4, '#cbbfa6', '#e6dcc6', '#a3977e') + bx(-6, 4.2, 1.2, 4.8, 1.2, '#c4b89f', '#ddd2ba', '#978b73') + bx(-2.6, 4.2, 1.2, 4.8, 1.2, '#c4b89f', '#ddd2ba', '#978b73') + bx(.8, 4.2, 1.2, 4.8, 1.2, '#c4b89f', '#ddd2ba', '#978b73') + bx(4.2, 4.2, 1.2, 4.8, 1.2, '#c4b89f', '#ddd2ba', '#978b73') + '<path d="M-4.8 -.6a1.1 1.3 0 0 1 2.2 0M-1.4 -.6a1.1 1.3 0 0 1 2.2 0M2 -.6a1.1 1.3 0 0 1 2.2 0" fill="#2a2f3a" stroke="none"/><path d="M-6 -1.9l1.4 -.84h10.4" stroke="#6fb5d8" stroke-width=".5" fill="none"/>',
+  sci: SHD + bx(-4.8, 4.2, 7, 3.2, 2.4, '#cfd8de', '#e8eef2', '#9aa7b0') + '<path d="M-3.6 1a3.4 3.4 0 0 1 6.8 0z" fill="#5fb3bd"/><path d="M-.2 -2.4a3.4 3.4 0 0 1 3.4 3.4h-3.4z" fill="#3f8f9a"/><path d="M.2 -1.6l3.4 -3.2" stroke="#22323a" stroke-width=".9"/><rect x="-2.2" y="2.4" width="1.4" height="1.8" fill="#3a4650"/>',
+  mil: SHD + pg(-6, 4.2, 9.4, 4.6, '#8f7a52') + '<path d="M-6 4.2v-1.6l4.6 -2.76h9.4v1.6" fill="none" stroke="#5f4424" stroke-width=".7"/>' + '<path d="M-3.6 3.6l1.6 -2.8l1.6 2.8z" fill="#c8584a"/><path d="M-.4 3.6l-1.6 -2.8l1.3 -.8l1.6 2.8z" fill="#96382e"/><path d="M1.2 2.6l1.6 -2.8l1.6 2.8z" fill="#c8584a"/><path d="M4.4 2.6l-1.6 -2.8l1.3 -.8l1.6 2.8z" fill="#96382e"/>' + '<path d="M.6 1v-6" stroke="#3a2a18" stroke-width=".4"/><path d="M.6 -5h3l-.8 .9l.8 .9h-3z" fill="#f0d060"/>',
+  fort: SHD + bx(-5.6, 4.2, 7.4, 3, 2.6, '#aaa49c', '#cfc9c1', '#7f7971') + bx(-3, 1.6, 3.6, 4.4, 2, '#b8b2aa', '#d8d2ca', '#8a847c') + '<path d="M-3 -2.8v-.9h.9v.9h.9v-.9h.9v.9h.9v-.9" fill="none" stroke="#b8b2aa" stroke-width=".7"/><path d="M-5.6 1.2v-.8h1v.8M1 1.2v-.8h.8" stroke="#aaa49c" stroke-width=".7" fill="none"/><path d="M-2 4.2V2.6a1 1 0 0 1 2 0v1.6z" fill="#221c18"/><path d="M-.2 -3.4v-2.6" stroke="#3a2a18" stroke-width=".4"/><path d="M-.2 -6h2.4l-.7 .7l.7 .7h-2.4z" fill="#d9483a"/>',
+  cult: SHD + '<ellipse cx="0" cy="1.2" rx="6" ry="3.2" fill="#b89a6c"/><path d="M-6 1.2a6 3.2 0 0 1 12 0v-2.6a6 3.2 0 0 0 -12 0z" fill="#d6bd92"/><ellipse cx="0" cy="-1.4" rx="6" ry="3.2" fill="#e6d2a8"/><ellipse cx="0" cy="-1" rx="4.2" ry="2.1" fill="#c2a678"/><ellipse cx="0" cy="-.6" rx="2.4" ry="1.1" fill="#ecdcb4"/><path d="M-4.6 2.6v1.4M-2 3.4v1.2M1 3.5v1.2M4 2.8v1.4" stroke="#7a6240" stroke-width=".6"/>',
+  air: SHD + pg(-6.4, 4.4, 9.6, 5, '#6f757c') + '<path d="M-4.2 3.5l3.2 -1.9M-.2 3.5l3.2 -1.9" stroke="#f4efe2" stroke-width=".4" stroke-dasharray=".9 .7" fill="none"/>' + bx(1.6, 1, 3.6, 1.8, 1.6, '#b7bcc2', '#dfe3e8', '#878d94') + '<path d="M-3 -1.2l5.4 -1.4l.4 .6l-2.2 1l.6 2l-.8 .3l-1.5 -1.7l-2 .7z" fill="#f2f4f7"/>',
+  won: SHD + bx(-5.6, 4.2, 8.4, 1.8, 3, '#d9ae42', '#f6da78', '#a8842a') + bx(-4, 2.6, 5.8, 1.8, 2.4, '#e0b84a', '#f8e08a', '#b08a2a') + bx(-2.4, 1, 3.2, 1.8, 1.8, '#e6c052', '#fbe79a', '#b8922e') + bx(-.9, -.6, 1, 3.6, .8, '#f0cf6a', '#fff2b8', '#c09a34') + '<path d="M-.1 -6.2l.5 1.2l1.3 .1l-1 .8l.3 1.3l-1.1 -.7l-1.1 .7l.3 -1.3l-1 -.8l1.3 -.1z" fill="#fff6c8" stroke="#b08a2a" stroke-width=".25"/>',
 };
 const SVN = { farm: 'Agricultura', past: 'Pecuária', fish: 'Pesca', wood: 'Floresta', mine: 'Mineração', ind: 'Indústria e ofícios', mkt: 'Comércio', port: 'Porto', tmpl: 'Fé e cultura', civ: 'Obras públicas', sci: 'Saber', mil: 'Exército', fort: 'Defesa', cult: 'Espetáculos', air: 'Aviação', won: 'Maravilha' };
 const SVK = { farm: 'agr faz cel irr moi arz pla jar', past: 'pec etc har chq', fish: 'pes psq slg', wood: 'flo ser cvo', mine: 'min pdr mna gar fun', ind: 'ofi frr egh rfn txt', mkt: 'mer car ban bol arm', port: 'por stl cia frl', tmpl: 'tem mos cat mon', civ: 'aqu san hos tri frm', sci: 'aca acd obs uni epb', mil: 'qua ars pov acm sil', fort: 'for pal cas fab bkr', cult: 'anf tea etd', air: 'aer apt' };
 const SVZ = { agr: 'farm', pec: 'past', pes: 'fish', flo: 'wood', min: 'mine', com: 'mkt', por: 'port', rel: 'tmpl', mil: 'mil', sci: 'sci' };
 const SVY = { food: 'farm', prod: 'ind', gold: 'mkt', sci: 'sci', pre: 'tmpl', stab: 'civ' };
 const svOf = k => { const S = STRUCT[k]; if (!S || S.road) return null; if (S.wonder) return 'won'; for (const c in SVK) if (SVK[c].split(' ').includes(k)) return c; return S.def ? 'fort' : S.air ? 'air' : S.rf || S.atk ? 'mil' : S.nav ? 'port' : SVZ[S.z] || SVY[Object.keys(S.y || {})[0]] || 'ind'; };
-// v50 (UI-17): cada desenho ganha uma silhueta escura (sv-x-d) que serve de contorno e de volume: desenhada deslocada
-// sob o desenho colorido, dá o relevo; uma elipse no chão faz a sombra. Sem filtros, para o mapa continuar leve.
-const svDark = d => d.replace(/<(\w+)([^>]*?)\/>/g, (m, tag, at) => { const w = +(/stroke-width="([\d.]+)"/.exec(at) || [0, 0])[1], line = !/fill="#/.test(at); return `<${tag}${at.replace(/ (fill|stroke|stroke-width)="[^"]*"/g, '')} fill="${line ? 'none' : '#0c1118'}" stroke="#0c1118" stroke-width="${w + 1.5}" stroke-linejoin="round"/>`; });
-const svDefs = () => Object.entries(SV).map(([k, d]) => `<symbol id="sv-${k}" viewBox="-6 -6 12 12" overflow="visible">${d}</symbol><symbol id="sv-${k}-d" viewBox="-6 -6 12 12" overflow="visible">${svDark(d)}</symbol>`).join('');
-// vagas em volta do emblema (fora dos pontinhos e do nome). A primeira é da cidade, que cresce com o porte.
-const SVP = [[-24, -4], [21, -4], [-13, -19], [15, -19], [36, -5], [-40, -6], [30, -20], [-29, -21], [0, -30], [-14, -33]];
+// v53 (UI-27): símbolos das melhorias e cidades geradas. A cidade é um conjunto de prédios em volume sobre um chão batido,
+// com estilo por era e cenário; cresce de aldeia a metrópole, ganha muralha com porte ou fortificação e um marco no centro.
+const svDefs = () => Object.entries(SV).map(([k, d]) => `<symbol id="sv-${k}" viewBox="-7 -7 14 14" overflow="visible"><g stroke="#17120d" stroke-width=".28" stroke-linejoin="round" stroke-linecap="round">${d}</g></symbol>`).join('');
+const CITY = {
+  anc: { w: '#dcc79e', d: '#b39a6e', t: '#ead9b4', g: '#bfa878', flat: 1, mix: ['#b5533a', '#7c3524'] },
+  med: { w: '#e8dcc2', d: '#b5a585', t: '#b5533a', r: '#7c3524', g: '#b9a67e' },
+  jp: { w: '#f1eadb', d: '#c6bca6', t: '#41606b', r: '#27404a', g: '#b5a888' },
+  gun: { w: '#e4d9c6', d: '#b3a791', t: '#66727f', r: '#434d58', g: '#b0a58c' },
+  ind: { w: '#cdbba2', d: '#96866f', t: '#8a8177', g: '#a39c90', flat: 1, tall: .7 },
+  mod: { w: '#a9bfd1', d: '#70869a', t: '#d5e3ee', g: '#8f9499', flat: 1, tall: 1.4 },
+};
+const cityStyle = () => ({ ant: 'anc', pre: 'anc', med: 'med', fan: 'med', jap: 'jp', pol: 'gun', gf: 'mod' })[G.sc.tech] || 'ind';
+const cityMemo = new Map();
+function cityHtml(i, lv, wall, cap) {
+  const st = cityStyle(), key = [G.sc.id, i, lv, wall, cap, st].join(); if (cityMemo.has(key)) return cityMemo.get(key);
+  const C = CITY[st], n = [3, 6, 10, 15][lv - 1], rx = [5.5, 8, 11, 14][lv - 1], ry = rx * .42; let s = i * 7919 + 13;
+  const r = () => (s = (s * 9301 + 49297) % 233280) / 233280, B = [];
+  for (let k = 0; k < n; k++) { const a = r() * 6.283, q = Math.sqrt(r()) * .92, x = Math.cos(a) * q * rx, y = Math.sin(a) * q * ry, w = 2 + r() * 1.5, h = C.tall ? 2 + r() * (1 + lv * C.tall) : C.flat ? 1.2 + r() * 1.1 : .9 + r() * .5; B.push([y, C.mix && r() < .4 ? hs(x - w / 2, y, w, .9, 1.5, 1.3, C.w, C.d, ...C.mix) : C.flat ? bx(x - w / 2, y, w, h, 1.3, C.w, C.t, C.d) + (C.tall ? `<path d="M${x - w / 2 + .5} ${y - h + .8}h${w - 1}M${x - w / 2 + .5} ${y - h + 1.8}h${w - 1}" stroke="#eaf3fa" stroke-width=".3" opacity=".8"/>` : `<rect x="${x - .35}" y="${y - .9}" width=".7" height=".9" fill="#5a4630" stroke="none"/>`) : hs(x - w / 2, y, w, h, 1.5, 1.5, C.w, C.d, C.t, C.r)]); }
+  if (lv >= 2) { // marco no centro: templo em degraus, torre de menagem, torre de castelo ou arranha-céu
+    const m = st === 'anc' ? bx(-3, 0, 5, 1.2, 2, '#d3bc8c', '#efdfb8', '#a88e60') + bx(-2.1, -1.2, 3.4, 1.2, 1.6, '#d9c394', '#f2e3c0', '#ae9466') + bx(-1.2, -2.4, 1.8, 1.3, 1.1, '#e0cb9c', '#f6e9c8', '#b49a6c') + '<path d="M-2.6 0v-1M-1.4 0v-1M-.2 0v-1M1 0v-1" stroke="#fff6dc" stroke-width=".35"/>'
+      : st === 'jp' ? bx(-2.8, 0, 4.6, 1.6, 1.8, '#d9d2c2', '#efe9dc', '#aaa291') + `<path d="M-3.6 -1.5h6.2l1.6 -1h-6.2z" fill="${C.t}"/>` + bx(-2, -1.9, 3.2, 1.5, 1.4, '#f1eadb', '#fbf6ea', '#c6bca6') + `<path d="M-2.8 -3.3h4.8l1.4 -.9h-4.8z" fill="${C.t}"/>` + bx(-1.2, -3.6, 1.8, 1.3, 1, '#f1eadb', '#fbf6ea', '#c6bca6') + `<path d="M-1.9 -4.8l1.6 -1.6l1.7 1.6l1 -.6l-1.6 -1.7z" fill="${C.r}"/><path d="M-1.9 -4.8h3.3l1 -.6" fill="none" stroke="${C.r}" stroke-width=".5"/>`
+      : C.tall ? bx(-1.6, 0, 2.6, 3 + lv * C.tall, 1.4, C.w, C.t, C.d) + `<path d="M-1.1 ${-2.4 - lv * C.tall}v${1.8 + lv * C.tall}M-.2 ${-2.4 - lv * C.tall}v${1.8 + lv * C.tall}" stroke="#eaf3fa" stroke-width=".25" opacity=".8"/><path d="M-.3 ${-3.4 - lv * C.tall}v-1.6" stroke="#d9483a" stroke-width=".3"/>`
+      : bx(-2, 0, 3.4, 3.6, 1.8, '#b8b2aa', '#d8d2ca', '#8a847c') + '<path d="M-2 -3.6v-.8h.8v.8h.9v-.8h.9v.8h.8v-.8" fill="none" stroke="#b8b2aa" stroke-width=".6"/>' + `<path d="M-1.2 -4l1.4 -3.2l1.4 3.2z" fill="${st === 'med' ? '#b5533a' : '#66727f'}"/><path d="M1.6 -4l-1.4 -3.2l1 -.6l1.4 3.2z" fill="${st === 'med' ? '#7c3524' : '#434d58'}"/><rect x="-.9" y="-1.4" width="1" height="1.4" fill="#2a2420" stroke="none"/>`;
+    B.push([.1, `<g transform="scale(1.5)">${m}</g>`]);
+  }
+  B.sort((a, b) => a[0] - b[0]);
+  const wf = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 0 ${2 * rx + 2.8} 0`, wb = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 1 ${2 * rx + 2.8} 0`;
+  const wl = (d, f) => `<path d="${d}" fill="none" stroke="#4d4842" stroke-width="2.3" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="${f}" stroke-width="1.8" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="#e4dfd6" stroke-width=".7" stroke-dasharray=".9 .6" transform="translate(0,-2)"/>`, tw = (x, y) => bx(x - .9, y + .7, 1.8, 3.2, 1, '#b4aea6', '#ded8d0', '#857f77') + `<path d="M${x - .9} ${y - 2.5}v-.6h.6v.6h.6v-.6h.6v.6" fill="none" stroke="#b4aea6" stroke-width=".4"/>`;
+  const trees = wall ? '' : [0, 1, 2, 3].map(k => tree((k % 2 ? 1 : -1) * (rx + .6 - k * .5), (k < 2 ? -1 : 1) * ry * .55, '#2f7a45', '#46a25e')).join('');
+  const h = `<g class="city" stroke="#17120d" stroke-width=".25" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="1" cy=".9" rx="${rx + 2.6}" ry="${ry + 2}" fill="#000" opacity=".28" stroke="none"/><ellipse rx="${rx + 1.6}" ry="${ry + 1.3}" fill="${C.g}" stroke="none" opacity=".92"/>`
+    + (wall ? wl(wb, '#8f8981') : trees)
+    + B.filter(b => b[0] <= .1).map(b => b[1]).join('') + B.filter(b => b[0] > .1).map(b => b[1]).join('')
+    + (wall ? `${wl(wf, '#a39d95')}${tw(-rx - 1.2, .2)}${tw(rx + 1.2, .2)}${tw(-rx * .55, ry + .4)}${tw(rx * .55, ry + .4)}<path d="M-.9 ${ry + 1.3}v-1.5a.9 .9 0 0 1 1.8 0v1.5z" fill="#221c18"/>` : '')
+    + (cap ? `<path d="M0 ${-ry - 1}v-${lv >= 2 ? 9 : 5}" stroke="#3a2a18" stroke-width=".35"/><path d="M0 ${-ry - (lv >= 2 ? 10 : 6)}h3l-.9 .9l.9 .9h-3z" fill="#f2c94c"/>` : '') + '</g>';
+  cityMemo.set(key, h); return h;
+}
+// melhorias em volta do emblema; a cidade fica acima dele, sobre o terreno
+const SVP = [[-22, 4], [22, 4], [-40, 0], [40, 0], [-34, 17], [34, 17], [-57, -7], [57, -7], [-56, 11], [56, 11]];
 function svHtml(i) {
-  const c = new Map(), lv = G.lv[i] || 0; if (lv && (G.tr[i] || real(G.own[i]))) c.set('cid' + Math.min(4, lv), 1);
-  for (const k of G.bld[i]) { const v = svOf(k); if (v) c.set(v, (c.get(v) || 0) + 1); }
-  const hasC = lv && c.has('cid' + Math.min(4, lv));
-  return [...c].slice(0, SVP.length).map(([v, n], s) => {
-    const cid = v.startsWith('cid'), [x, y] = SVP[hasC ? s : s + 1] || SVP[0], z = cid ? 1.25 + .2 * Math.min(4, lv) : v === 'won' ? 1.45 : 1.2, u = `href="#sv-${v}`, box = 'x="-5" y="-5" width="10" height="10"';
-    return `<g transform="translate(${x},${y - (cid ? (z - 1.2) * 4 : 0)}) scale(${z})"><title>${cid ? pName(i) : SVN[v] + (n > 1 ? ' ×' + n : '')}</title><ellipse class="svs" cx=".8" cy="4.4" rx="5.6" ry="1.7"/><use ${u}-d" ${box} transform="translate(.9,.9)"/><use ${u}-d" ${box}/><use ${u}" ${box}/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`;
-  }).join('');
+  const c = new Map(), o = G.own[i], lv = G.lv[i] || 0, has = lv && (G.tr[i] || real(o)); let wall = false;
+  for (const k of G.bld[i]) { const v = svOf(k); if (v === 'fort') wall = true; if (v) c.set(v, (c.get(v) || 0) + 1); }
+  if (has && wall) c.delete('fort'); // a fortificação vira a muralha da cidade
+  const L = Math.min(4, lv), cy = -15 - [2.3, 3.4, 4.6, 5.9][L - 1] * 1.6;
+  const city = has ? `<g transform="translate(0,${cy}) scale(1.6)"><title>${esc(pName(i))}${wall ? ' · murada' : ''}</title>${cityHtml(i, L, wall || (L >= 3 && !CITY[cityStyle()].tall), !!capOwner(i))}</g>` : '';
+  return city + [...c].slice(0, SVP.length).map(([v, n], s) => { const [x, y] = SVP[s], z = v === 'won' ? 1.5 : 1.25; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
 }
 const terrDefs = () => Object.entries(TERR).map(([k, T]) => `<pattern id="tr-${k}" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${T.c}"/>${TMARK[k] || ''}</pattern>`).join('');
 // faixa da cor do dono por dentro do contorno (recorte do próprio território); feita só quando a visão de relevo abre
@@ -2416,12 +2454,12 @@ function declutter(k) { // ponytail: caixas aproximadas pelo número de letras, 
   });
 }
 function clampVB() {
-  const m = G.m; vb.w = Math.max(m.w / 10, Math.min(m.w, vb.w)); vb.h = vb.w * m.h / m.w;
+  const m = G.m; vb.w = Math.max(m.w / zMax(), Math.min(m.w, vb.w)); vb.h = vb.w * m.h / m.w;
   vb.x = Math.max(-vb.w * .15, Math.min(m.w - vb.w * .85, vb.x)); vb.y = Math.max(-vb.h * .15, Math.min(m.h - vb.h * .85, vb.y));
 }
 function zoomAt(cx, cy, w) {
   const r = svg.getBoundingClientRect(), u = upp(), ox = (r.width - vb.w / u) / 2, oy = (r.height - vb.h / u) / 2;
-  const px = vb.x + (cx - r.left - ox) * u, py = vb.y + (cy - r.top - oy) * u, k = Math.max(G.m.w / 10, Math.min(G.m.w, w)) / vb.w;
+  const px = vb.x + (cx - r.left - ox) * u, py = vb.y + (cy - r.top - oy) * u, k = Math.max(G.m.w / zMax(), Math.min(G.m.w, w)) / vb.w;
   vb.x = px - (px - vb.x) * k; vb.y = py - (py - vb.y) * k; vb.w *= k; vb.h *= k; clampVB(); setVB();
 }
 function zoomBtn(f) { const r = svg.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, vb.w * f); }

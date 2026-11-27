@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v53 — 27/11/2026 · Cidades e paisagem de verdade no mapa (UI-27)
+
+- **Cidades no lugar dos ícones (UI-27).** Cada território povoado mostra uma cidade desenhada em volume sobre o terreno: casas, ruas de chão batido, árvores em volta e um marco no centro. A aldeia tem três casas; a metrópole, quinze, com muralha de pedra, torres e portão.
+- **Estilo por época e cenário.** Antiguidade com casas de terraço e templo em degraus; Idade Média com telhados de barro e torre de menagem; Sengoku com telhados escuros e castelo de vários andares; era da pólvora com ardósia; guerras mundiais com quarteirões de alvenaria; Guerra Fria com torres de vidro.
+- **Capital e muralha.** A capital hasteia bandeira. Castelo, forte ou muralha construídos no território viram a muralha da própria cidade, em vez de um ícone solto.
+- **Melhorias na paisagem.** Campos lavrados, pasto cercado com gado, pesqueiro com barco, serraria na mata, mina com entrada e minério, oficina com chaminé, feira de tendas, porto com navio, templo de colunas, aqueduto, observatório, acampamento militar, anfiteatro, pista de pouso e monumento dourado para as maravilhas. Tudo original, desenhado em vetor.
+- **Escala que cabe no território.** O tamanho de cada cidade segue a distância até o vizinho mais próximo, então nada invade a província ao lado em mapas apertados. Mapas com territórios pequenos (como a Europa no mapa-múndi) ganham zoom máximo maior, até 16 vezes.
+
 ## v52 — 26/11/2026 · Conselheiro de turno, chance e risco nas fronteiras (UI-25, UI-26)
 
 - **Conselheiro de turno (UI-25).** No topo das ações do império, uma lista do que está parado ou esquecido neste turno, cada linha com o botão que resolve: pesquisa não escolhida, territórios sem obra, cívica que a cultura já paga, vaga de política livre, panteão disponível, governador sem território, grande figura à espera, vaga de rota comercial, proposta diplomática sem resposta e territórios em risco. A barra de ação mostra o número de pontos de atenção ao lado do botão de encerrar o turno, sem bloquear nada.
