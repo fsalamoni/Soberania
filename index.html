@@ -4415,7 +4415,7 @@ function setVB() {
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
   // v53: cada cidade cabe no próprio território: a escala segue a distância até o vizinho mais próximo
   const nn = nnD(), ir = inR(); // v29; v76: em ilha ou faixa estreita a cidade encolhe para não passar da costa: as construções crescem com o zoom
-  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(5.5, nn[i] / u / 100, Math.max(ir[i] / u / 14, nn[i] / u / 210)); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
+  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(5.5, nn[i] / u / 100, Math.max(ir[i] / u / 14, nn[i] / u / 210)); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); cstPlace(g, t, k * +z.toFixed(2)); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
@@ -4536,8 +4536,22 @@ function cityHtml(i, lv, wall, cap, urb = [], ter = 'p') {
 }
 // melhorias em volta do emblema; a cidade fica acima dele, sobre o terreno
 const SVP = [[-24, 2], [24, 2], [-42, -6], [42, -6], [-36, 16], [36, 16], [-58, -14], [58, -14], [-58, 8], [58, 8]];
-const svp = (i, s) => { const [x, y] = SVP[s], h = (i * 2654435761 + s * 40503) >>> 0; return [x + h % 11 - 5, y + (h >>> 8) % 9 - 4]; };
+const svp = (i, s) => { const m = G.m, key = i * 16 + s; m.svp = m.svp || {}; if (m.svp[key]) return m.svp[key]; const [x0, y0] = SVP[s], h = (i * 2654435761 + s * 40503) >>> 0, x = x0 + h % 11 - 5, y = y0 + (h >>> 8) % 9 - 4, t = m.terr[i], sc = Math.min(nnD()[i] / 100, Math.max(inR()[i] / 14, nnD()[i] / 210)), pt = svg.createSVGPoint(); let r = [x, y];
+  for (const f of [1, .72, .5, .34]) { r = [Math.round(x * f), Math.round(y * f) + (f < 1 ? 3 : 0)]; pt.x = t.x + r[0] * sc; pt.y = t.y + r[1] * sc; if (P[i].isPointInFill(pt)) break; }
+  return m.svp[key] = r; };
 const URB = new Set(['tmpl', 'mkt', 'ind', 'mil', 'civ', 'sci', 'cult', 'won']); // obras que ficam dentro da cidade; as rurais se espalham pelo território
+// v77 (UI-42): ponto de mar junto à costa do território, o mais perto do centro. Serve de ancoradouro para porto e pesca.
+const coastPt = i => { const m = G.m; m.cst = m.cst || {}; if (i in m.cst) return m.cst[i]; let best = null;
+  if (coastal(i)) { const p = P[i], L = p.getTotalLength(), t = m.terr[i], N = [i, ...G.A[i]], pt = svg.createSVGPoint(), o = Math.max(2, nnD()[i] * .045);
+    for (let k = 0; k < 96; k++) { const q = p.getPointAtLength(L * k / 96), dx = q.x - t.x, dy = q.y - t.y, d = Math.hypot(dx, dy) || 1; pt.x = q.x + dx / d * o; pt.y = q.y + dy / d * o; if (pt.x > 0 && pt.y > 0 && pt.x < m.w && pt.y < m.h && !N.some(j => P[j].isPointInFill(pt)) && (!best || d < best[2])) best = [+pt.x.toFixed(1), +pt.y.toFixed(1), d]; } }
+  return m.cst[i] = best; };
+// obras de costa desenhadas sobre o mar do mapa: sem lâmina d'água própria nem chão
+const SVC = {
+  port: '<path d="M-6.4 3.6q1 -.6 2 0t2 0M1 5q1 -.6 2 0t2 0" stroke="#cfe6f5" stroke-width=".3" stroke-opacity=".7" fill="none"/>' + bx(-7, 1.4, 4.6, .45, 2.4, '#8a5f33', '#b88a55', '#6b4726') + '<path d="M.4 2.6h5.6l-1.1 1.7h-3.4z" fill="#6b3f22"/><path d="M3 2.6v-6.2" stroke="#3a2412" stroke-width=".45"/><path d="M3.2 -3.2l3 4.8h-3z" fill="#f4efe2"/><path d="M2.8 -2.6l-2.2 4.2h2.2z" fill="#e2dccb"/><path d="M3 -3.6h1.6l-.5 .5l.5 .5H3" fill="#d9483a"/><path d="M-4.4 3h2.6l-.5 .9h-1.6z" fill="#7a4a26"/>',
+  fish: '<path d="M-1 4.6q1 -.6 2 0t2 0" stroke="#cfe6f5" stroke-width=".3" stroke-opacity=".7" fill="none"/><path d="M0 2.2h4.6l-.9 1.5h-2.8z" fill="#7a4a26"/><path d="M2.2 2.2v-4.6" stroke="#4a3018" stroke-width=".4"/><path d="M2.4 -2.2l2.6 4h-2.6z" fill="#f4efe2"/><circle cx="-3.4" cy="3" r="1.7" fill="none" stroke="#efe8d4" stroke-width=".25" stroke-dasharray=".5 .4"/><circle cx="-5.1" cy="3" r=".32" fill="#d9483a"/><circle cx="-1.7" cy="3" r=".32" fill="#d9483a"/><circle cx="-3.4" cy="1.3" r=".32" fill="#d9483a"/>',
+};
+// põe cada obra de costa no seu ponto do mapa, qualquer que seja o zoom
+const cstPlace = (g, t, s) => (g._cst || []).forEach(e => e.setAttribute('transform', `translate(${((e.dataset.x - t.x) / s).toFixed(1)},${((e.dataset.y - t.y) / s).toFixed(1)})`));
 function svHtml(i) {
   const c = new Map(), o = G.own[i], lv = G.lv[i] || 0, has = lv && (G.tr[i] || real(o)); let wall = false;
   for (const k of G.bld[i]) { const v = svOf(k); if (v === 'fort') wall = true; if (v) c.set(v, (c.get(v) || 0) + 1); }
@@ -4546,9 +4560,11 @@ function svHtml(i) {
   const L = Math.min(4, lv), RY = cityR(L, urb.length) * CQ, cy = -14 - RY * 1.6;
   const city = has ? `<g transform="translate(0,${cy}) scale(1.6)"><title>${esc(pName(i))}${wall ? ' · murada' : ''}</title>${cityHtml(i, L, wall || (L >= 3 && !CITY[cityStyle()].tall), !!capOwner(i), urb, G.ter[i])}</g>` : '';
   // caminhos de terra saem do portão até a guarnição e até cada melhoria rural
+  const cp = coastPt(i), sea = cp ? [...c].filter(([v]) => SVC[v]) : []; sea.forEach(([v]) => c.delete(v));
   const gy = has ? cy + (RY + .6) * 1.6 : 0, rural = [...c].slice(0, SVP.length);
+  const docks = sea.map(([v, n], s) => `<g class="cst" data-x="${cp[0]}" data-y="${cp[1]}"><g transform="translate(${s * -15},${s * 4}) scale(1.45)" stroke="#2b2219" stroke-width=".15" stroke-linejoin="round" stroke-linecap="round"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title>${SVC[v]}${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g></g>`).join('');
   const ways = has ? `<path class="svr" d="M0 ${gy}V-11${rural.map((_, k) => { const [x, y] = svp(i, k); return `M0 ${gy}Q${x * .25} ${y + 4} ${x} ${y + 4}`; }).join('')}"/>` : '';
-  return ways + city + rural.map(([v, n], s) => { const [x, y] = svp(i, s), z = v === 'won' ? 1.5 : 1.45; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
+  return ways + docks + city + rural.map(([v, n], s) => { const [x, y] = svp(i, s), z = v === 'won' ? 1.5 : 1.45; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
 }
 const terrDefs = () => Object.entries(TERR).map(([k, T]) => `<pattern id="tr-${k}" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${T.c}"/>${TMARK[k] || ''}</pattern>`).join('');
 // faixa da cor do dono por dentro do contorno (recorte do próprio território); feita só quando a visão de relevo abre
@@ -4672,6 +4688,7 @@ function initPan() {
   window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); // soltar fora do mapa também encerra o toque
   new ResizeObserver(() => G && setVB()).observe(svg);
 }
+let cstNew = false;
 function renderMap() {
   civSee(); if (G.seen) svg.querySelectorAll('.sealinks > g').forEach(l => { const s = G.m.sea[+l.dataset.k]; l.style.display = s && G.seen.has(s[0]) && G.seen.has(s[1]) ? '' : 'none'; });
   const net = G.lens === 'net' ? netOf(G.player) : null;
@@ -4691,7 +4708,7 @@ function renderMap() {
     g.querySelector('.cap').toggleAttribute('hidden', !capOwner(i));
     const lv = G.tr[i] || real(o) ? G.lv[i] || 0 : 0; g.classList.toggle('chg', !!G.chg && G.turnF === G.player && G.chg.includes(i)); const pl = g.querySelector('.pl'); pl.lastChild.textContent = lv ? pName(i) + (subOf(i) ? ' ▲' : '') : ''; pl.classList.toggle('big', lv >= 2);
     P[i].firstChild.textContent = `${G.m.terr[i].n} · ${lv ? pName(i) : 'ermo'} · ${G.tr[i]} tropas`;
-    const drawn = !['res', 'zon', 'ter'].includes(L), sv = drawn ? svHtml(i) : '', sg = g.querySelector('.sv'); if (sg.dataset.k !== sv) { sg.innerHTML = sv; sg.dataset.k = sv; } // v29
+    const drawn = !['res', 'zon', 'ter'].includes(L), sv = drawn ? svHtml(i) : '', sg = g.querySelector('.sv'); if (sg.dataset.k !== sv) { sg.innerHTML = sv; sg.dataset.k = sv; g._cst = [...sg.querySelectorAll('.cst')]; if (g._cst.length) cstNew = true; } // v29
     const ics = L === 'res' ? G.dep[i].map(d => DEP[d].ic) : L === 'zon' ? zonesAt(i).map(k => STRUCT[k].ic) : drawn ? [] : G.bld[i].map(k => STRUCT[k].ic);
     if (L === 'ter') ics.unshift(TERR[G.ter[i]].ic + (G.riv[i] ? '〰' : ''), LEVEL[G.lv[i]].ic);
     g.querySelector('.ic').textContent = (G.relics.includes(i) ? 'ᚱ' : '') + ics.slice(0, 3).join('') + (ics.length > 3 ? '+' + (ics.length - 3) : '') + (G.fort[i] > 0 ? '⛨' : '') + (occupied(i) ? '⚑' : '') + (o === G.player && G.q[i].length ? '⏳' : '');
@@ -4702,6 +4719,7 @@ function renderMap() {
   for (let i = 0; i < G.N; i++) if (road(i)) for (const j of G.A[i]) if (j > i && road(j) && G.own[i] === G.own[j] && !isSea(i, j)) { const d = roadD(i, j), k = Math.min(road(i), road(j)); rc.push(`<path d="${d}" class="rk rk${k}"/>`); rl.push(`<path d="${d}" class="rd rd${k}"/>`); }
   for (const r of G.routes) { const a = T[r.a], b = T[r.b], dx = b.x - a.x, dy = b.y - a.y; rl.push(`<path d="M${a.x} ${a.y}Q${(a.x + b.x) / 2 - dy * .18} ${(a.y + b.y) / 2 + dx * .18} ${b.x} ${b.y}" class="rt${r.f === G.player || r.o === G.player ? ' me' : ''}${r.k === 'sup' ? ' sup ' + r.c + (supCut(r) ? ' cut' : '') : ''}"/>`); } // parte 6: rota em arco; v35 abastecimento
   $('#roads').innerHTML = rc.join('') + rl.join('');
+  if (cstNew) { cstNew = false; setVB(); } // v77: obra de costa recém-desenhada vai para o seu ponto do mapa
   legend(net);
   document.querySelectorAll('#lens button').forEach(b => b.classList.toggle('on', b.dataset.l === (G.lens || 'own')));
   const hl = [], me = G.player, my = G.turnF === me;

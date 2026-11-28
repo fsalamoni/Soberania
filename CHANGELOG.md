@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v77 — 28/11/2026 · Porto e pesca na costa de verdade; obras rurais sempre em terra (UI-42)
+
+Continuação do pedido do Flavio de cidades e obras integradas ao mapa.
+
+- **Porto e pesca no mar.** Em território com costa, porto e pesca saem dos pontos fixos em volta da cidade e vão para o mar junto à costa mais próxima do centro (`coastPt`), desenhados sobre a água do próprio mapa: cais, navio e barco com rede, sem lâmina d'água própria. A posição é fixa no mapa em qualquer zoom (`cstPlace`). Sem costa desenhada, vale o desenho antigo.
+- **Obras rurais em terra.** Cada posição é testada contra o contorno do território; se cairia no mar ou no vizinho, recua em direção ao centro (`svp`).
+- Teste novo: porto fora do contorno do território e obras rurais dentro dele.
+
 ## v76 — 28/11/2026 · Fila vazia deixa de ser pendência; obras rurais como parcelas no terreno (P-14, UI-41)
 
 Pedido do Flavio: o "só produzir" não funcionava na prática, porque região que já tinha terminado as obras continuava aparecendo como ociosa.
