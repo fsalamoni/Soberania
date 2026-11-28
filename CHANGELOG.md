@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v78 — 28/11/2026 · Atacar direto pelo território, sem etapa nem declaração (D-19, UI-43)
+
+Pedido do Flavio: não há necessidade de botão de declarar campanha; basta selecionar o seu território e atacar o inimigo.
+
+- O botão de declarar campanha já tinha saído na v62. O que ainda travava era a ordem: com reforços por distribuir, o clique no inimigo só mostrava "Distribua os reforços antes de atacar".
+- **Agora o ataque sai em dois cliques.** Território seu e depois o vizinho inimigo. Se ainda houver reforços por distribuir, o jogo pergunta se pode colocá-los todos no território que ataca e abre a batalha; "Voltar e distribuir" mantém tudo como estava.
+- Os botões de ataque na ficha da região e a lista de frentes já ficam disponíveis com reforços pendentes (`atkWhy(..., soft)`).
+- Textos sem "declarar" e sem "campanha": a crônica diz que a facção "parte para o ataque" e a barra mostra "atacando".
+- Teste novo com o fluxo completo; conferido com cliques reais em 1366 × 768 e 390 × 844.
+
 ## v77 — 28/11/2026 · Porto e pesca na costa de verdade; obras rurais sempre em terra (UI-42)
 
 Continuação do pedido do Flavio de cidades e obras integradas ao mapa.

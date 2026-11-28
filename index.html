@@ -2082,7 +2082,7 @@ function useSea(f, i, j) { if (!isSea(i, j) || G.seaUsed.has(tk(i, j))) return; 
 // freio de ritmo: cada facção conquista no máximo cqMax territórios por turno (+1 com a doutrina militar)
 const cqMax = f => Infinity; // v24: ataques ilimitados enquanto houver tropas (escolha do Flavio)
 const openR = () => Math.min(8, Math.ceil(G.rounds / 15)); // D-18
-const warOn = f => { const F = Fa(f); if (!F.camp) { F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} entra em campanha militar.`); } }; // D-19: campanha automática no primeiro ataque do turno
+const warOn = f => { const F = Fa(f); if (!F.camp) { F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} parte para o ataque.`); } }; // D-19: campanha automática no primeiro ataque do turno
 const canAtk = (f, i, j, probe) => (probe || Fa(f).camp || f === G.player) && (!real(f) || Fa(f).cq < cqMax(f)) && G.own[i] === f && G.tr[i] > 1 && G.A[i].includes(j) && hostile(f, j) && seaOk(f, i, j) && !(G.round <= openR() && real(G.own[j]) && Fa(G.own[j]).capI === j); // D-18: capitais protegidas na abertura
 // conjunto refeito quando a lista de tecnologias muda (push ou troca); a lista fica longa nos cenários modernos
 const has = (f, k) => { const F = Fa(f), t = F && F.tech; if (!t) return false; if (F.tS !== t || F.tN !== t.length) { F.tS = t; F.tN = t.length; F.tSet = new Set(t); } return F.tSet.has(k); };
@@ -3314,15 +3314,18 @@ const canInfl = (f, j) => !inflWhy(f, j);
 // v49: por que não dá para atacar j a partir de i ('' = pode)
 // v62 (D-19): atacar quem está em trégua ou aliança é possível, mas rompe o tratado; brk diz qual ('' = nenhum ou aliado de equipe)
 const brk = (f, d) => real(d) && d !== f && peace(f, d) && !(Fa(f).team && Fa(f).team === Fa(d).team) ? (G.ally && G.ally.has(tk(f, d)) ? 'aliança' : 'trégua') : '';
-function atkWhy(f, i, j) {
+// soft (v78): ignora os reforços ainda por distribuir, que o próprio ataque coloca no território de origem
+function atkWhy(f, i, j, soft) {
   if (G.own[i] !== f || !G.A[i].includes(j)) return 'Sem fronteira com um território seu.';
   const d = G.own[j], F = Fa(f);
   if (d === f) return 'O território já é seu.';
   if (d === 'off') return 'Território fora deste cenário.';
   if (!hostile(f, j) && !brk(f, d)) return 'Aliado de equipe: não pode ser atacado.';
-  if (f === G.player && F.reinf > 0) return `Distribua os reforços antes de atacar (faltam ${F.reinf}).`;
+  const pend = f === G.player && F.reinf > 0 && G.phase !== 'mov' ? F.reinf : 0;
+  if (pend && !soft) return `Distribua os reforços antes de atacar (faltam ${F.reinf}).`;
   if (G.phase === 'mov') return 'O remanejamento já começou: os ataques deste turno terminaram.';
-  if (G.phase !== 'atk') return 'Distribua os reforços antes de atacar.';
+  if (G.phase !== 'atk' && !pend) return 'Distribua os reforços antes de atacar.';
+  if (pend) { if (G.tr[i] + pend < 2) return `${tname(i)} precisa de 2 ou mais tropas para atacar.`; if (!hostile(f, j) && !brk(f, d)) return 'Ataque indisponível agora.'; if (!seaOk(f, i, j)) return 'Travessia por mar: a frota não tem mais travessias neste turno. Portos e navegação dão mais.'; if (G.round <= openR() && real(d) && Fa(d).capI === j) return `Abertura: capitais ficam protegidas até o fim da rodada ${openR()}.`; return ''; }
   if (G.tr[i] < 2) return `${tname(i)} precisa de 2 ou mais tropas para atacar: uma sempre fica guardando o lugar.`;
   if (real(f) && F.cq >= cqMax(f)) return `Limite de ${cqMax(f)} conquista(s) por turno atingido: as tropas precisam consolidar o terreno.`;
   if (!seaOk(f, i, j)) return 'Travessia por mar: a frota não tem mais travessias neste turno. Portos e navegação dão mais.';
@@ -3331,7 +3334,12 @@ function atkWhy(f, i, j) {
 }
 // tenta atacar j a partir de i: explica a recusa, avisa das consequências de romper tratado ou abre a batalha
 function tryAttack(i, j) {
-  const me = G.player, w = atkWhy(me, i, j);
+  const me = G.player, F = Fa(me), n = F.reinf;
+  if (n > 0 && G.turnF === me && !atkWhy(me, i, j, true)) { // v78: o ataque não exige distribuir antes; o que falta vai para o território que ataca, com confirmação
+    modal(`<h2>Atacar ${esc(tname(j))} a partir de ${esc(tname(i))}?</h2><p>Você ainda tem <b>${n}</b> reforço(s) por distribuir. Para atacar agora, eles vão todos para ${esc(tname(i))}, que fica com ${G.tr[i] + n} tropas.</p>`, [[`Pôr ${n} em ${tname(i)} e atacar`, () => { G.tr[i] += n; F.reinf = 0; G.sel = i; render(); setTimeout(() => tryAttack(i, j), 0); }], ['Voltar e distribuir', null]]);
+    return true;
+  }
+  const w = atkWhy(me, i, j);
   if (w) { toast(w); return false; }
   const b = brk(me, G.own[j]);
   if (b) { warModal(i, j, b); return true; }
@@ -3348,7 +3356,7 @@ function warModal(i, j, b) {
     lost.length ? `Acabam junto: ${lost.join(', ')}.` : '',
     cb ? `Você tem motivo de guerra contra ${fname(d)}: as outras facções não tratam isto como traição.` : `${fname(d)} passa a ver você como traidor (opinião −40)${others ? ` e as outras ${others} facções perdem confiança em você (−10 cada)` : ''}. Novos acordos ficam mais difíceis pelo resto da partida.`,
     help.length ? `Entram na guerra contra você, por defesa mútua: ${help.map(fname).join(', ')}.` : 'Nenhuma outra facção entra na guerra por causa deste ataque.',
-    'O ataque põe o império em campanha neste turno, o que soma cansaço de guerra.',
+    'Atacar neste turno soma cansaço de guerra.',
   ].filter(Boolean);
   modal(`<h2>Atacar ${esc(tname(j))} rompe a ${b} com ${esc(fname(d))}</h2><p>O que acontece se você confirmar:</p><ul>${L.map(t => `<li>${esc(t)}</li>`).join('')}</ul><p class="hint">Chance de vencer esta batalha atacando até o fim: ${Math.round(100 * odds(i, j))}%.</p>`,
     [[`Romper a ${b} e atacar`, () => {
@@ -3389,7 +3397,7 @@ function act(f, a, x, y) {
   }
   if (a === 'camp') {
     if (F.camp) return 'A campanha já foi declarada.';
-    F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} declara campanha militar.`);
+    F.camp = true; F.nC = (F.nC || 0) + 1; log(f, `${fname(f)} parte para o ataque.`);
   } else if (a === 'rec') {
     if (F.recOn) return 'O recrutamento já está aberto neste turno.';
     if (F.gold < troopCost(f)) return 'Ouro insuficiente.';
@@ -4788,7 +4796,7 @@ function onTerr(i) {
   } else if (s != null && s !== i && G.own[s] === me && !mine && G.own[i] !== 'off' && G.A[s].includes(i)) {
     // território seu e depois um vizinho de outro dono: é um ataque. Em trégua ou aliança, só vira ataque (com aviso) se as tropas permitirem
     const bk = brk(me, G.own[i]);
-    if (bk && atkWhy(me, s, i)) G.sel = i;
+    if (bk && atkWhy(me, s, i, true)) G.sel = i;
     else if (hostile(me, i) || bk) { if (tryAttack(s, i)) return; G.sel = i; }
     else G.sel = i;
   } else G.sel = i;
@@ -5133,7 +5141,7 @@ function bordersHtml(i) {
   const me = G.player, o = G.own[i], my = G.turnF === me && !G.busy && !G.over;
   const nbs = G.A[i].filter(j => G.own[j] !== 'off');
   if (o === 'off' || !nbs.length) return '';
-  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst), bk = brk(me, G.own[dst]); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || (bk ? `Atacar rompe a ${bk}: o jogo mostra as consequências antes de confirmar.` : `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`))}">⚔ ${lab}${bk ? ` (rompe a ${bk})` : ''}</button>${w ? `<span class="hint why">${esc(w)}</span>` : ''}${G.tr[src] > 1 && hostile(me, dst) ? (pc => `<span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim, com os bônus de dado dos dois lados.">${pc}%</span>`)(Math.round(100 * odds(src, dst))) : ''}`; };
+  const A = (src, dst, lab) => { const w = atkWhy(me, src, dst, true), bk = brk(me, G.own[dst]); return `<button class="mini ${w ? '' : 'bad'}" data-a="atkFrom" data-i="${src}" data-j="${dst}" ${w ? 'disabled' : ''} title="${esc(w || (bk ? `Atacar rompe a ${bk}: o jogo mostra as consequências antes de confirmar.` : `Atacar ${tname(dst)} com as tropas de ${tname(src)}.`))}">⚔ ${lab}${bk ? ` (rompe a ${bk})` : ''}</button>${w ? `<span class="hint why">${esc(w)}</span>` : ''}${G.tr[src] > 1 && hostile(me, dst) ? (pc => `<span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim, com os bônus de dado dos dois lados.">${pc}%</span>`)(Math.round(100 * odds(src, dst))) : ''}`; };
   const I = j => { const w = inflWhy(me, j); return `<button class="mini" data-a="inflAt" data-i="${j}" ${w ? 'disabled' : ''} title="${esc(w || 'Anexa sem lutar; fica com metade das tropas.')}">⭐ Influenciar · ${inflCost(me, j)}</button>`; };
   const rows = nbs.map(j => {
     const d = G.own[j], D = Fa(d), rel = d === me ? 'seu' : !real(d) ? (d === 'reb' ? 'rebelde' : 'neutro') : allied(me, d) ? 'aliado' : peace(me, d) ? 'trégua' : 'inimigo';
@@ -5201,10 +5209,10 @@ function renderSide() {
     } else {
       // frentes abertas: o melhor ataque disponível contra cada vizinho, com a chance de vencer
       const best = {};
-      if (G.tab === 'imp') for (const i of owned(me)) if (G.tr[i] > 1) for (const j of G.A[i]) if (hostile(me, j) && !atkWhy(me, i, j)) { const p = odds(i, j); if (!best[j] || p > best[j][1]) best[j] = [i, p]; }
+      if (G.tab === 'imp') for (const i of owned(me)) if (G.tr[i] > 1) for (const j of G.A[i]) if (hostile(me, j) && !atkWhy(me, i, j, true)) { const p = odds(i, j); if (!best[j] || p > best[j][1]) best[j] = [i, p]; }
       const fr = Object.entries(best).map(([j, [i, p]]) => [i, +j, p]).sort((a, b) => b[2] - a[2]).slice(0, 6);
       const none = G.round <= openR() ? `Nas primeiras rodadas as capitais estão protegidas (até a rodada ${openR()}); vizinhos neutros podem ser atacados se você tiver 2 ou mais tropas ao lado.` : real(me) && F.cq >= cqMax(me) ? `Limite de ${cqMax(me)} conquista(s) por turno atingido.` : 'Nenhum território seu com 2 ou mais tropas tem um vizinho que possa ser atacado agora.';
-      ph = `<h4>2 · Atacar <span class="hint">opcional</span></h4><p class="hint">Clique num território seu e depois num vizinho, ou escolha uma frente abaixo. Não é preciso declarar nada: o primeiro ataque do turno põe o império em campanha, e turnos seguidos em campanha somam cansaço de guerra.</p>
+      ph = `<h4>2 · Atacar <span class="hint">opcional</span></h4><p class="hint">Clique num território seu e depois no vizinho inimigo, ou escolha uma frente abaixo. Não há nada a declarar. Turnos seguidos com ataques somam cansaço de guerra.</p>
       ${fr.length ? `<ul class="nbl">${fr.map(([i, j, p]) => { const pc = Math.round(100 * p); return `<li><button class="lnk" data-a="sel" data-i="${j}" title="Selecionar ${esc(tname(j))}"><i class="dot" style="background:${Fa(G.own[j]).c}"></i>${esc(tname(j))}</button><span class="hint">🪖 ${G.tr[j]} · a partir de ${esc(tname(i))} (${G.tr[i]})</span><span class="bt"><button class="mini bad" data-a="atkFrom" data-i="${i}" data-j="${j}" title="Abre a batalha: você ainda escolhe atacar uma vez, até o fim ou recuar.">⚔ Atacar</button><span class="pct ${pc >= 70 ? 'ok' : pc >= 40 ? 'warn' : 'bad'}" title="Chance de vencer atacando até o fim.">${pc}%</span></span></li>`; }).join('')}</ul>` : `<p class="hint">${none}</p>`}
       ${F.camp ? `<p class="parts">Em campanha: ${F.cq} conquista(s) neste turno${blitzCost(me) ? ` · a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa (desgaste da blitz)` : ` · as ${ECON.blitz} primeiras não têm desgaste`}.</p>` : ''}${forces}`;
       hint = F.camp ? `<b>Em campanha:</b> ${F.cq} conquista(s)${blitzCost(me) ? ` · a próxima custa −${blitzCost(me)} de estabilidade e 1 tropa` : ''}. Siga atacando, remaneje ou encerre.` : '<b>Seu turno:</b> para atacar, clique num território seu e num vizinho. Atacar e remanejar são opcionais.';
@@ -5317,11 +5325,11 @@ function rules() {
   <p><b>Estradas e rede de bens.</b> Os bens (sal, ferro, pedra, luxos…) só valem para o império quando o território que os explora está na rede: a capital, os territórios seus ligados a ela por estrada (os dois lados com estrada) e os portos seus, que se ligam entre si. Uma trilha liga ainda os vizinhos de quem está na rede. Perder um território de passagem corta a rede. Na rede não falta suprimento. No remanejamento, pela estrada as tropas andam até 2 territórios (3 com estrada pavimentada), e de um porto seu vão a qualquer outro porto seu. Estrada em montanha e pântano custa o dobro; em deserto, 50% a mais. Veja a lente Rede.</p>
   <p><b>Comércio.</b> O botão Rotas (em Economia) abre o painel de comércio. Abrir uma rota custa 1 ação e ${ECON.route} ouro, e ela começa a render no turno seguinte; você abre 1 rota por mercado, porto e banco. Rota interna (mercado nas duas pontas) dá +1 produção no destino e põe os bens dele na rede. Caravana (caravançará até um mercado alheio a 4 territórios) dá +2 ouro a cada lado e traz 1 bem que lhe falta; rota marítima (porto com armazém até um porto alheio) dá +3 a cada lado e traz 2 bens, mas sem frota (2 travessias) os piratas a atacam às vezes. Rota com quem tem uma tecnologia que você não tem barateia essa pesquisa em 20%. Guerra, embargo ou perda da ponta desfazem a rota, e quem toma a ponta de uma rota alheia pilha o ouro de 2 turnos.</p>
   <p><b>Freios da guerra.</b> Desgaste da blitz: as ${ECON.blitz} primeiras conquistas de cada turno são livres; a partir da ${ECON.blitz + 1}ª, cada uma custa ${ECON.blitzS}, depois ${2 * ECON.blitzS}, ${3 * ECON.blitzS}… de estabilidade e deixa 1 tropa para trás. Última resistência: a capital de quem tem até 2 territórios defende com +1. Perder territórios soma cansaço uma vez por rodada, e só a primeira agitação da rodada contra uma facção pega inteira (as outras valem 1/3).Território conquistado fica ocupado por ${ECON.occ} turnos: não conta para renda e reforços, produz metade e é o primeiro a se revoltar. Cada turno em campanha soma cansaço de guerra, que come a estabilidade; turnos de paz e festividades o reduzem. Atacar de um território a mais de ${ECON.sup} passos da capital, de um quartel, de um depósito de suprimentos ou de um porto custa 1 dado. A Bateria costeira soma +1 à defesa contra desembarques, a Fábrica de munições soma +1 aos ataques que saem dela, e a Academia naval dá +1 travessia.</p>
-  <p><b>O turno.</b> O turno é livre: obras, pesquisa, governo, diplomacia, comércio e recrutamento podem ser feitos a qualquer momento. Só a parte militar tem ordem: 1 distribuir os reforços, 2 atacar, 3 remanejar. Atacar e remanejar são opcionais; distribuir os reforços é obrigatório para atacar, remanejar e encerrar o turno. As etapas ficam na barra inferior.</p>
+  <p><b>O turno.</b> O turno é livre: obras, pesquisa, governo, diplomacia, comércio e recrutamento podem ser feitos a qualquer momento. Só a parte militar tem ordem: 1 distribuir os reforços, 2 atacar, 3 remanejar. Atacar e remanejar são opcionais; os reforços precisam estar distribuídos para remanejar e encerrar o turno; ao atacar, o jogo oferece pôr os que faltam no território que ataca. As etapas ficam na barra inferior.</p>
   <p><b>1. Reforços.</b> Tropas grátis: a soma dos níveis dos territórios não ocupados ÷ 3 (mínimo 3), +1 com ferro e +1 com cavalos explorados, mais regiões completas, capitais e quartéis.</p>
   <p><b>Comandos.</b> Os comandos ficam na barra sob o mapa (Militar, Obras, Pesquisa, Governo, Diplomacia, Economia e Vitórias); cada item diz o que faz, o custo e o motivo quando está indisponível. A lupa (tecla B ou /) busca um comando pelo que você quer fazer. Não há limite de ações por turno: o que segura você é o ouro, as tropas e o prestígio. Festividades, impostos e agitadores valem 1 vez por turno.</p>
   <ul>
-  <li><b>⚔ Atacar</b> não exige declarar nada: com os reforços distribuídos, clique num território seu e num vizinho. O primeiro ataque ou bombardeio do turno põe o império em campanha, e cada turno em campanha soma cansaço de guerra. Atacar quem está em trégua ou é aliado é possível, mas rompe o tratado; o jogo mostra as consequências antes de confirmar.</li>
+  <li><b>⚔ Atacar</b> não exige declarar nada nem passar por menu: clique num território seu e no vizinho inimigo. Se ainda houver reforços por distribuir, o jogo oferece colocá-los no território que ataca. Cada turno em que você ataca ou bombardeia soma cansaço de guerra. Atacar quem está em trégua ou é aliado é possível, mas rompe o tratado; o jogo mostra as consequências antes de confirmar.</li>
   <li><b>⚔ Recrutar</b> abre a compra de tropas por ouro, na capital ou num quartel. Elas chegam no início do próximo turno.</li>
   <li><b>🏛 Ordenar obras</b> abre todas as filas por um turno: ponha, retire e apresse obras em quantos territórios quiser. ${['ofi', 'mer', 'aca', 'qua', 'for', 'tem', 'por'].map(sName).join(', ')} e mais de cem outras obras, conforme a era e as tecnologias.</li>
   <li><b>🤝 Festividades</b> (+15 de estabilidade), <b>Influenciar</b> (anexa um vizinho neutro ou rebelde com prestígio, sem lutar) e <b>Agitadores</b> (rival perde estabilidade).</li>
@@ -5398,11 +5406,11 @@ function cmdGroups() {
   // [chave, ícone, nome, itens ou null, ação direta, ponto, estado em poucas palavras, pendências do conselheiro, atalho]
   return [
     ['mil', '⚔', 'Militar', [
-      { a: 'tstep', k: 'atk', ic: '⚔', n: 'Atacar', cost: 'opcional', d: 'Clique num território seu e depois num vizinho. Não é preciso declarar nada: o primeiro ataque do turno põe o império em campanha. Abre a lista de frentes.', why: ph || mil, on: false },
+      { a: 'tstep', k: 'atk', ic: '⚔', n: 'Atacar', cost: 'opcional', d: 'Clique num território seu e depois no vizinho inimigo: é só isso. Aqui você vê a lista de frentes com a chance de vencer em cada uma.', why: ph || mil, on: false },
       A('rec', '🪖', F.recOn ? 'Comprar tropas' : 'Recrutar', tc + '💰 por tropa', `Compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, F.recOn ? '' : pa || gold(tc), G.mode === 'rec'),
       A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
       { a: 'cardsGo', k: '', ic: '🃏', n: `Cartas ${F.cards.length}/5`, cost: 'grátis', d: 'Vantagens pontuais ganhas ao conquistar. Usar uma carta não gasta ação. Abre a sua mão no painel do turno.', why: F.cards.length ? '' : 'Nenhuma carta na mão: ganhe uma em cada turno em que conquistar um território.', on: false },
-      ...(G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', mil, G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'em campanha' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
+      ...(G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', mil, G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'atacando' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
     ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'só produzindo', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
     ['tec', '🔬', 'Pesquisa', null, 'techs', pend(['techs']), rt ? `${F.sci}/${techCost(rt, me)}` : 'escolher', ['techs'], 'T', 'Árvore de tecnologias: escolha o que pesquisar.'],
     ['gov', '🏛', 'Governo', [
@@ -5481,7 +5489,7 @@ const TUT = [
   ['#info .kpis', 'Aba Região: a ficha do território', 'Tropas, porte e o que o território rende por turno em comida, produção, ouro e saber. A sobra de comida faz o território crescer em oito portes, de Aldeia a Megalópole, desde que haja moradia e emprego; portes maiores abrem mais zonas para construir. Com fome, ele encolhe.', tutTab('reg', 'fro')],
   ['#info .stabs', 'Fronteiras, Obras e Detalhes', 'Fronteiras lista os vizinhos com as ações possíveis. Obras mostra o que existe e o que dá para construir neste território. Detalhes traz terreno, jazidas, rede de estradas e explicações de cada número.', tutTab('reg', 'fro')],
   ['#info .rs', 'Fronteiras: atacar, influenciar e mover', 'Para cada vizinho você vê o dono, as tropas e o que pode fazer. Atacar mostra a chance de vencer, já com os bônus dos dois lados. Influenciar tenta trazer um território neutro sem luta, gastando prestígio. Mover leva tropas para um território seu. Quando uma ação não é possível, o motivo aparece escrito.', tutTab('reg', 'fro')],
-  ['#actbar', 'Atacar', 'Com os reforços distribuídos, clique num território seu e depois num vizinho: não é preciso declarar nada. O painel mostra as frentes abertas, com a chance de vencer em cada uma. O primeiro ataque do turno põe o império em campanha, e turnos seguidos em campanha cansam o povo. Atacar quem está em trégua ou é aliado abre antes um aviso com todas as consequências. ', () => { tutTab('imp')(); $('#phase').scrollIntoView({ block: 'nearest' }); }],
+  ['#actbar', 'Atacar', 'Clique num território seu e depois no vizinho inimigo: não há nada a declarar. Se faltarem reforços por distribuir, o jogo oferece colocá-los no território que ataca. O painel mostra as frentes abertas, com a chance de vencer em cada uma. Turnos seguidos com ataques cansam o povo. Atacar quem está em trégua ou é aliado abre antes um aviso com todas as consequências. ', () => { tutTab('imp')(); $('#phase').scrollIntoView({ block: 'nearest' }); }],
   ['#actbar', 'Remanejar e encerrar', 'Remanejar move tropas entre territórios seus vizinhos: cada tropa anda uma vez e sempre fica ao menos uma no lugar. Ao começar o remanejamento, os ataques do turno terminam, mas obras, pesquisa e governo continuam liberados. Encerrar turno passa a vez; se a pesquisa estiver parada ou houver proposta sem resposta, o jogo avisa antes. ', tutTab('imp')],
   ['#me .stabs [data-k=obj]', 'Como vencer', 'Cumpra o objetivo da sua facção e segure-o por alguns turnos seguidos, ou alcance a meta de legado, ou elimine os rivais. Objetivo e legado só valem depois do primeiro terço da partida, então os primeiros turnos são para crescer. Se as rodadas acabarem, vence quem mais cresceu. Você perde se ficar sem territórios.', tutTab('imp', 'acoes')],
   ['#top [data-a=tut]', 'Ajuda sempre à mão', 'Este tutorial pode ser reaberto aqui a qualquer momento. O botão do teclado lista os atalhos, Regras traz o manual completo e o Guia na seção Ações acompanha os seus primeiros turnos. Boa partida.'],
