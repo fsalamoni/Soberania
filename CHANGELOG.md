@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v76 — 28/11/2026 · Fila vazia deixa de ser pendência; obras rurais como parcelas no terreno (P-14, UI-41)
+
+Pedido do Flavio: o "só produzir" não funcionava na prática, porque região que já tinha terminado as obras continuava aparecendo como ociosa.
+
+- **Causa.** A v74 só tirava o aviso depois de um toque em "Só produzir" em cada região, e quase sempre sobra alguma obra possível (a França do cenário napoleônico tem 29), então a região voltava a cobrar. Mesmo com tudo construído, a ficha da região ainda abria o texto "Não quer construir aqui?" e a barra dizia "fila vazia".
+- **Regra nova.** Fila vazia não é pendência. Região sem obra produz o foco dela, sem aviso, sem ponto na barra e sem exigir escolha. Saem o item do conselheiro, o estado "A decidir", o destaque amarelo e os botões "Só produzir", "deixar as regiões só produzindo" e "Voltar a avisar".
+- **Obras.** Os indicadores viram Em obra, Produzindo e Com obra possível (informativo). Cada região sem obra mostra o que produz e cinco botões para trocar o foco ali mesmo, com o ganho de cada um; "Construir aqui" só aparece onde há o que construir, e região completa diz "Tudo construído por aqui".
+- **Barra.** O estado de Obras mostra "só produzindo" quando não há fila.
+- **Obras rurais no terreno.** Fazenda vira um retalho de lavouras, floresta um arvoredo de copas redondas e mina uma pedreira em degraus, sem o desenho de montanha; as posições variam de um território para outro.
+- **Território pequeno.** A cidade encolhe quando o centro fica perto da costa (raio livre medido no contorno), para passar menos da borda em ilhas e faixas estreitas.
+- Teste da v74 reescrito para a regra nova, incluindo região toda construída.
+
 ## v75 — 28/11/2026 · Cidades assentadas no relevo e cores de facção translúcidas (UI-40)
 
 Pedido do Flavio: as cidades continuavam parecendo peças soltas; ele quer a cidade dentro do mapa, mesclada e interligada ao relevo, as cores das facções mais transparentes e um visual mais próximo de um mapa de civilização. Arte original, sem copiar nada de outros jogos.

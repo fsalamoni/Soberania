@@ -1133,8 +1133,6 @@ function advice() {
   const add = (ic, t, k, lab, i) => L.push({ ic, t, k, lab, i });
   if (G.offers.length || (G.dem && G.dem.to === me)) add('🤝', 'Há proposta diplomática esperando a sua resposta.', 'dipl', 'Responder');
   if (!F.res && Object.values(TK).some(t => techOk(me, t))) add('🔬', 'Nenhuma pesquisa em andamento: o saber deste turno se perde.', 'techs', 'Escolher pesquisa');
-  const idle = T.filter(i => semObra(me, i));
-  if (idle.length) add('🏗', `${idle.length} território(s) sem obra e sem foco escolhido: ${idle.slice(0, 3).map(tname).join(', ')}${idle.length > 3 ? '…' : ''}.`, 'works', 'Abrir Obras');
   if ((F.gf || []).length) add('🌟', `${F.gf.map(t => GF[t].n).join(', ')} à sua espera.`, 'fig', 'Usar');
   const cv = CIVIC.filter(c => civOk(me, c) && F.cu >= civCost(c));
   if (cv.length && !anar(me)) add('🎭', `Cultura suficiente para adotar ${cv[0].n}${cv.length > 1 ? ' ou outra cívica' : ''}.`, 'civ', 'Ver cívicas');
@@ -1260,9 +1258,7 @@ const FOCO = {
 };
 const focoWhy = (f, k) => { const t = FOCO[k].tech; return t && !has(f, t) ? `exige a tecnologia ${tName(t)}` : ''; };
 const focoOf = i => { const f = G.own[i], k = f === G.player && G.foc && G.foc[i]; return k && FOCO[k] && !focoWhy(f, k) ? k : 'com'; };
-// v74 (P-14): foco escolhido pelo jogador é decisão tomada: a região só produz e sai dos avisos de obra
-const focoSet = i => !!(G.foc && G.foc[i]);
-const semObra = (me, i) => !G.q[i].length && !focoSet(i) && Object.keys(STRUCT).some(k => canQueue(me, k, i));
+// v76 (P-14): fila vazia não é pendência. Região sem obra produz o foco dela, sem aviso e sem exigir escolha.
 const focoGain = (i, k) => Math.max(1, Math.round((prodOf(i) + supNet(i, 'prod')) / FOCO[k].r * (k === 'our' && gov(G.own[i]) === 'rme' ? 1.5 : 1)));
 function focoApply(f, i) {
   const F = Fa(f), k = focoOf(i), g = focoGain(i, k);
@@ -1275,13 +1271,12 @@ function focoApply(f, i) {
 // caixa do foco na aba de obras da região
 function focoBox(i) {
   const me = G.player, fk = focoOf(i), idle = !G.q[i].length, lock = Object.keys(FOCO).filter(k => focoWhy(me, k));
-  return `<details class="rbox foco"${idle && !focoSet(i) ? ' open' : ''}><summary><h5>Foco da produção: ${FOCO[fk].ic} ${FOCO[fk].n} <span class="hint">${!idle ? 'vale quando a fila esvaziar' : focoSet(i) ? 'ativo: região só produzindo' : 'ativo: a fila está vazia'}</span></h5></summary>
-    ${idle && !focoSet(i) ? '<p class="hint adv">Não quer construir aqui? Toque num foco abaixo: a região fica só produzindo e sai dos avisos de obra.</p>' : ''}
-    <p class="hint">Sem obra na fila, os ${prodOf(i) + supNet(i, 'prod')} ⚒ desta região não se perdem: viram o que você escolher aqui.</p>
+  return `<details class="rbox foco"${idle ? ' open' : ''}><summary><h5>Foco da produção: ${FOCO[fk].ic} ${FOCO[fk].n} <span class="hint">${idle ? 'ativo: a região está produzindo' : 'vale quando a fila esvaziar'}</span></h5></summary>
+    <p class="hint">Construir é opcional. Sem obra na fila, os ${prodOf(i) + supNet(i, 'prod')} ⚒ desta região viram o que você escolher aqui.</p>
     <div class="cats">${Object.keys(FOCO).map(k => { const w = focoWhy(me, k); return `<button class="mini ${k === fk ? 'on' : ''}" data-a="foco" data-i="${i}" data-k="${k}" aria-pressed="${k === fk}" ${w ? 'disabled' : ''} title="${esc(FOCO[k].d + (w ? ' Bloqueado: ' + w + '.' : ''))}">${FOCO[k].ic} ${FOCO[k].n} <small>${w ? '🔒' : '+' + focoGain(i, k)}</small></button>`; }).join('')}</div>
     <p class="hint adv">${FOCO[fk].ic} <b>${FOCO[fk].n}:</b> +${focoGain(i, fk)} de ${FOCO[fk].un} por turno. ${esc(FOCO[fk].d)}</p>
     ${lock.length ? `<p class="hint">🔒 ${lock.map(k => `${FOCO[k].n} ${esc(focoWhy(me, k))}`).join('; ')}.</p>` : ''}
-    <p class="hint"><button class="mini" data-a="focoAll" data-k="${fk}" title="Põe este foco em todas as suas regiões. Cada uma só o usa quando a fila dela esvazia.">Usar ${FOCO[fk].n} em todas as regiões</button>${focoSet(i) ? ` <button class="mini" data-a="focoOff" data-i="${i}" title="Desfaz a escolha: esta região volta a aparecer nos avisos quando estiver sem obra.">Voltar a avisar sem obra</button>` : ''}</p></details>`;
+    <p class="hint"><button class="mini" data-a="focoAll" data-k="${fk}" title="Põe este foco em todas as suas regiões. Cada uma só o usa quando a fila dela esvazia.">Usar ${FOCO[fk].n} em todas as regiões</button></p></details>`;
 }
 // produção do território entra no item do topo; o excesso passa ao seguinte
 function produce(f) {
@@ -2428,6 +2423,7 @@ function buildMap() {
   setVB();
 }
 // v53: distância de cada território ao vizinho mais próximo; dá a escala das cidades e o zoom máximo do mapa
+const inR = () => G.m.inr || (G.m.inr = G.m.terr.map((t, i) => { const p = P[i], L = p.getTotalLength(); let m = 1e9; for (let k = 0; k < 64; k++) { const q = p.getPointAtLength(L * k / 64); m = Math.min(m, Math.hypot(q.x - t.x, q.y - t.y)); } return m; }));
 const nnD = () => G.m.nn || (G.m.nn = G.m.terr.map((t, i) => Math.min(...G.m.terr.map((o, j) => j === i ? 1e9 : Math.hypot(o.x - t.x, o.y - t.y)))));
 const zMax = () => Math.max(10, Math.min(16, G.m.w / (Math.min(...nnD()) * 7)));
 function upp() { const r = svg.getBoundingClientRect(); return r.width ? Math.max(vb.w / r.width, vb.h / r.height) : 1; }
@@ -2435,8 +2431,8 @@ function setVB() {
   svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
   // v53: cada cidade cabe no próprio território: a escala segue a distância até o vizinho mais próximo
-  const nn = nnD(); // v29: as construções crescem com o zoom
-  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(5.5, nn[i] / u / 100); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
+  const nn = nnD(), ir = inR(); // v29; v76: em ilha ou faixa estreita a cidade encolhe para não passar da costa: as construções crescem com o zoom
+  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(5.5, nn[i] / u / 100, Math.max(ir[i] / u / 14, nn[i] / u / 210)); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
@@ -2462,12 +2458,13 @@ const hs = (x, y, w, h, d, r, wl, wd, rf, rd) => `<path d="M${x} ${y}v${-h}h${w}
 const pg = (x, y, w, d, f) => `<path d="M${x} ${y}l${d} ${-d * .6}h${w}l${-d} ${d * .6}z" fill="${f}"/>`;
 const SHD = '<ellipse cx=".4" cy="2.6" rx="9.5" ry="4.6" fill="url(#cg_soil)" stroke="none"/>';
 const tree = (x, y, c1, c2) => `<path d="M${x} ${y}v-1.2" stroke="#5a3d22" stroke-width=".5"/><path d="M${x - 1.5} ${y - 1}l1.5 -2.6l1.5 2.6z" fill="${c1}"/><path d="M${x - 1.1} ${y - 2.4}l1.1 -2.2l1.1 2.2z" fill="${c2}"/>`;
+const rt = (x, y, c1, c2) => `<ellipse cx="${x + .4}" cy="${y + .3}" rx="1" ry=".5" fill="#000" fill-opacity=".2" stroke="none"/><circle cx="${x}" cy="${y - .6}" r="1" fill="${c1}" stroke="none"/><circle cx="${x - .28}" cy="${y - .9}" r=".6" fill="${c2}" stroke="none"/>`;
 const SV = {
-  farm: SHD + pg(-6, 4.2, 5, 3, '#cdb648') + pg(-.8, 4.2, 5, 3, '#7fae4a') + pg(-4.2, 2.4, 5, 3, '#9cc25a') + pg(1, 2.4, 4.4, 3, '#d9c260') + '<path d="M-5 3.6l3 -1.8M-3.8 3.6l3 -1.8M-2.6 3.6l3 -1.8M2 1.8l3 -1.8M3.2 1.8l3 -1.8" stroke="#8a7a22" stroke-width=".3" fill="none"/>' + hs(2.4, -.2, 2.4, 1.3, 1.3, 1, '#e6d8b6', '#b9a680', '#a8563a', '#7a3a26'),
+  farm: SHD + '<g stroke="#5f5a26" stroke-opacity=".35" stroke-width=".12">' + pg(-8, 4.6, 4.6, 2.6, '#c9b64c') + pg(-3.2, 4.6, 3.6, 2.6, '#86ad4e') + pg(.6, 4.6, 4.2, 2.6, '#b7c35a') + pg(-5.2, 2.9, 3.8, 2.4, '#9cc05a') + pg(-1.2, 2.9, 3.2, 2.4, '#d6c463') + pg(2.2, 2.9, 3.8, 2.4, '#7fa648') + pg(-2.4, 1.4, 4.4, 2.2, '#c2b550') + pg(2.2, 1.4, 3, 2.2, '#94b855') + '</g><path d="M-7 4l2.6 -1.56M-6 4l2.6 -1.56M-5 4l2.6 -1.56M1.6 4l2.6 -1.56M2.8 4l2.6 -1.56M-.4 2.3l2.4 -1.44M.6 2.3l2.4 -1.44" stroke="#6f6a22" stroke-width=".22" stroke-opacity=".6" fill="none"/>' + hs(4.4, -.7, 1.9, 1, 1.1, .9, '#e6d8b6', '#b9a680', '#a8563a', '#7a3a26') + rt(6.6, -.2, '#3d7d42', '#57a05a'),
   past: SHD + pg(-6, 4.2, 9, 4.6, '#86b55a') + '<path d="M-6 4.2l4.6 -2.76h9l-4.6 2.76z" fill="none" stroke="#6b4a2a" stroke-width=".55"/><path d="M-6 4.2v-1.2M-1.4 1.44v-1.2M3 4.2v-1.2M7.6 1.44v-1.2" stroke="#6b4a2a" stroke-width=".5"/>' + '<ellipse cx="-1" cy="2.6" rx="1.1" ry=".7" fill="#f2ead8"/><ellipse cx="2.2" cy="2" rx="1.1" ry=".7" fill="#8a5a3a"/><ellipse cx="3.6" cy="3.2" rx="1" ry=".65" fill="#f2ead8"/>',
   fish: SHD + pg(-6, 4.2, 9, 4.4, '#3f86b0') + '<path d="M-4 2.8q1 -.6 2 0t2 0M0 4q1 -.6 2 0t2 0" stroke="#9fd0ee" stroke-width=".3" fill="none"/>' + bx(-5.6, 3.4, 3.4, .5, 2.6, '#8a5f33', '#b88a55', '#6b4726') + '<path d="M0 2.4h5l-1 1.5h-3z" fill="#7a4a26"/><path d="M2.4 2.4v-5" stroke="#4a3018" stroke-width=".4"/><path d="M2.6 -2.4l2.8 4.2h-2.8z" fill="#f4efe2"/>',
-  wood: SHD + pg(-6, 4.2, 9, 4.2, '#5f8f4a') + tree(-3.6, 3.4, '#2f7a45', '#3f9a58') + tree(-.6, 1.8, '#2a6f3f', '#3a8f52') + tree(2.6, 3, '#2f7a45', '#46a25e') + tree(4.8, 1.2, '#2a6f3f', '#3a8f52') + '<circle cx="-.2" cy="3.8" r=".7" fill="#b98a55"/><circle cx="1.1" cy="3.8" r=".7" fill="#a87a48"/><circle cx=".45" cy="2.9" r=".7" fill="#c49a66"/>',
-  mine: SHD + '<path d="M-6 4.2L-2.6 -3.4L.6 -.4L2.6 -2.6L6.6 4.2Z" fill="#8f877e"/><path d="M-2.6 -3.4L.6 -.4L-.8 4.2H-6Z" fill="#a9a198"/><path d="M-2.6 -3.4l1 1.2l-.9 .5l.8 1" stroke="#f1eee8" stroke-width=".4" fill="none"/>' + '<path d="M-.6 4.2V2A1.6 1.6 0 0 1 2.6 2V4.2Z" fill="#16110d"/><path d="M-.9 4.2V1.9M2.9 4.2V1.9M-1.1 1.9H3.1" stroke="#7a5630" stroke-width=".55"/>' + bx(3.4, 4.4, 1.8, .9, .8, '#6b5a48', '#c9a23a', '#4d4034'),
+  wood: SHD + [[-5.2, 1.2], [-2.6, -.2], [.4, -1], [3.2, -.4], [5.6, .8], [-4, 3.2], [-1.2, 2], [1.8, 1.4], [4.4, 2.8], [-2.2, 4.4], [.8, 3.8], [3, 4.8]].map(([x, y], k) => rt(x, y, k % 3 ? '#2c6e3f' : '#25613a', k % 2 ? '#3f9156' : '#4a9d5e')).join('') + '<circle cx="6.2" cy="4.2" r=".55" fill="#b98a55"/><circle cx="7.2" cy="4.2" r=".55" fill="#a87a48"/><circle cx="6.7" cy="3.5" r=".55" fill="#c49a66"/>',
+  mine: SHD + '<ellipse cx="0" cy="1.6" rx="6.2" ry="3.2" fill="#a39a8c" stroke-opacity=".4"/><ellipse cx=".3" cy="1.9" rx="4.7" ry="2.35" fill="#8a8175" stroke-opacity=".4"/><ellipse cx=".6" cy="2.2" rx="3.2" ry="1.5" fill="#6f675d" stroke-opacity=".4"/><ellipse cx=".9" cy="2.5" rx="1.7" ry=".75" fill="#4f4841" stroke="none"/><path d="M-5.6 .8q2.6 -2 5.6 -2.2M-3.9 1.4q2 -1.4 4.2 -1.5" stroke="#d9d2c4" stroke-width=".3" stroke-opacity=".7" fill="none"/><path d="M6 2.4q-2.4 .4 -4.4 .2" stroke="#cdb78a" stroke-width=".6" fill="none"/>' + hs(-6.6, -.6, 2, 1, 1.1, .9, '#d8ccb4', '#a89c84', '#7a6a58', '#54483c') + bx(5, 4.6, 1.5, .8, .7, '#6b5a48', '#c9a23a', '#4d4034'),
   ind: SHD + bx(-5.6, 4.2, 6, 3, 2.4, '#b9a28c', '#d6c4ae', '#8c7864') + '<path d="M-5.6 1.2l1.5 -1.4v1.4l1.5 -1.4v1.4l1.5 -1.4v1.4l1.5 -1.4v1.4" fill="#8f7d6a"/><rect x="-4.6" y="2.2" width="1.2" height="2" fill="#3a2c20"/><rect x="-2.4" y="2" width="1.6" height="1" fill="#f2d98a"/>' + bx(1.6, 3.2, 1.5, 6.4, 1, '#9a5a44', '#bd7860', '#6f3d2d') + '<circle cx="3.2" cy="-4.6" r="1.1" fill="#e6e2da" opacity=".85" stroke="none"/><circle cx="4.5" cy="-5.6" r=".8" fill="#e6e2da" opacity=".6" stroke="none"/>',
   mkt: SHD + pg(-6, 4.2, 9, 4.2, '#c2ad84') + '<path d="M-5 3.4l2 -3.4l2 3.4z" fill="#d9483a"/><path d="M-1 3.4l-2 -3.4l1.6 -1l2 3.4z" fill="#a8342a"/><path d="M-4 3.4l1 -3.4M-2 3.4l-1 -3.4" stroke="#f4efe2" stroke-width=".45"/>' + '<path d="M.6 4l2 -3.4l2 3.4z" fill="#e0b83c"/><path d="M4.6 4l-2 -3.4l1.6 -1l2 3.4z" fill="#b08a22"/><path d="M1.6 4l1 -3.4M3.6 4l-1 -3.4" stroke="#fff6d8" stroke-width=".45"/>' + bx(-1.6, 4.4, 1.3, .9, .8, '#a8743e', '#c9955a', '#7a5228'),
   port: SHD + pg(-6.4, 4.4, 10, 4.6, '#3f86b0') + bx(-6, 3.6, 5, .5, 2.8, '#8a5f33', '#b88a55', '#6b4726') + hs(-5.4, 1.2, 2.8, 1.5, 1.4, 1.1, '#e6d8b6', '#b9a680', '#7a5a8a', '#52386a') + '<path d="M.4 2.6h5.6l-1.1 1.7h-3.4z" fill="#6b3f22"/><path d="M3 2.6v-6.2" stroke="#3a2412" stroke-width=".45"/><path d="M3.2 -3.2l3 4.8h-3z" fill="#f4efe2"/><path d="M2.8 -2.6l-2.2 4.2h2.2z" fill="#e2dccb"/><path d="M3 -3.6h1.6l-.5 .5l.5 .5H3" fill="#d9483a"/>',
@@ -2556,6 +2553,7 @@ function cityHtml(i, lv, wall, cap, urb = [], ter = 'p') {
 }
 // melhorias em volta do emblema; a cidade fica acima dele, sobre o terreno
 const SVP = [[-24, 2], [24, 2], [-42, -6], [42, -6], [-36, 16], [36, 16], [-58, -14], [58, -14], [-58, 8], [58, 8]];
+const svp = (i, s) => { const [x, y] = SVP[s], h = (i * 2654435761 + s * 40503) >>> 0; return [x + h % 11 - 5, y + (h >>> 8) % 9 - 4]; };
 const URB = new Set(['tmpl', 'mkt', 'ind', 'mil', 'civ', 'sci', 'cult', 'won']); // obras que ficam dentro da cidade; as rurais se espalham pelo território
 function svHtml(i) {
   const c = new Map(), o = G.own[i], lv = G.lv[i] || 0, has = lv && (G.tr[i] || real(o)); let wall = false;
@@ -2566,8 +2564,8 @@ function svHtml(i) {
   const city = has ? `<g transform="translate(0,${cy}) scale(1.6)"><title>${esc(pName(i))}${wall ? ' · murada' : ''}</title>${cityHtml(i, L, wall || (L >= 3 && !CITY[cityStyle()].tall), !!capOwner(i), urb, G.ter[i])}</g>` : '';
   // caminhos de terra saem do portão até a guarnição e até cada melhoria rural
   const gy = has ? cy + (RY + .6) * 1.6 : 0, rural = [...c].slice(0, SVP.length);
-  const ways = has ? `<path class="svr" d="M0 ${gy}V-11${rural.map((_, k) => { const [x, y] = SVP[k]; return `M0 ${gy}Q${x * .25} ${y + 4} ${x} ${y + 4}`; }).join('')}"/>` : '';
-  return ways + city + rural.map(([v, n], s) => { const [x, y] = SVP[s], z = v === 'won' ? 1.5 : 1.25; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
+  const ways = has ? `<path class="svr" d="M0 ${gy}V-11${rural.map((_, k) => { const [x, y] = svp(i, k); return `M0 ${gy}Q${x * .25} ${y + 4} ${x} ${y + 4}`; }).join('')}"/>` : '';
+  return ways + city + rural.map(([v, n], s) => { const [x, y] = svp(i, s), z = v === 'won' ? 1.5 : 1.45; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
 }
 const terrDefs = () => Object.entries(TERR).map(([k, T]) => `<pattern id="tr-${k}" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${T.c}"/>${TMARK[k] || ''}</pattern>`).join('');
 // faixa da cor do dono por dentro do contorno (recorte do próprio território); feita só quando a visão de relevo abre
@@ -2884,7 +2882,7 @@ const pbar = (v, max) => `<span class="bar"><i style="width:${Math.min(100, 100 
 // fila de um território (UI-02 e UI-06)
 function qHtml(i) {
   const me = G.player, F = Fa(me), mine = G.own[i] === me, eta = qEta(i);
-  if (!G.q[i].length) return '<p class="hint">Fila vazia.</p>';
+  if (!G.q[i].length) return '<p class="hint">Nenhuma obra na fila. A produção daqui vai para o foco.</p>';
   return '<ul class="q">' + G.q[i].map((x, n) => {
     const c = pCost(G.own[i], x.k, i), rc = rushCost(me, i, n);
     const btn = mine && G.turnF === me ? (true ? `<button class="mini" data-a="rush" data-i="${i}" data-n="${n}" ${canRush(me, i, n) ? '' : 'disabled'} title="${x.t >= G.round ? 'Não dá para apressar no turno em que a obra começou.' : ''}">Apressar ${rc}💰</button><button class="mini" data-a="unq" data-i="${i}" data-n="${n}" title="Retirar da fila (perde o progresso)">✕</button>` : '') : '';
@@ -2926,15 +2924,16 @@ function chainHtml(k, seen, d) {
 function worksTab() {
   const me = G.player, F = Fa(me), T = owned(me), u = upkeepOf(me), my = G.turnF === me && !G.over && !G.busy, can = my;
   const os = ['fil', 'con', 'cad'].includes(G.osub) ? G.osub : 'fil';
-  const opt = i => Object.keys(STRUCT).some(k => canQueue(me, k, i)), empty = T.filter(i => !G.q[i].length), idle = empty.filter(i => semObra(me, i)), foc = empty.filter(i => !idle.includes(i)), busy = T.length - empty.length;
+  const opt = i => Object.keys(STRUCT).some(k => canQueue(me, k, i)), empty = T.filter(i => !G.q[i].length), busy = T.length - empty.length, free = empty.filter(opt).length;
   const fl = i => { const k = focoOf(i); return `${FOCO[k].ic} ${FOCO[k].n}: +${focoGain(i, k)} de ${FOCO[k].un} por turno`; };
-  const tabs = [['fil', `📋 Filas${idle.length ? ' • ' + idle.length : ''}`], ['con', '🔨 Construir'], ['cad', '🌳 Cadeias']];
-  let h = `<h4>Obras do império</h4><div class="kpis">${kp('🏗', 'Em obra', busy, `de ${T.length} território(s)`, 'Territórios com alguma obra na fila.')}${kp('🌾', 'Só produzindo', foc.length, foc.length ? 'pelo foco' : 'nenhum', 'Territórios sem obra na fila, por escolha sua ou porque não há o que construir. A produção deles vira o recurso do foco.')}${kp('💤', 'A decidir', idle.length, idle.length ? 'obra ou foco' : 'nenhum', 'Territórios com a fila vazia, com obra possível e sem foco escolhido por você. Ponha uma obra ou escolha um foco: nos dois casos o aviso some.', idle.length ? 'warn' : '')}</div>
+  const tabs = [['fil', '📋 Filas'], ['con', '🔨 Construir'], ['cad', '🌳 Cadeias']];
+  let h = `<h4>Obras do império</h4><div class="kpis">${kp('🏗', 'Em obra', busy, `de ${T.length} território(s)`, 'Territórios com alguma obra na fila.')}${kp('🌾', 'Produzindo', empty.length, empty.length ? 'pelo foco' : 'nenhum', 'Territórios sem obra na fila. Nada se perde e nada fica pendente: a produção deles vira o recurso do foco.')}${kp('➕', 'Com obra possível', free, free ? 'se você quiser' : 'nenhum', 'Territórios sem obra na fila onde ainda há algo que dá para construir. Construir é opcional.')}</div>
     <div class="stabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === os}" class="${k === os ? 'on' : ''}" data-a="stab" data-g="osub" data-k="${k}">${l}</button>`).join('')}</div>`;
   if (!can) h += `<p class="hint adv">${my ? 'As filas ficam livres assim que a batalha em andamento terminar.' : 'Você pode consultar tudo; para mexer nas filas, espere o seu turno.'}</p>`;
   if (os === 'fil') {
-    h += `<p class="hint">A produção ⚒ de cada território avança a obra do topo da fila dele (até ${qMax(me)} na fila). Com a fila vazia, ela vai para o foco da região (comida, ouro, saber, cultura ou estabilidade). Apressar custa ouro; retirar perde o progresso. Manutenção das construções prontas: ${u.b} de ouro por turno.</p>${idle.length && can ? `<p><button class="mini" data-a="focoIdle" title="Você não é obrigado a construir. Estas regiões passam a só produzir o foco delas e saem dos avisos.">Não construir: deixar ${idle.length === 1 ? 'a região sem obra' : 'as ' + idle.length + ' regiões sem obra'} só produzindo</button></p>` : ''}`;
-    h += [...idle, ...T.filter(i => G.q[i].length).sort((a, b) => prodOf(b) - prodOf(a)), ...foc].map(i => `<div class="rbox${idle.includes(i) ? ' idle' : ''}"><h5><button class="lnk" data-a="selObr" data-i="${i}" title="Abrir as obras de ${esc(tname(i))}">${esc(tname(i))}</button> <span class="hint" title="Zonas ${zonesAt(i).length}/${G.lv[i]} · ${G.bld[i].length} construção(ões)">${esc(pName(i))} · ${prodOf(i)} ⚒${occupied(i) ? ' · ocupado' : ''}</span></h5>${G.q[i].length ? qHtml(i) : idle.includes(i) ? `<p class="hint">💤 Sem obra nem foco escolhido. Por ora: ${fl(i)}.</p>` : `<p class="hint">Só produzindo ${fl(i)}.${opt(i) ? '' : ' Nada a construir aqui agora.'}</p>`}${idle.includes(i) ? `<button class="mini pri" data-a="selObr" data-i="${i}">➕ Escolher obra</button> ${can ? `<button class="mini" data-a="foco" data-i="${i}" data-k="${focoOf(i)}" title="Não constrói nada aqui: a produção vira ${FOCO[focoOf(i)].un} e o aviso some.">${FOCO[focoOf(i)].ic} Só produzir</button>` : ''}` : `<button class="mini" data-a="selObr" data-i="${i}">${G.q[i].length ? '➕ Escolher obra aqui' : 'Trocar o foco ou construir'}</button>`}</div>`).join('');
+    h += `<p class="hint">A produção ⚒ de cada território avança a obra do topo da fila dele (até ${qMax(me)} na fila). Com a fila vazia, ela vai para o foco da região (comida, ouro, saber, cultura ou estabilidade), sem aviso nem pendência: construir é opcional. Apressar custa ouro; retirar perde o progresso. Manutenção das construções prontas: ${u.b} de ouro por turno.</p>`;
+    const fb = i => Object.keys(FOCO).map(k => { const w = focoWhy(me, k); return `<button class="mini ${k === focoOf(i) ? 'on' : ''}" data-a="foco" data-i="${i}" data-k="${k}" aria-pressed="${k === focoOf(i)}" aria-label="${FOCO[k].n}" ${w || !can ? 'disabled' : ''} title="${esc(FOCO[k].n + ': ' + FOCO[k].d + (w ? ' Bloqueado: ' + w + '.' : ''))}">${FOCO[k].ic}${w ? '' : ' +' + focoGain(i, k)}</button>`; }).join('');
+    h += [...T.filter(i => G.q[i].length).sort((a, b) => prodOf(b) - prodOf(a)), ...empty].map(i => `<div class="rbox"><h5><button class="lnk" data-a="selObr" data-i="${i}" title="Abrir as obras de ${esc(tname(i))}">${esc(tname(i))}</button> <span class="hint" title="Zonas ${zonesAt(i).length}/${G.lv[i]} · ${G.bld[i].length} construção(ões)">${esc(pName(i))} · ${prodOf(i)} ⚒${occupied(i) ? ' · ocupado' : ''}</span></h5>${G.q[i].length ? qHtml(i) + `<button class="mini" data-a="selObr" data-i="${i}">➕ Escolher obra aqui</button>` : `<p class="hint">Produzindo ${fl(i)}.${opt(i) ? '' : ' Tudo construído por aqui.'}</p><div class="cats fpick" role="group" aria-label="Foco de ${esc(tname(i))}">${fb(i)}</div>${opt(i) ? `<button class="mini" data-a="selObr" data-i="${i}">➕ Construir aqui</button>` : ''}`}</div>`).join('');
   } else if (os === 'con') {
     const by = {}, all = Object.keys(STRUCT).filter(k => !STRUCT[k].air || G.air);
     all.forEach(k => (by[sCat(k)] = by[sCat(k)] || []).push(k));
@@ -3305,7 +3304,7 @@ function rules() {
   <p><b>Três caminhos para vencer.</b> Cumpra o objetivo militar da sua facção e mantenha-o por vários turnos seguidos (3, 3 ou 4, conforme a duração), chegue aos pontos de legado da duração escolhida (ciência, obras e cultura) ou elimine os rivais. Objetivo e legado só valem a partir de 1/3 da partida, e os turnos seguidos do objetivo só começam a contar aí; quem cumpre o objetivo é anunciado a todos e vira alvo. A dominação vale sempre. Se as rodadas acabarem, vence quem mais cresceu: territórios ganhos, +2 por capital, +2 por alvo do objetivo e o legado.</p>
   <p><b>Recursos.</b> No início do turno você recebe 💰 ouro e 🔬 saber somados de cada território (terreno, rio, nível, zonas e jazidas) e ⭐ prestígio (capitais, templos, maravilha). Eles se acumulam de um turno para o outro. Depois paga a manutenção: soldo das tropas (acima de ${ECON.freeT} por território, 1 ouro a cada ${ECON.perT}; sem ouro, elas desertam) e das construções (sem ouro, a mais cara fica desativada no turno).</p>
   <p><b>Água.</b> Território sem rio pode ter Poço (+1 saúde) e Açude (+2 comida, a irrigação de quem não tem rio). O Reservatório dá comida e saúde nas vilas. Com rio, a Roda d'água soma produção à oficina e a Represa acaba com as enchentes e é exigida pela Hidrelétrica. Poço, açude, reservatório e represa protegem o estoque de comida na seca, como o celeiro. A Estação de tratamento tira poluição das cidades.</p>
-  <p><b>Construir não é obrigatório.</b> Escolher um foco numa região sem obra é uma decisão: ela passa a só produzir e sai dos avisos de obra, até você pôr uma obra lá ou desfazer a escolha. Em Obras, um botão deixa todas as regiões sem obra só produzindo.</p>
+  <p><b>Construir não é obrigatório.</b> Região sem obra na fila fica produzindo o foco dela e não gera aviso nem pendência. Em Obras, cada região sem obra mostra o que está produzindo e deixa trocar o foco ali mesmo.</p>
   <p><b>Foco da produção.</b> Território com a fila vazia não desperdiça a produção ⚒: ela vira o foco escolhido em Região > Obras. Alimentação (comida para a região, sempre disponível), Riqueza (ouro, com Comércio), Ciência (saber, com Escrita), Cultura (com Alvenaria) ou Festividades (estabilidade, com Construção civil, até +3 por turno no império). Quando nada mais pode ser construído, o jogo deixa de pedir uma obra e mostra só o foco.</p>
   <p><b>Obras em turnos.</b> Cada território tem produção ⚒ (terreno, +2 na capital, oficina, zonas e jazidas) e uma fila de até 3 obras (5 com a tecnologia de administração). A produção avança a obra do topo a cada turno, e o excesso passa à seguinte. Não há limite de construções por território, só uma de cada tipo. Com as obras abertas dá para apressar com ouro (2 por ponto que falta, 3 na maravilha), mas não no turno em que a obra começou. Quem conquista fica com as construções e com metade do progresso das obras; maravilha em andamento se perde.</p>
   <p><b>Pesquisa em turnos.</b> Escolha uma tecnologia na árvore (não gasta ação). O saber acumulado vai para ela, e ela fica pronta no início do turno em que o custo for atingido. Trocar de pesquisa não perde nada. A árvore mostra o que você sabe, o que pode pesquisar e, como silhueta, o passo seguinte; o resto aparece quando você chegar perto.</p>
@@ -3403,7 +3402,7 @@ function cmdGroups() {
       A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
       { a: 'cardsGo', k: '', ic: '🃏', n: `Cartas ${F.cards.length}/5`, cost: 'grátis', d: 'Vantagens pontuais ganhas ao conquistar. Usar uma carta não gasta ação. Abre a sua mão no painel do turno.', why: F.cards.length ? '' : 'Nenhuma carta na mão: ganhe uma em cada turno em que conquistar um território.', on: false },
       ...(G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', mil, G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'em campanha' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
-    ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'fila vazia', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
+    ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'só produzindo', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
     ['tec', '🔬', 'Pesquisa', null, 'techs', pend(['techs']), rt ? `${F.sci}/${techCost(rt, me)}` : 'escolher', ['techs'], 'T', 'Árvore de tecnologias: escolha o que pesquisar.'],
     ['gov', '🏛', 'Governo', [
       M('govm', '🏛', 'Governo e fé', 'Forma de governo, políticas, cívicas e crenças.', pend(['pol', 'civ', 'fe'])),
@@ -3472,10 +3471,10 @@ const TUT = [
   ['#cmd .cmdm', 'Buscar', 'Não sabe onde fica alguma coisa? Toque na lupa e escreva o que quer fazer, com as suas palavras: atacar, ouro, paz, construir. A busca mostra os comandos que servem, já com custo, explicação e o motivo quando estão apagados. No teclado, B ou a barra / abrem a busca e Enter aciona o primeiro resultado.', () => { tutCmd('bus')(); cmdQ = 'ouro'; renderCmd(); }],
   ['#cmd .cmdm', 'Império', 'Caminhos de vitória mostra todos os caminhos para vencer e o quanto você e os rivais avançaram em cada um: além do objetivo do cenário, do legado e da dominação, há vitórias próprias, cada uma com a sua barra de progresso. Quem passa de 75% em alguma vira alvo de todos. Consulte antes de decidir no que investir. Os outros itens abrem no painel o objetivo do cenário e o seu líder, a comparação das facções e a crônica da partida.', tutCmd('vic')],
   ['#me .stabs', 'Seções do painel', 'Turno traz o que fazer agora: novidades, pendências e a etapa militar. Objetivo detalha a meta do cenário e o que falta. Facções compara poder, opinião e ameaça de cada rival. Crônica guarda tudo o que aconteceu na partida.', tutTab('imp')],
-  ['.is-acoes .advr:not(.rep)', 'Conselheiro', 'A lista do que está parado ou esquecido neste turno: pesquisa não escolhida, território sem obra, vaga de política livre, governador sem posto, fronteira em risco. Cada linha tem o botão que resolve. Zere a lista antes de encerrar o turno.', tutTab('imp', 'acoes')],
+  ['.is-acoes .advr:not(.rep)', 'Conselheiro', 'A lista do que está parado ou esquecido neste turno: pesquisa não escolhida, vaga de política livre, governador sem posto, fronteira em risco. Cada linha tem o botão que resolve. Zere a lista antes de encerrar o turno.', tutTab('imp', 'acoes')],
   ['.is-acoes .rep', 'Desde o seu último turno', 'A partir da segunda rodada, este quadro abre o seu turno com o que mudou enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, o que aconteceu no seu império e o saldo de cada rival. O território que mudou de mãos pisca no mapa.', tutTab('imp', 'acoes')],
   ['#cards', 'Cartas', 'Você ganha uma carta em cada turno em que conquista um território, até cinco na mão. Cada carta dá uma vantagem pontual, e usá-la não gasta ação. Guarde as melhores para a batalha decisiva.', tutTab('imp', 'acoes')],
-  ['#works .kpis', 'Painel de Obras', 'O resumo da construção no império: quantos territórios estão em obra, quantos só produzem pelo foco e quantos esperam a sua decisão. Fila vazia não desperdiça produção: ela vira o recurso do foco. Você não é obrigado a construir: escolha um foco e a região sai dos avisos.', tutTab('obr', 'fil')],
+  ['#works .kpis', 'Painel de Obras', 'O resumo da construção no império: quantos territórios estão em obra, quantos produzem pelo foco e em quantos ainda há algo a construir. Fila vazia não é pendência: a produção vira o recurso do foco, e você troca o foco na própria lista.', tutTab('obr', 'fil')],
   ['#works .stabs', 'Filas, Construir e Cadeias', 'Filas mostra o que cada território está construindo e quanto falta. Construir lista as obras por finalidade (comida, ouro, saber, defesa, cultura) e diz onde cada uma cabe. Cadeias mostra o que cada obra libera depois, para você planejar com antecedência.', tutTab('obr', 'fil')],
   ['#works .rbox', 'A fila de um território', 'Cada território tem a própria fila, com até três obras (cinco com a tecnologia de administração). A produção do território paga a obra aos poucos, turno a turno, e o prazo estimado aparece ao lado. Escolha a obra aqui ou clicando no território no mapa.', tutTab('obr', 'fil')],
   ['#info .kpis', 'Aba Região: a ficha do território', 'Tropas, porte e o que o território rende por turno em comida, produção, ouro e saber. A sobra de comida faz o território crescer em oito portes, de Aldeia a Megalópole, desde que haja moradia e emprego; portes maiores abrem mais zonas para construir. Com fome, ele encolhe.', tutTab('reg', 'fro')],
@@ -3580,8 +3579,6 @@ document.addEventListener('click', e => {
   else if (a === 'empire') empireModal();
   else if (a === 'goto') { e.preventDefault(); $('#modal').hidden = true; G.sel = +el.dataset.i; G.tab = 'reg'; sideOpen(); renderMap(); render(); }
   else if (a === 'works') { G.tab = 'obr'; sideOpen(); render(); }
-  else if (a === 'focoOff') { if (G.foc) delete G.foc[+el.dataset.i]; render(); }
-  else if (a === 'focoIdle') { const me = G.player; G.foc = G.foc || {}; owned(me).filter(i => semObra(me, i)).forEach(i => { G.foc[i] = focoOf(i); }); toast('As regiões sem obra agora só produzem. Para construir nelas, abra Obras quando quiser.'); render(); }
   else if (a === 'cardsGo') { G.tab = 'imp'; G.isub = 'acoes'; cmdOpen = null; sideOpen(); render(); $('#cards').scrollIntoView({ block: 'start' }); }
   else if (a === 'ipan') { G.tab = 'imp'; G.isub = el.dataset.k; cmdOpen = null; sideOpen(); render(); }
   else if (a === 'foco' || a === 'focoAll') { const k = el.dataset.k, me = G.player; if (!FOCO[k] || focoWhy(me, k)) return; G.foc = G.foc || {}; (a === 'foco' ? [+el.dataset.i] : owned(me)).forEach(i => { if (G.own[i] === me) G.foc[i] = k; }); if (a === 'focoAll') toast(`${FOCO[k].n} é agora o foco de todas as suas regiões.`); render(); }
