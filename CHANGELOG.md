@@ -1,5 +1,198 @@
 # Histórico de versões
 
+## v79 — 28/11/2026 · Cartas de gestão: quem joga em paz também tem mão (CT-20 a CT-31)
+
+Parte 4 do plano da análise. As cartas tinham parado no desenho da v3: 12 efeitos, todos de guerra ou de estabilidade, ganhos só ao conquistar.
+
+- **12 cartas de gestão novas**, com nome próprio em cada era (84 nomes): obra adiantada em 3 turnos, +8 de comida, ouro de caravana (+8, ou +12 com rota ativa), metade da pesquisa em andamento, +10 de cultura, fé num território vizinho, +20 de relação com uma facção, estrada pronta na hora, fim do cansaço de guerra, relatório de um rival (ouro, pesquisa, cartas e obras em fila), mercenários por 4 turnos e censo (+1 de ouro por território, até 10).
+- **Dois baralhos.** Conquistar rende carta de guerra, como antes. Adotar uma cívica ou concluir uma maravilha rende carta de gestão. A mão continua com 5, e cada carta mostra de qual baralho veio (⚔ ou 🏛).
+- **Duas cartas fortes ajustadas.** A que tirava metade das tropas agora tira no máximo 3. A que tomava um território com até 3 tropas só funciona contra facção com estabilidade abaixo de 50 (neutros e rebeldes seguem valendo).
+- Quando uma carta não pode ser usada, o aviso diz o motivo (sem obra na fila, sem pesquisa escolhida, facção estável demais).
+- A IA usa as cartas de gestão no começo do turno e descarta a que não tem uso quando a mão enche.
+- A carta "+1 ação" da análise ficou de fora: as ações já não são limitadas. No lugar entrou o censo.
+- Regras, tutorial e ajuda do comando Cartas atualizados. Teste novo cobre os 12 efeitos, os dois ajustes, os baralhos e o uso pela IA.
+
+## v78 — 28/11/2026 · Atacar direto pelo território, sem etapa nem declaração (D-19, UI-43)
+
+Pedido do Flavio: não há necessidade de botão de declarar campanha; basta selecionar o seu território e atacar o inimigo.
+
+- O botão de declarar campanha já tinha saído na v62. O que ainda travava era a ordem: com reforços por distribuir, o clique no inimigo só mostrava "Distribua os reforços antes de atacar".
+- **Agora o ataque sai em dois cliques.** Território seu e depois o vizinho inimigo. Se ainda houver reforços por distribuir, o jogo pergunta se pode colocá-los todos no território que ataca e abre a batalha; "Voltar e distribuir" mantém tudo como estava.
+- Os botões de ataque na ficha da região e a lista de frentes já ficam disponíveis com reforços pendentes (`atkWhy(..., soft)`).
+- Textos sem "declarar" e sem "campanha": a crônica diz que a facção "parte para o ataque" e a barra mostra "atacando".
+- Teste novo com o fluxo completo; conferido com cliques reais em 1366 × 768 e 390 × 844.
+
+## v77 — 28/11/2026 · Porto e pesca na costa de verdade; obras rurais sempre em terra (UI-42)
+
+Continuação do pedido do Flavio de cidades e obras integradas ao mapa.
+
+- **Porto e pesca no mar.** Em território com costa, porto e pesca saem dos pontos fixos em volta da cidade e vão para o mar junto à costa mais próxima do centro (`coastPt`), desenhados sobre a água do próprio mapa: cais, navio e barco com rede, sem lâmina d'água própria. A posição é fixa no mapa em qualquer zoom (`cstPlace`). Sem costa desenhada, vale o desenho antigo.
+- **Obras rurais em terra.** Cada posição é testada contra o contorno do território; se cairia no mar ou no vizinho, recua em direção ao centro (`svp`).
+- Teste novo: porto fora do contorno do território e obras rurais dentro dele.
+
+## v76 — 28/11/2026 · Fila vazia deixa de ser pendência; obras rurais como parcelas no terreno (P-14, UI-41)
+
+Pedido do Flavio: o "só produzir" não funcionava na prática, porque região que já tinha terminado as obras continuava aparecendo como ociosa.
+
+- **Causa.** A v74 só tirava o aviso depois de um toque em "Só produzir" em cada região, e quase sempre sobra alguma obra possível (a França do cenário napoleônico tem 29), então a região voltava a cobrar. Mesmo com tudo construído, a ficha da região ainda abria o texto "Não quer construir aqui?" e a barra dizia "fila vazia".
+- **Regra nova.** Fila vazia não é pendência. Região sem obra produz o foco dela, sem aviso, sem ponto na barra e sem exigir escolha. Saem o item do conselheiro, o estado "A decidir", o destaque amarelo e os botões "Só produzir", "deixar as regiões só produzindo" e "Voltar a avisar".
+- **Obras.** Os indicadores viram Em obra, Produzindo e Com obra possível (informativo). Cada região sem obra mostra o que produz e cinco botões para trocar o foco ali mesmo, com o ganho de cada um; "Construir aqui" só aparece onde há o que construir, e região completa diz "Tudo construído por aqui".
+- **Barra.** O estado de Obras mostra "só produzindo" quando não há fila.
+- **Obras rurais no terreno.** Fazenda vira um retalho de lavouras, floresta um arvoredo de copas redondas e mina uma pedreira em degraus, sem o desenho de montanha; as posições variam de um território para outro.
+- **Território pequeno.** A cidade encolhe quando o centro fica perto da costa (raio livre medido no contorno), para passar menos da borda em ilhas e faixas estreitas.
+- Teste da v74 reescrito para a regra nova, incluindo região toda construída.
+
+## v75 — 28/11/2026 · Cidades assentadas no relevo e cores de facção translúcidas (UI-40)
+
+Pedido do Flavio: as cidades continuavam parecendo peças soltas; ele quer a cidade dentro do mapa, mesclada e interligada ao relevo, as cores das facções mais transparentes e um visual mais próximo de um mapa de civilização. Arte original, sem copiar nada de outros jogos.
+
+- **Relevo à mostra na lente Dono.** Nos mapas com relevo, a lente Dono passa a mostrar o relevo colorido por baixo; a cor da facção vira um véu translúcido (36%; neutros 16%, rebeldes 50% com hachura) e a fronteira ganha a faixa na cor do dono. Névoa e territórios fora do cenário seguem opacos. As demais lentes não mudam.
+- **Cidade assentada no terreno.** Sai o prato oval com contorno; entra uma mancha urbana irregular que se desfaz no chão, com duas vias principais que atravessam a cidade e continuam pelos caminhos, anel viário nas cidades grandes, quarteirões de casas pequenas com sombra, praça diante do marco e lotes para as obras urbanas.
+- **Arrabaldes, hortas e arvoredo.** Casas fora dos muros ao longo das vias, canteiros na borda e árvores conforme o terreno do território (mais em floresta e selva, nenhuma no deserto).
+- **Muralha que acompanha a cidade.** Muro baixo poligonal com torre em cada canto e portão onde a via sai, no lugar do anel oval grosso.
+- **Traço mais leve.** Contorno fino nas construções e nas obras rurais, que agora pousam num chão que se desfaz no terreno; caminhos contínuos no lugar do tracejado. Arranha-céus mais altos no centro nas eras industrial e moderna.
+- **Cidade maior de perto.** O teto de ampliação da cidade com o zoom subiu de 3,3 para 5,5, sempre limitado ao tamanho do território.
+- Teste novo na bateria para o véu translúcido, a faixa de fronteira e a cidade sem prato.
+
+## v74 — 27/11/2026 · Gestão do turno pela barra de baixo, painel sob demanda, região que só produz e formato para tablet (UI-39, P-14)
+
+Pedido do Flavio: a gestão estava repetida, tudo ficava na lateral com rolagem enorme, a barra de baixo quase não era usada e região sem obra cobrava uma escolha mesmo quando a ideia era só produzir.
+
+- **Construir deixou de ser obrigação.** Escolher um foco (alimentação, riqueza, ciência, cultura ou festividades) numa região sem obra agora é uma decisão: ela passa a só produzir e some dos avisos do conselheiro, do ponto na barra e do destaque nas filas. Em Obras há um botão para deixar todas as regiões sem obra só produzindo, e cada linha tem os dois caminhos lado a lado: Escolher obra ou Só produzir. Dá para desfazer na ficha da região. Território conquistado volta a pedir a decisão.
+- **O painel lateral abre só quando você pede.** Ele começa fechado e o mapa ocupa a tela. Abre ao tocar num território ou pela barra de baixo: etapas do turno, Obras, Império e Cartas. No lugar das três abas há um título e um ✕. Esc fecha.
+- **Indicadores sempre à vista, uma vez só.** Ouro, saber, prestígio, estabilidade, felicidade e legado saíram do painel e ficam numa faixa no topo. A barra parou de repetir esses números: Governo mostra a forma de governo, Economia as rotas, Império o avanço do objetivo.
+- **Barra como centro.** Vitórias virou Império e reúne caminhos de vitória, objetivo e líder, facções e crônica. Militar ganhou Cartas. Novidades do turno e pendências aparecem na barra também no celular. Com um território seu selecionado, a barra oferece pôr todos os reforços nele.
+- **Menos repetição.** O aviso de pesquisa parada aparecia em quatro lugares e agora fica na barra e no conselheiro. O título do território não se repete. Distribuir reforços não abre o painel a cada toque.
+- **Menos rolagem.** Na ficha da região, cada obra ocupa uma linha com nome, custo, prazo, efeito resumido e o botão Construir; tocar abre o texto inteiro. O foco fica recolhido quando há fila. Medido no cenário napoleônico, primeiro turno, computador: Obras da França de 2023 para 1377 px de altura; filas do império de 1574 para 1197 px. Ainda rolam, mas bem menos.
+- **Formato para tablet.** Pedido do Flavio. Deitado (821 a 1180 px de largura): o cabeçalho cabe em uma linha, o painel fica um pouco mais estreito e o mapa ganha a altura que o cabeçalho quebrado tomava. Em pé (600 a 820 px): mapa em metade da tela com o painel embaixo, barra com o estado de cada tema por escrito, etapas numeradas, indicadores com nome e menus centralizados. Conferido em 768 × 1024 e 1024 × 768, com toque.
+- Corrigido: no celular, com o painel aberto, a página ficava mais larga que a tela e cortava texto à direita. As caixas da ficha da região ocupam a largura toda.
+- Tutorial, regras e testes acompanham as mudanças. Nada muda para a IA nem no equilíbrio.
+
+## v73 — 27/11/2026 · Rio grande de verdade vira regra do jogo (MC-05)
+
+- **Mais territórios com rio na regra, pelo mundo real.** Escolha do Flavio. Passa a contar como "com rio" todo território cortado por um rio de grande porte real. Eram 68 de 348, agora são 148. Os 68 antigos continuam.
+- **O que isso muda para quem joga.** Nesses 80 territórios novos valem o bônus de rio (+1 comida, +1 ouro, +1 saúde) e as obras de rio: irrigação, moinho, roda d'água, cais fluvial, ponte e represa. Poço e açude, que são obras de quem não tem rio, deixam de aparecer neles.
+- **Critério único.** Rio grande é o de escala até 2 no mapa-múndi, até 3 no mapa das Américas e até 4 nos mapas regionais, na base Natural Earth, com trecho dentro do território pelo menos do tamanho mínimo usado no desenho. Exemplos novos: Danúbio na Áustria, Sérvia e Bulgária; Reno na Holanda e na Suíça; Don na Rússia Meridional; Ohio e Missouri no meio-oeste dos EUA; São Francisco na Bahia, Minas e Pernambuco; Araguaia e Tocantins em Goiás; Amazonas no Peru; Ob, Ienissei e Lena na Sibéria.
+- **Por mapa (antes e depois):** mundo 21 e 31 de 75; Europa 1805 8 e 19 de 36; Europa 1914 10 e 21 de 46; Mediterrâneo 7 e 19 de 46; nórdico 4 e 12 de 32; Américas 3 e 9 de 27; EUA 1861 7 e 22 de 35; Brasil 1835 2 e 9 de 20; Japão 6 e 6 de 31 (a base mundial quase não tem rio japonês; ficam os já marcados).
+- **Equilíbrio medido.** Bateria completa com a mesma semente (65), antes e depois: partidas de 32,2 para 31,2 rodadas em média, obras por partida de 327 para 334, vitórias por domínio de 26 para 32 em 109 partidas, dentro da variação já vista entre sementes (24 a 33). Medido com uma semente só.
+- O desenho dos rios não mudou. A dica ao passar o cursor agora aparece nos 148.
+
+## v72 — 27/11/2026 · Rios reais em todas as regiões de todos os mapas (MC-05, UI-38)
+
+- **Todos os rios do mundo real, em todas as regiões.** Antes só os territórios que a regra marca com rio (68 de 348) tinham rio desenhado. Agora 337 de 348 territórios dos 9 mapas mostram os seus rios reais. Pedido do Flavio.
+- **De onde vem o traçado.** Da Natural Earth, base aberta de rios do mundo na escala 1:10 milhões (domínio público), projetada igual a cada mapa: Reno, Danúbio, Tejo, Volga, Mississippi e afluentes, São Francisco, Tocantins, Xingu, Paraná, Congo, Níger, Ganges, Yangtzé e centenas de outros. A largura segue o porte do rio.
+- **Onde a base não chega, entra o relevo.** No Japão, que tem um só rio nessa base, e em regiões pequenas de rios curtos (Ceará, Paraíba, Sicília, Dinamarca), o rio é calculado pelo escoamento na elevação real, como na v71.
+- **Sem rio inventado.** Arábia, Líbia, Tripolitânia, Cirenaica e Groenlândia ficam sem rio. Rios reais que cruzam desertos, como o Nilo, aparecem. No mapa-múndi, Cuba e Taiwan são pequenos demais para a escala.
+- **Regra inalterada.** Quais territórios contam como "com rio" para bônus e obras não mudou. A dica ao passar o cursor aparece só nesses.
+- Em cada mapa entram os rios do porte que a escala comporta; se com isso um território ficaria vazio, entram os rios menores que ele tem de verdade.
+
+## v71 — 27/11/2026 · Rios que seguem o relevo de verdade (MC-05, UI-38)
+
+- **O traçado dos rios agora sai da elevação real**, a mesma que desenha o relevo do mapa. Antes era uma curva inventada entre dois pontos do território, e por isso cortava serras. Pedido do Flavio.
+- **Como é calculado (`maps/rios.js`).** O terreno é enchido a partir do mar, cada ponto escoa para o vizinho mais baixo e a vazão se acumula rio abaixo. Em cada território com rio saem o rio principal, os maiores afluentes e, quando existe, um segundo rio de outra bacia. O curso corre pelos vales, serpenteia nas planícies, engrossa rumo à foz e continua no território vizinho.
+- **Resultado.** Nos mapas reais aparecem os grandes sistemas no lugar certo: Amazonas com Negro e Madeira, Mississippi com Ohio e Missouri, Nilo, Danúbio, Vístula, Loire, Shinano.
+- **Largura constante na tela.** O traço do rio não engrossa com o zoom: de perto continua uma linha fina sobre o vale, de longe continua visível.
+- Vale para os 9 mapas com relevo. Os rios seguem só nas lentes Relevo e Terreno. Não muda regra: quais territórios têm rio continua igual.
+- As projeções dos mapas saíram de `maps/relevo.js` para `maps/proj.js`, usado pelo relevo e pelos rios.
+
+## v70 — 27/11/2026 · Mais obras militares (C-146 a C-149)
+
+- **Torre de vigia (C-146).** +1 no maior dado de defesa com 3 ou mais tropas no território. Tecnologia: Alvenaria.
+- **Estação de radar (C-147).** +1 no maior dado de defesa. Exige aeródromo. Tecnologia: Radar.
+- **Abrigo antiaéreo (C-148).** +1 saúde e +1 estabilidade. Nível 2. Tecnologia: Aviação.
+- **Memorial de guerra (C-149).** +1 prestígio e +1 estabilidade. Exige quartel e nível 2. Tecnologia: Arqueologia.
+- Equilíbrio da v68 conferido com uma segunda semente: as vitórias por conquista foram de 33 para 28 (semente 65), depois de terem ido de 24 para 32 (semente 66). A variação é da semente, não da estação ferroviária.
+
+## v69 — 27/11/2026 · Rios só nos mapas com relevo e cidade assentada no terreno (MC-05, UI-38)
+
+- **Rios só nas lentes Relevo e Terreno.** Na lente Dono, das cores das facções, e nas de Zonas, Recursos e Rede o rio não aparece mais. Pedido do Flavio.
+- **Cidade sem disco.** A cidade ficava sobre um disco claro com sombra, como uma peça pousada no mapa. Agora o chão da cidade se desfaz no terreno em volta, sem borda e sem sombra de disco.
+
+## v68 — 27/11/2026 · Ponte, túnel, estação ferroviária e porto de contêineres (C-142 a C-145)
+
+- **Ponte (C-142).** +1 ouro, e as tropas que saem do território no remanejamento andam 1 território a mais pela estrada. Exige estrada e rio. Tecnologia: Construção civil.
+- **Túnel (C-143).** +1 ouro, e as obras do território deixam de custar mais por causa do relevo. Exige estrada; só em colina ou montanha. Tecnologia: Dinamite.
+- **Estação ferroviária (C-144).** +2 ouro e base de suprimento, como o quartel e o porto. Exige ferrovia e nível 2. Tecnologia: Ferrovia.
+- **Porto de contêineres (C-145).** +3 ouro e +1 produção. Exige porto e nível 3. Tecnologia: Computadores.
+- O cais fluvial (C-141) passa a exigir Pesca e barcos, da primeira era, em vez da doutrina de navegação.
+- O catálogo mostra o requisito novo "só em colina ou montanha".
+
+## v67 — 27/11/2026 · Rios desenhados no mapa e cais fluvial (MC-05, C-141)
+
+- **Os rios aparecem no mapa (MC-05).** Antes o rio era só uma informação do território. Agora cada território com rio mostra o curso d'água: ele nasce na divisa com o vizinho mais alto (montanha, depois colina), passa ao lado da cidade em meandros e deságua no litoral. O desenho fica sob o sombreado do relevo, como parte do terreno, e não sai dos limites do território. Passar o cursor sobre o rio diz o que ele permite construir.
+- **Cais fluvial (C-141).** +1 ouro e hidrovia: o território entra na rede de bens junto com os seus outros cais fluviais e portos, sem precisar de estrada. Exige rio. Tecnologia: Navegação.
+- O traçado é calculado uma vez por mapa e é sempre o mesmo para o mesmo mapa. Não muda regra nem equilíbrio; só o cais fluvial é obra nova.
+- Teste novo: todo território com rio tem rio desenhado, e o cais liga à rede e exige rio.
+
+## v66 — 27/11/2026 · Quartel com nome único e obras militares novas (C-136 a C-140)
+
+- **Quartel existe com esse nome.** A obra mudava de nome por era (Acampamento, Quartel, Base Militar, Caserna), enquanto as regras, o manual e outras obras falavam sempre em "quartel". Agora se chama Quartel em todas as eras.
+- **Depósito de suprimentos (C-136).** Base de suprimento barata, sem manutenção, para manter os 3 dados de ataque longe da capital. Tecnologia: Roda.
+- **Bateria costeira (C-137).** +1 na defesa contra ataques vindos do mar. Tecnologia: Artilharia; exige litoral.
+- **Fábrica de munições (C-138).** +1 nos ataques que saem do território. Exige distrito industrial e aço na rede. Tecnologia: Rifles.
+- **Academia naval (C-139).** +1 travessia e +1 prestígio. Exige estaleiro. Tecnologia: Hidrografia, que passa a liberar uma obra.
+- **Hospital militar (C-140).** +1 saúde e +1 estabilidade. Exige quartel. Tecnologia: Medicina, que passa a liberar uma obra.
+- Manual e teste novo. O plano da análise ganhou uma seção de obras militares para as próximas partes.
+
+## v65 — 27/11/2026 · Água: poço, açude, reservatório, roda d'água, represa e tratamento (C-130 a C-135)
+
+Parte 1 do plano da análise completa.
+
+- **Poço (C-130).** Só em território sem rio: +1 saúde. Tecnologia: Mineração.
+- **Açude (C-131).** Só sem rio, sobre uma fazenda: +2 comida. É a irrigação de quem não tem rio. Tecnologia: Irrigação.
+- **Reservatório (C-132).** Vila ou maior: +1 comida e +1 saúde. Tecnologia: Engenharia.
+- **Roda d'água (C-133).** Oficina e rio: +2 produção. A tecnologia Rodas d'água passa a liberar uma obra.
+- **Represa (C-134).** Com rio: +1 comida e fim das enchentes no território. **A Hidrelétrica passa a exigir uma Represa** no mesmo território. Tecnologia: Dinamite.
+- **Estação de tratamento (C-135).** Cidade com saneamento: +1 saúde e −2 de poluição. Tecnologia: Ecologia.
+- **Seca e enchente com prevenção.** Poço, açude, reservatório e represa protegem o estoque de comida na seca, como o celeiro; a represa impede a enchente. O aviso do evento diz qual obra teria evitado a perda.
+- A IA constrói as obras novas (peso próprio, e a represa vale mais quando falta energia).
+- **Correção.** O catálogo dizia "colina ou montanha" para toda obra que depende de terreno vizinho, mesmo as de selva e floresta (Seringal, Reserva Florestal, Parque Nacional). Agora mostra o terreno certo.
+- Hidrelétricas já construídas em partidas salvas continuam funcionando.
+
+## v64 — 27/11/2026 · Foco de produção da IA só no Difícil; simulações com semente (P-14, IA-22)
+
+- **Dificuldade.** No Difícil, os impérios da IA também aproveitam a produção das regiões sem obra, sempre em comida. No Fácil e no Normal, só o jogador tem o foco. O resumo da escolha de dificuldade explica a diferença.
+- **Simulações repetíveis (IA-22).** `SEED=n node test3.js` repete exatamente as mesmas partidas simuladas, o que permite comparar o equilíbrio antes e depois de uma mudança. Sem `SEED`, a semente é sorteada e impressa no começo.
+- Análise completa do conteúdo (construções, tecnologias, recursos, cartas, governos, líderes, mapa) e plano em 7 partes em documento separado.
+
+## v63 — 27/11/2026 · Foco de produção: região sem obra não fica parada (P-14)
+
+- **Produção nunca se perde.** Território com a fila vazia passa a converter a produção ⚒ no foco escolhido: Alimentação (comida da região, sempre disponível), Riqueza (ouro, exige Comércio, rende 50% a mais na república mercantil), Ciência (saber, exige Escrita), Cultura (exige Alvenaria) ou Festividades (estabilidade, exige Construção civil, até +3 por turno no império). Antes, essa produção era desperdiçada.
+- **Sem pedido de obra impossível.** Quando nada cabe na região, o painel deixa de mostrar "Construir aqui" e "Escolher obra": aparece só o foco, com o ganho por turno. A obra volta a ser oferecida quando uma tecnologia, zona ou construção a liberar.
+- **Aba Obras.** O indicador "Ociosos" virou "Sem obra" e conta só os territórios em que há algo a construir. Os demais aparecem no fim da lista com o foco e o rendimento.
+- **Um toque para todos.** Botão "Usar este foco em todas as regiões"; focos bloqueados mostram o cadeado e a tecnologia que falta.
+- O foco vale para o império do jogador e entra no salvamento. Os impérios da IA seguem como antes: em 109 partidas simuladas, as vitórias por domínio foram 20 na v62, 33 com o foco ligado para todos e 26 com o foco só no jogador. A variação entre rodadas é grande, mas por cautela o foco ficou de fora da IA.
+- Texto da doutrina de conquista atualizado (não existe mais "declarar campanha").
+- Manual e teste novo (P-14).
+
+## v62 — 27/11/2026 · Turno livre, etapas na barra e ataque sem declarar campanha (D-19, UI-37)
+
+O turno tinha três fases fechadas: nada de obras ou governo antes de pôr os reforços, nada de gestão durante o remanejamento, e para atacar era preciso abrir um menu e declarar campanha.
+
+- **Turno livre.** Obras, pesquisa, governo, diplomacia, comércio e recrutamento valem do começo ao fim do turno. Só a parte militar tem ordem: distribuir os reforços, atacar, remanejar. Atacar e remanejar são opcionais.
+- **Única obrigação:** distribuir os reforços. Sem isso não dá para atacar, remanejar nem encerrar o turno, e o jogo diz isso por escrito.
+- **Atacar sem declarar campanha.** Com os reforços distribuídos, basta clicar num território seu e num vizinho. O primeiro ataque do turno põe o império em campanha (é o que soma cansaço de guerra); turno sem ataque não soma.
+- **Aviso antes de romper tratado.** Atacar quem está em trégua ou é aliado deixou de ser bloqueado: abre um aviso com as consequências daquele caso (estabilidade, acordos que acabam, opinião da facção e das outras, quem entra na guerra por defesa mútua, motivo de guerra quando houver) e a chance de vencer. Esc ou "Não atacar" não rompe nada.
+- **Etapas do turno na barra inferior:** Distribuir, Atacar, Remanejar e Encerrar turno, com a etapa atual destacada, a concluída marcada e uma linha dizendo o que fazer agora. Tocar numa etapa abre os detalhes dela no painel lateral.
+- **Frentes abertas.** A etapa Atacar lista no painel os melhores ataques possíveis, com tropas dos dois lados e chance de vencer; um toque abre a batalha.
+- **Recusas explicadas.** Todo ataque negado diz o motivo: reforços por distribuir, remanejamento já iniciado, menos de 2 tropas, limite de conquistas do turno, frota sem travessias, capital protegida na abertura. O motivo também aparece ao lado do botão na lista de fronteiras. Antes, o limite de conquistas respondia só "Ataque indisponível agora".
+- **Fronteiras revisadas.** Os 11 mapas foram comparados com o desenho, território por território. Faltava uma fronteira no mapa-múndi (Canadá Leste e EUA Oeste, que se tocam por 15 px), agora incluída. Nos demais, toda divisa desenhada é fronteira no jogo.
+- **Mapa inteiro visível no computador.** O mapa agora termina acima da barra, então nenhum território fica coberto por ela. No celular a barra foi para o rodapé da tela e saiu de cima do mapa.
+- **Painel lateral recolhível** (botão junto ao zoom): o mapa ocupa a largura toda e o painel reabre ao escolher algo na barra ou um território.
+- **Encerrar com cuidado.** Se a pesquisa está parada ou há proposta diplomática sem resposta, encerrar o turno pede confirmação.
+- Carta de reforços pode ser usada em qualquer momento antes do remanejamento. Tutorial, guia do iniciante, busca e manual reescritos para o fluxo novo.
+
+## v61 — 27/11/2026 · Barra de comandos: estado, pendências, busca e teclado (UI-36)
+
+A barra da v60 mostrava onde ficam os comandos. Faltava dizer como o império está, por que um tema pede atenção e ajudar quem não sabe em que tema procurar.
+
+- **Estado em cada tema (computador):** sob o nome, o que importa agora: tropas ou "em campanha", obras na fila, avanço da pesquisa, estabilidade, prestígio ou propostas, ouro e saldo do turno, legado e meta. No celular, o estado aparece no alto do menu aberto.
+- **Pendências dentro do menu:** o ponto dourado agora se explica. Ao abrir o tema, o aviso do conselheiro vem no alto, com o botão que resolve ("Há vaga de política livre", Ver políticas). Militar avisa de territórios em risco; Economia, de vaga de rota.
+- **Busca (lupa, tecla B ou /):** escreva o que quer fazer com as suas palavras, como "atacar", "ouro", "paz" ou "construir", e a busca mostra os comandos que servem, com custo, explicação e motivo quando apagados. Sem acento e sem maiúscula também vale. Enter aciona o primeiro resultado. Tutorial, Regras e Salvar também são encontrados.
+- **Teclado:** M abre Militar, E abre Economia, setas andam pelos itens, Esc fecha e devolve o foco ao tema. Os itens apagados agora recebem foco e são lidos por leitor de tela junto com o motivo (antes eram pulados).
+- **Correção:** com muitos itens, as linhas do menu se espremiam e cortavam o texto no celular; agora o menu rola.
+- Tutorial com o passo da busca (34 passos); atalhos novos na janela de atalhos.
+
 ## v60 — 27/11/2026 · Barra de comandos: tudo a um toque, com explicação (UI-35)
 
 O painel tinha virado uma rolagem longa. Para declarar campanha era preciso estar na aba Império, na seção Ações, e rolar por baixo do conselheiro e do guia: numa tela de 1000 px de altura o botão ficava fora da vista. As janelas (tecnologias, governo, diplomacia) estavam numa fileira, as ações noutra, bem abaixo, sem dizer o que faziam a não ser passando o mouse.
