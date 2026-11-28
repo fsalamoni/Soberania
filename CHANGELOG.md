@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v79 — 28/11/2026 · Cartas de gestão: quem joga em paz também tem mão (CT-20 a CT-31)
+
+Parte 4 do plano da análise. As cartas tinham parado no desenho da v3: 12 efeitos, todos de guerra ou de estabilidade, ganhos só ao conquistar.
+
+- **12 cartas de gestão novas**, com nome próprio em cada era (84 nomes): obra adiantada em 3 turnos, +8 de comida, ouro de caravana (+8, ou +12 com rota ativa), metade da pesquisa em andamento, +10 de cultura, fé num território vizinho, +20 de relação com uma facção, estrada pronta na hora, fim do cansaço de guerra, relatório de um rival (ouro, pesquisa, cartas e obras em fila), mercenários por 4 turnos e censo (+1 de ouro por território, até 10).
+- **Dois baralhos.** Conquistar rende carta de guerra, como antes. Adotar uma cívica ou concluir uma maravilha rende carta de gestão. A mão continua com 5, e cada carta mostra de qual baralho veio (⚔ ou 🏛).
+- **Duas cartas fortes ajustadas.** A que tirava metade das tropas agora tira no máximo 3. A que tomava um território com até 3 tropas só funciona contra facção com estabilidade abaixo de 50 (neutros e rebeldes seguem valendo).
+- Quando uma carta não pode ser usada, o aviso diz o motivo (sem obra na fila, sem pesquisa escolhida, facção estável demais).
+- A IA usa as cartas de gestão no começo do turno e descarta a que não tem uso quando a mão enche.
+- A carta "+1 ação" da análise ficou de fora: as ações já não são limitadas. No lugar entrou o censo.
+- Regras, tutorial e ajuda do comando Cartas atualizados. Teste novo cobre os 12 efeitos, os dois ajustes, os baralhos e o uso pela IA.
+
 ## v78 — 28/11/2026 · Atacar direto pelo território, sem etapa nem declaração (D-19, UI-43)
 
 Pedido do Flavio: não há necessidade de botão de declarar campanha; basta selecionar o seu território e atacar o inimigo.

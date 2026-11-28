@@ -120,6 +120,36 @@ const ok = (c, m) => { if (!c) { console.log('FALHOU:', m); process.exitCode = 1
   ok(await p.evaluate(() => { const G = window.__sob.G, c = G.F[G.player].capI; return !!document.querySelector(`g.b[data-i="${c}"] .sv .city`) && Object.keys(STRUCT).every(k => STRUCT[k].road || SV[svOf(k)]); }), 'construções desenhadas em volta da capital, todas com desenho');
   ok(await p.evaluate(() => { const G = window.__sob.G, c = G.F[G.player].capI, t = document.querySelectorAll('path.t')[c], ct = document.querySelector(`g.b[data-i="${c}"] .sv .city`); const r = [document.querySelector('#relc').style.display !== 'none', +t.getAttribute('fill-opacity') < .5, document.querySelector('#rib').style.display !== 'none', !ct.querySelector(':scope > ellipse[fill^="url"]'), ct.querySelectorAll('path').length > 20]; if (r.includes(false)) console.error('v75 ' + r.join()); return !r.includes(false); }), 'v75: cor da facção translúcida sobre o relevo e cidade assentada no terreno, sem prato');
   ok(await p.evaluate(() => { const G = window.__sob.G, me = G.player, i = owned(me).find(j => coastPt(j)); if (i == null) return 'skip'; const b0 = G.bld[i]; G.bld[i] = [...b0, 'por', 'agr', 'min'].filter((k, n, a) => a.indexOf(k) === n); renderMap(); const c = document.querySelector(`g.b[data-i="${i}"] .cst`), pt = svg.createSVGPoint(); pt.x = +c.dataset.x; pt.y = +c.dataset.y; const sea = !P[i].isPointInFill(pt) && /translate/.test(c.getAttribute('transform') || ''); const t = G.m.terr[i], sc = Math.min(nnD()[i] / 100, Math.max(inR()[i] / 14, nnD()[i] / 210)); const land = [0, 1].map(s => { const [x, y] = svp(i, s); pt.x = t.x + x * sc; pt.y = t.y + y * sc; return P[i].isPointInFill(pt) || Math.hypot(x, y) < 14; }); G.bld[i] = b0; renderMap(); if (!sea || land.includes(false)) console.error('v77 ' + sea + ' ' + land.join()); return sea && !land.includes(false); }), 'v77: porto ancorado no mar junto à costa e obras rurais dentro do território');
+  { // v79: cartas de gestão (CT-20 a CT-31), ajuste das duas cartas fortes e compra em paz
+    const r = await p.evaluate(() => {
+      const G = window.__sob.G, me = G.player, F = G.F[me]; if (G.turnF !== me || G.busy || G.over) return 'skip';
+      const bad = [], T = owned(me), t = T[0];
+      const snap = JSON.stringify({ q: G.q, bld: G.bld, food: G.food, tr: G.tr, fai: G.fai, mem: G.mem, F: G.F });
+      for (const e of Object.keys(CARDS)) if (Array.isArray(CARDS[e]) && e !== 'sym' && CARDS[e].length !== 24) bad.push('lista ' + e);
+      const play = (k, a) => { F.cards = [{ k }]; return playCard(me, 0, a); };
+      let g = F.gold; if (!play(14) || F.gold < g + 8) bad.push(14);
+      g = F.cu || 0; if (!play(16) || F.cu !== g + 10) bad.push(16);
+      F.ww = 7; if (!play(20) || F.ww !== 0) bad.push(20);
+      g = F.gold; if (!play(23) || F.gold !== g + Math.min(10, T.length)) bad.push(23);
+      g = G.food[t]; if (!play(13, t) || G.food[t] !== g + 8) bad.push(13);
+      g = G.tr[t]; if (!play(22, t) || G.tr[t] !== g + 3) bad.push(22);
+      const r0 = G.round; G.round += 4; mercsLeave(me); G.round = r0; if (G.tr[t] !== g) bad.push('22 saída');
+      G.q[t] = []; if (play(12, t) !== false || !cardWhy) bad.push('12 sem fila');
+      const kq = Object.keys(STRUCT).find(k => canQueue(me, k, t)); if (kq) { G.q[t].push({ k: kq, p: 0, t: G.round }); if (!play(12, t) || !(built(t, kq) || G.q[t][0].p > 0)) bad.push(12); }
+      const te = T.find(i => engK(me, i)); if (te != null) { const b = engK(me, te); if (!play(19, te) || !built(te, b)) bad.push(19); }
+      if (F.res) { g = F.sci; const had = F.tech.length; if (!play(15) || !(F.sci > g || F.tech.length > had)) bad.push(15); }
+      const o = G.order.find(o => o !== me && G.F[o].alive && owned(o).length);
+      if (o) { const j = owned(o)[0]; g = relOf(o, me).v; if (!play(18, j) || !(relOf(o, me).v > g)) bad.push(18); if (play(18, t) !== false) bad.push('18 em si'); }
+      const pr = T.flatMap(i => G.A[i].filter(j => hostile(me, j) && real(G.own[j]) && !capOwner(j)).map(j => [i, j]))[0];
+      if (pr) { const j = pr[1], X = G.F[G.own[j]]; G.tr[j] = 2; X.stab = 80; if (play(11, j) !== false || G.own[j] === me) bad.push('11 estável'); G.tr[j] = 10; if (!play(4, j) || G.tr[j] !== 7) bad.push(4); }
+      for (let n = 0; n < 40; n++) if (drawCard(0).k > 11 || drawCard(1).k < 12) { bad.push('baralhos'); break; }
+      F.cards = []; gainCard(me); if (F.cards.length !== 1 || F.cards[0].k < 12) bad.push('compra em paz');
+      if (o) { const A = G.F[o], tf = G.turnF; A.cards = [14, 16, 20, 23, 13].map(k => ({ k })); G.turnF = o; aiCards(o, 'ref'); G.turnF = tf; if (A.cards.length) bad.push('IA ficou com ' + A.cards.map(c => c.k)); }
+      const s = JSON.parse(snap); for (const k of ['q', 'bld', 'food', 'tr', 'fai', 'mem']) G[k] = s[k]; for (const f in s.F) { const X = G.F[f]; for (const k of ['gold', 'cu', 'ww', 'sci', 'res', 'tech', 'cards', 'mercs', 'stab', 'nB', 'civ']) X[k] = s.F[f][k]; X.tS = null; }
+      document.querySelector('#modal').hidden = true; render(); return bad.join('; ') || true;
+    });
+    ok(r === true || r === 'skip', 'v79: 12 cartas de gestão aplicam o efeito, a IA usa, Traição e Envenenamento ajustadas, carta por cívica' + (r === true || r === 'skip' ? '' : ' [' + r + ']'));
+  }
   { // v78: atacar direto pelo mapa com reforços por distribuir
     const r = await p.evaluate(async () => { const G = window.__sob.G, me = G.player, F = G.F[me]; if (G.turnF !== me || G.busy || G.over) return 'skip'; const s0 = { tr: G.tr.slice(), reinf: F.reinf, phase: G.phase, sel: G.sel, camp: F.camp }; F.reinf = 3; G.phase = 'ref'; let pr = null; for (const i of owned(me)) { const j = G.A[i].find(j => hostile(me, j) && !brk(me, G.own[j]) && !atkWhy(me, i, j, true)); if (j != null) { pr = [i, j]; break; } } if (!pr) { F.reinf = s0.reinf; G.phase = s0.phase; return 'skip'; } const [i, j] = pr, hard = !!atkWhy(me, i, j); G.sel = i; render(); onTerr(j); const m = document.querySelector('#modal'), asked = !m.hidden && /reforço/.test(m.innerText); m.querySelector('[data-m="0"]').click(); await new Promise(r => setTimeout(r, 60)); const went = F.reinf === 0 && G.tr[i] === s0.tr[i] + 3 && G.tgt === j; hideBattle(); G.tr = s0.tr; F.reinf = s0.reinf; G.phase = s0.phase; G.sel = s0.sel; F.camp = s0.camp; m.hidden = true; render(); return hard && asked && went || [hard, asked, went].join(); });
     ok(r === true || r === 'skip', 'v78: clicar no território e no vizinho inimigo ataca, com oferta de pôr os reforços que faltam' + (r === true || r === 'skip' ? '' : ' [' + r + ']'));

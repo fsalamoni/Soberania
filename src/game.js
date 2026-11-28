@@ -388,7 +388,7 @@ function govAct(f, a, x, y) {
   if (a === 'civ') {
     const c = CK[x]; if (!c || !civOk(f, c)) return 'Cívica indisponível.';
     if (F.cu < civCost(c)) return 'Cultura insuficiente.';
-    F.cu -= civCost(c); F.civ.push(x); F.pfree = G.round; log(f, `${fname(f)} adota ${c.n}.`); return '';
+    F.cu -= civCost(c); F.civ.push(x); F.pfree = G.round; log(f, `${fname(f)} adota ${c.n}.`); gainCard(f); return '';
   }
   if (a === 'gov') {
     const g = GOV[x]; if (!g || !civ(f, g.c) || gov(f) === x) return 'Governo indisponível.';
@@ -1245,6 +1245,7 @@ function finishWork(i, n) {
   const f = G.own[i], x = G.q[i].splice(n, 1)[0]; G.bld[i].push(x.k); Fa(f).nB++;
   log(f, `${fname(f)} conclui ${sName(x.k)} em ${tname(i)}.`);
   if (STRUCT[x.k].wonder) era(f, G.bld.filter(b => b.some(k => STRUCT[k].wonder)).length === 1 ? 3 : 1, `concluiu ${sName(x.k)}`); // E-10
+  if (STRUCT[x.k].wonder) gainCard(f); // v79: maravilha concluída rende carta de gestão
   if (STRUCT[x.k].ww) for (let j = 0; j < G.N; j++) { const n0 = G.q[j].length; G.q[j] = G.q[j].filter(y => y.k !== x.k); if (G.q[j].length < n0 && real(G.own[j])) log(G.own[j], `${fname(G.own[j])} perde a obra de ${sName(x.k)}: outra facção terminou primeiro.`); }
 }
 // v63 (P-14): foco de produção. Região sem obra na fila não perde a produção: ela vira o recurso do foco escolhido.
@@ -1564,20 +1565,24 @@ function tradeRes(f, a, b) {
 }
 
 // ---------- cartas de benefício (nomes da era); usar uma carta não gasta ação ----------
-const drawCard = () => ({ k: Math.floor(rnd() * 12) });
+// v79: baralho de guerra (0 a 11) e de gestão (12 a 23). d = 0 compra de guerra, d = 1 de gestão, sem d de qualquer um.
+const drawCard = d => ({ k: Math.floor(rnd() * (d == null ? 24 : 12)) + (d ? 12 : 0) });
+function gainCard(f) { const F = Fa(f); if (F.cards.length >= 5) return; const c = drawCard(1); F.cards.push(c); if (f === G.player && !G.auto) toast('Nova carta de gestão: ' + cardName(c) + '.'); }
+let cardWhy = '';
 const cardName = c => CARDS[G.era.cards][c.k];
 const cardFx = c => c.k === 7 && G.air ? CARDS.airFx : CARDS.efx[c.k];
 // alvo exigido: own, enemy, adj (inimigo vizinho), turn (inimigo vizinho fraco), two (dois territórios seus)
-const cardNeeds = k => ({ 1: 'own', 4: 'enemy', 5: 'enemyF', 6: 'two', 7: G.air ? null : 'adj', 8: 'enemyF', 10: 'enemyF', 11: 'turn' }[k] || null);
+const cardNeeds = k => ({ 1: 'own', 4: 'enemy', 5: 'enemyF', 6: 'two', 7: G.air ? null : 'adj', 8: 'enemyF', 10: 'enemyF', 11: 'turn', 12: 'own', 13: 'own', 17: facFaith(G.turnF) == null ? null : 'faith', 18: 'enemyF', 19: 'own', 21: 'enemyF', 22: 'own' }[k] || null);
 function playCard(f, h, target, t2) {
   const F = Fa(f), c = F.cards[h]; if (!c || c.k == null) return false;
+  cardWhy = '';
   const k = c.k, o = target != null ? G.own[target] : null;
   const adjOwn = j => G.A[j].some(i => G.own[i] === f);
   if (k === 0) { if (G.phase === 'mov') return false; F.reinf += 4; }
   else if (k === 1) { if (o !== f) return false; G.fort[target] = 2; }
   else if (k === 2) { if (G.phase === 'mov') return false; F.ofs = true; }
   else if (k === 3) F.stab = Math.min(100, F.stab + 20);
-  else if (k === 4) { if (!hostile(f, target)) return false; G.tr[target] = Math.max(1, Math.ceil(G.tr[target] / 2)); }
+  else if (k === 4) { if (!hostile(f, target)) return false; G.tr[target] -= Math.min(3, Math.floor(G.tr[target] / 2)); }
   else if (k === 5 || k === 8 || k === 10) {
     if (!real(o) || allied(f, o) || (k !== 10 && !hostile(f, target))) return false;
     if (k === 5) agitHit(o, 15);
@@ -1590,11 +1595,54 @@ function playCard(f, h, target, t2) {
     else { if (!hostile(f, target) || !adjOwn(target)) return false; let kill = 0; for (let n = 0; n < 3; n++) if (d6() >= 4 && G.tr[target] - kill > 1) kill++; G.tr[target] -= kill; log(f, `${cardName(c)} eliminam ${kill} tropa(s) em ${tname(target)}.`); }
   }
   else if (k === 9) F.navLeft += 2;
-  else if (k === 11) { if (!hostile(f, target) || !adjOwn(target) || G.tr[target] > 3 || capOwner(target)) return false; if (real(o)) Fa(o).stab = Math.max(0, Fa(o).stab - 5); G.own[target] = f; G.fort[target] = 0; delete G.rl[target]; if (real(o) && !owned(o).length) eliminate(o, f); }
+  else if (k === 11) { if (!hostile(f, target) || !adjOwn(target) || G.tr[target] > 3 || capOwner(target)) return false; if (real(o) && Fa(o).stab >= 50) { cardWhy = `${fname(o)} está estável demais (estabilidade ${Math.round(Fa(o).stab)}, precisa estar abaixo de 50).`; return false; } if (real(o)) Fa(o).stab = Math.max(0, Fa(o).stab - 5); G.own[target] = f; G.fort[target] = 0; delete G.rl[target]; if (real(o) && !owned(o).length) eliminate(o, f); }
+  if (k >= 12 && (cardWhy = cardMgmt(f, k, target))) return false;
   F.cards.splice(F.cards.indexOf(c), 1);
   log(f, `${fname(f)} usa ${cardName(c)}${target != null ? ' em ' + tname(target) : ''}.`);
   checkWin();
   return true;
+}
+
+// v79 (CT-20 a CT-31): cartas de gestão. Devolve o motivo quando não dá para usar; vazio quando o efeito foi aplicado.
+const engK = (f, t) => { const q = G.q[t]; G.q[t] = []; const k = ['est', 'pav', 'frv', 'rdv', 'tav'].find(k => canQueue(f, k, t)); G.q[t] = q; return k; };
+const pilgT = f => { const x = facFaith(f); return x == null ? [] : G.own.map((o, j) => j).filter(j => G.own[j] !== 'off' && G.fai[j] !== x && G.A[j].some(i => G.fai[i] === x)); };
+function cardMgmt(f, k, t) {
+  const F = Fa(f), o = t != null ? G.own[t] : null;
+  if ([12, 13, 19, 22].includes(k) && o !== f) return 'Escolha um território seu.';
+  if (k === 12) { const x = G.q[t][0]; if (!x) return 'Não há obra na fila deste território.'; x.p += 3 * (prodOf(t) + supNet(t, 'prod')); if (x.p >= pCost(f, x.k, t)) finishWork(t, 0); }
+  else if (k === 13) { if (occupied(t)) return 'Território ocupado ainda não produz.'; G.food[t] += 8; }
+  else if (k === 14) F.gold += myRoutes(f).some(r => rLive(r)) ? 12 : 8;
+  else if (k === 15) { if (!F.res) return 'Escolha uma pesquisa antes.'; F.sci += Math.ceil(techCost(TK[F.res], f) / 2); research(f); }
+  else if (k === 16) F.cu = (F.cu || 0) + 10;
+  else if (k === 17) { const x = facFaith(f); if (x == null) F.cu = (F.cu || 0) + 8; else { if (!pilgT(f).includes(t)) return 'Escolha um território sem a sua fé, vizinho de onde ela já está.'; G.fai[t] = x; } }
+  else if (k === 18 || k === 21) { if (!real(o) || o === f) return 'Escolha um território de outra facção.'; if (k === 18) remember(o, f, 'embaixador hábil', 20); else if (f === G.player && !G.auto) intelModal(o); }
+  else if (k === 19) { const b = engK(f, t); if (!b) return 'Não há estrada a fazer ou a melhorar aqui.'; let n = G.q[t].findIndex(x => x.k === b); if (n < 0) n = G.q[t].push({ k: b, p: 0, t: G.round }) - 1; finishWork(t, n); }
+  else if (k === 20) { F.ww = 0; F.stab = Math.min(100, F.stab + 5); }
+  else if (k === 22) { G.tr[t] += 3; (F.mercs = F.mercs || []).push({ u: G.round + 4, n: 3, i: t }); }
+  else if (k === 23) F.gold += Math.min(10, owned(f).length);
+  return '';
+}
+function intelModal(o) {
+  const X = Fa(o), q = owned(o).filter(i => G.q[i].length).map(i => `<li>${esc(tname(i))}: ${G.q[i].map(x => esc(sName(x.k))).join(', ')}</li>`).join('');
+  modal(`<h3>Relatório: ${esc(fname(o))}</h3><p>💰 ${Math.round(X.gold)} de ouro · 🔬 ${X.res ? 'pesquisando ' + esc(tName(X.res)) : 'sem pesquisa em andamento'} · ⚖ estabilidade ${Math.round(X.stab)} · cansaço de guerra ${X.ww || 0}</p><p><b>Cartas na mão:</b> ${X.cards.map(c => esc(cardName(c))).join(', ') || 'nenhuma'}</p><p><b>Obras em fila:</b></p><ul>${q || '<li>nenhuma</li>'}</ul>`, [['Fechar']]);
+}
+// os mercenários da carta vão embora no fim do contrato (saem de onde chegaram e, se faltar, das maiores pilhas; sempre fica 1)
+function mercsLeave(f) {
+  const F = Fa(f); if (!F.mercs || !F.mercs.length) return;
+  F.mercs = F.mercs.filter(m => {
+    if (m.u > G.round) return true;
+    let n = m.n; for (const i of [m.i, ...owned(f).sort((a, b) => G.tr[b] - G.tr[a])]) { if (G.own[i] !== f) continue; const d = Math.min(n, G.tr[i] - 1); G.tr[i] -= d; n -= d; if (!n) break; }
+    log(f, `Os mercenários de ${fname(f)} encerram o contrato e partem.`); return false;
+  });
+}
+function aiMgmtT(f, k) { // IA: alvo de cada carta de gestão
+  const F = Fa(f), T = owned(f);
+  if (k === 12) return T.filter(i => G.q[i].length).sort((a, b) => (pCost(f, G.q[b][0].k, b) - G.q[b][0].p) - (pCost(f, G.q[a][0].k, a) - G.q[a][0].p))[0];
+  if (k === 13) return settled(f).filter(i => !growMax(i)).sort((a, b) => G.lv[b] - G.lv[a])[0] ?? settled(f)[0];
+  if (k === 17) return pilgT(f).sort((a, b) => (G.own[b] === f) - (G.own[a] === f))[0];
+  if (k === 18 || k === 21) { const o = G.order.filter(o => o !== f && Fa(o).alive && Fa(o).entered && !allied(f, o)).sort((a, b) => power(b) - power(a))[0]; return o && owned(o)[0]; }
+  if (k === 19) return T.find(i => engK(f, i));
+  if (k === 22) return T.filter(i => G.A[i].some(j => hostile(f, j))).sort((a, b) => (threat(f, b) - G.tr[b]) - (threat(f, a) - G.tr[a]))[0] ?? T[0];
 }
 
 // ---------- combate ----------
@@ -1784,6 +1832,7 @@ function beginTurn(f) {
   for (const [i, n] of Object.entries(F.recQ)) if (G.own[i] === f) G.tr[i] += n;
   F.recQ = {};
   // v43: levante nacional. Capital sob ameaça recebe milícia; quem está encurralado (≤ 1/4 do tamanho inicial) recebe mais
+  mercsLeave(f);
   checkRoutes();
   for (const r of myRoutes(f)) if (r.k === 'mar' && rLive(r) && navOf(f) < 2 && rnd() < 1 / 6) { r.cut = G.round; log(f, `Piratas atacam a rota marítima de ${fname(f)} saindo de ${tname(r.a)}: ela não rende nesta rodada.`); } // T-17
   const inc = income(f); F.gold += inc.gold; F.sci += anar(f) ? 0 : inc.sci; F.pre += inc.pre; for (const x of lfx(f, 'CT')) if (G.round % x[2] === 0 && F.cards.length < 5) F.cards.push(drawCard()); govTurn(f); succession(f); figures(f); events(f);
@@ -1815,7 +1864,7 @@ function finishTurn(f) {
   for (const i of owned(f)) G.dug[i] = G.tr[i] >= 2 && !G.acted.has(i) && !G.arr[i] ? 1 : 0; // A-45: quem fica parado se entrincheira
   const F = Fa(f);
   F.ww = F.camp && gov(f) !== 'ppu' ? Math.min(30, F.ww + (gov(f) === 'rep' ? 2 : 1)) : Math.max(0, F.ww - 2);
-  if ((F.conq || F.ab === 'espiao') && F.cards.length < 5) F.cards.push(drawCard());
+  if ((F.conq || F.ab === 'espiao') && F.cards.length < 5) F.cards.push(drawCard(F.conq ? 0 : undefined)); // conquista rende carta de guerra
   G.sel = G.tgt = null; G.card = null;
 }
 async function advance() {
@@ -1997,7 +2046,8 @@ function bestAttack(f, minEdge, probe) {
 function aiCards(f, phase) {
   const F = Fa(f), border = owned(f).filter(i => G.A[i].some(j => hostile(f, j)));
   if (phase === 'ref') {
-    for (let h = F.cards.length - 1; h >= 0; h--) { const c = F.cards[h]; if (c.k === 0 || (c.k === 3 && F.stab < 55)) playCard(f, h); }
+    for (let h = F.cards.length - 1; h >= 0; h--) { const c = F.cards[h]; if (c.k === 0 || (c.k === 3 && F.stab < 55)) playCard(f, h); else if (c.k >= 12) playCard(f, h, aiMgmtT(f, c.k)); }
+    if (F.cards.length >= 5) { const h = F.cards.findIndex(c => c.k >= 12); if (h >= 0) F.cards.splice(h, 1); } // mão cheia de carta sem uso: descarta uma para voltar a comprar
     return;
   }
   const use = (k, t, t2) => { const h = F.cards.findIndex(c => c.k === k); return h >= 0 && playCard(f, h, t, t2); };
@@ -2783,7 +2833,7 @@ function onTerr(i) {
     const { h } = G.card, k = Fa(me).cards[h].k;
     if (cardNeeds(k) === 'two' && G.card.src == null) { if (G.own[i] !== me || G.tr[i] < 2) return toast('Escolha um território seu com 2+ tropas.'); G.card.src = i; G.sel = i; toast('Agora clique no destino.'); return render(); }
     const ok = cardNeeds(k) === 'two' ? playCard(me, h, G.card.src, i) : playCard(me, h, i);
-    if (ok) { G.card = null; toast('Carta usada.'); } else toast('Alvo inválido para esta carta.');
+    if (ok) { G.card = null; toast('Carta usada.'); } else toast(cardWhy || 'Alvo inválido para esta carta.');
     return render();
   }
   if (myTurn && G.mode === 'air') {
@@ -2992,8 +3042,8 @@ function useCard(h) {
   const c = Fa(G.player).cards[h];
   if (G.card && G.card.h === h) { G.card = null; return render(); }
   const need = cardNeeds(c.k);
-  if (need) { G.card = { h }; G.mode = null; toast({ own: 'Clique num território seu.', two: 'Clique no território de origem.', adj: 'Clique num inimigo vizinho.', turn: 'Clique num inimigo vizinho com até 3 tropas.' }[need] || 'Clique num território da facção alvo.'); return render(); }
-  if (!playCard(G.player, h)) toast(c.k === 0 ? 'Use na fase de Reforços.' : 'Não dá para usar agora.');
+  if (need) { G.card = { h }; G.mode = null; toast({ 12: 'Clique num território seu com obra na fila.', 19: 'Clique num território seu para receber a estrada.', 22: 'Clique no território seu que recebe os mercenários.' }[c.k] || { faith: 'Clique num território sem a sua fé, vizinho de onde ela já está.', own: 'Clique num território seu.', two: 'Clique no território de origem.', adj: 'Clique num inimigo vizinho.', turn: 'Clique num inimigo vizinho com até 3 tropas.' }[need] || 'Clique num território da facção alvo.'); return render(); }
+  if (!playCard(G.player, h)) toast(c.k === 0 ? 'Use na fase de Reforços.' : cardWhy || 'Não dá para usar agora.');
   render();
 }
 function dipl(o, act) {
@@ -3281,7 +3331,7 @@ function renderSide() {
   const ttl = tab === 'reg' ? '📍 Território' :tab === 'obr' ? '🏗 Obras do império' : isub === 'acoes' ? '⏳ Seu turno' : '🏛 ' + esc(F.n);
   $('#ptabs').innerHTML = `<b class="ptt">${ttl}</b><button class="mini" data-a="side" aria-label="Fechar o painel" title="Fechar o painel (Esc). Ele reabre pela barra de baixo ou ao tocar num território.">✕</button>`;
   $('#info').innerHTML = inf || '<p class="hint">Clique num território no mapa. Aqui aparecem as obras, as tropas e as fronteiras dele, com os botões de atacar, influenciar e mover. Arraste para mover o mapa, role ou use + e − para zoom.</p>';
-  $('#cards').innerHTML = `<h4>Cartas <span class="hint">${F.cards.length}/5 · ganhe uma por turno em que conquistar · usar não gasta ação</span></h4>` + (F.cards.length ? F.cards.map((c, h) => `<button class="card ${G.card && G.card.h === h ? 'on' : ''}" data-a="card" data-h="${h}" ${my ? '' : 'disabled'}><b>${esc(cardName(c))}</b><span>${esc(cardFx(c))}</span></button>`).join('') : '<p class="hint">Nenhuma carta.</p>');
+  $('#cards').innerHTML = `<h4>Cartas <span class="hint">${F.cards.length}/5 · usar não gasta ação</span></h4><p class="hint">⚔ Guerra: uma por turno em que conquistar. 🏛 Gestão: uma a cada cívica adotada ou maravilha concluída.</p>` + (F.cards.length ? F.cards.map((c, h) => `<button class="card ${G.card && G.card.h === h ? 'on' : ''}" data-a="card" data-h="${h}" ${my ? '' : 'disabled'}><b><i class="ctag" title="${c.k >= 12 ? 'Carta de gestão' : 'Carta de guerra'}">${c.k >= 12 ? '🏛' : '⚔'}</i> ${esc(cardName(c))}</b><span>${esc(cardFx(c))}</span></button>`).join('') : '<p class="hint">Nenhuma carta.</p>');
   $('#tech').innerHTML = `<h4>Tecnologia · ${esc(G.era.n)}</h4><p class="hint" title="${esc(F.tech.map(k => tName(k)).join(', '))}">${F.tech.length} tecnologias pesquisadas · <button class="mini" data-a="techs">Abrir a árvore</button></p><p class="hint">Regras da era:</p><ul>${G.era.tech.map(t => `<li>${esc(t)}</li>`).join('')}${G.sc.air ? `<li>${esc(G.sc.air.n)}: alcance ${G.sc.air.r}, acertam com ${G.sc.air.hit}+.</li>` : ''}</ul>`;
   const tot = Math.max(1, G.own.filter(o => real(o)).length);
   $('#facs').innerHTML = `<h4>Facções <button class="mini" data-a="dipl">Diplomacia${G.offers.length || (G.dem && G.dem.to === me) ? ' •' : ''}</button></h4>` + G.order.filter(f => Fa(f).entered || Fa(f).late).map(f => {
@@ -3355,7 +3405,7 @@ function rules() {
   <p><b>Combate.</b> Como nos jogos clássicos de conquista: ataque e defesa rolam até 3 dados, compara-se do maior para o menor e o empate fica com a defesa. Ao vencer, você move até o número de dados da última rolagem. Fortificações, capitais, colinas, montanhas e florestas com 3+ tropas somam +1 ao maior dado da defesa; em montanha o empate é sempre da defesa, e quem ataca um pântano usa 1 dado a menos. Cada facção conquista no máximo 1 território por turno (2 com a doutrina militar).</p>
   <p><b>Mar e ar.</b> Atravessar uma linha tracejada gasta uma travessia da frota; o desembarque usa no máximo 2 dados, ou 3 saindo de um porto. Nas eras com aviação, cada capital e aeródromo dá uma unidade aérea que bombardeia depois dos reforços distribuídos: o antiaéreo pode derrubá-la, e ela não conquista.</p>
   <p><b>3. Remanejamento.</b> Cada tropa sobrando anda uma vez para um território seu vizinho. Pode dividir entre vizinhos, e 1 tropa fica sempre. Ao começar a remanejar, os ataques do turno terminam; a gestão do império continua liberada.</p>
-  <p><b>Cartas de benefício.</b> Você ganha uma por turno em que conquistar. Usar uma carta não gasta ação.</p>
+  <p><b>Cartas de benefício.</b> São dois baralhos. Cartas de guerra (⚔): uma por turno em que conquistar. Cartas de gestão (🏛): uma a cada cívica adotada ou maravilha concluída; elas aceleram obras, comida, ouro, pesquisa, cultura, fé e diplomacia. A mão guarda até cinco, e usar uma carta não gasta ação.</p>
   <p><b>Estabilidade.</b> Perder territórios, romper tréguas e cobrar impostos derrubam a estabilidade. Abaixo de 35, províncias podem se rebelar; abaixo de 15, os reforços caem pela metade.</p>`, [['Entendi']]);
 }
 
@@ -3426,7 +3476,7 @@ function cmdGroups() {
       { a: 'tstep', k: 'atk', ic: '⚔', n: 'Atacar', cost: 'opcional', d: 'Clique num território seu e depois no vizinho inimigo: é só isso. Aqui você vê a lista de frentes com a chance de vencer em cada uma.', why: ph || mil, on: false },
       A('rec', '🪖', F.recOn ? 'Comprar tropas' : 'Recrutar', tc + '💰 por tropa', `Compre tropas na capital ou num ${sName('qua')}. Elas chegam no início do próximo turno.`, F.recOn ? '' : pa || gold(tc), G.mode === 'rec'),
       A('', '🗡', 'Mercenários', 2 * tc + '💰', 'Uma tropa já na capital, na hora. Uma vez por turno.', F.merc === G.round ? 'Já contratados neste turno.' : gold(2 * tc), false, 'merc'),
-      { a: 'cardsGo', k: '', ic: '🃏', n: `Cartas ${F.cards.length}/5`, cost: 'grátis', d: 'Vantagens pontuais ganhas ao conquistar. Usar uma carta não gasta ação. Abre a sua mão no painel do turno.', why: F.cards.length ? '' : 'Nenhuma carta na mão: ganhe uma em cada turno em que conquistar um território.', on: false },
+      { a: 'cardsGo', k: '', ic: '🃏', n: `Cartas ${F.cards.length}/5`, cost: 'grátis', d: 'Vantagens pontuais: cartas de guerra ao conquistar, cartas de gestão ao adotar uma cívica ou concluir uma maravilha. Usar uma carta não gasta ação. Abre a sua mão no painel do turno.', why: F.cards.length ? '' : 'Nenhuma carta na mão: conquiste um território, adote uma cívica ou conclua uma maravilha.', on: false },
       ...(G.air && F.planes ? [A('', '✈', `${G.air.n} (${F.planes})`, 'grátis', 'Bombardeie um alvo ao alcance. Não conquista território.', mil, G.mode === 'air', 'air')] : [])], null, pend(['sel']), F.camp ? 'atacando' : T.reduce((s, i) => s + G.tr[i], 0) + ' tropas', ['sel'], 'M'],
     ['obr', '🏗', 'Obras', null, 'cmdObr', pend(['works']), nq ? nq + ' na fila' : 'só produzindo', ['works'], 'O', 'Filas de construção e tudo o que dá para erguer em cada território.'],
     ['tec', '🔬', 'Pesquisa', null, 'techs', pend(['techs']), rt ? `${F.sci}/${techCost(rt, me)}` : 'escolher', ['techs'], 'T', 'Árvore de tecnologias: escolha o que pesquisar.'],
@@ -3499,7 +3549,7 @@ const TUT = [
   ['#me .stabs', 'Seções do painel', 'Turno traz o que fazer agora: novidades, pendências e a etapa militar. Objetivo detalha a meta do cenário e o que falta. Facções compara poder, opinião e ameaça de cada rival. Crônica guarda tudo o que aconteceu na partida.', tutTab('imp')],
   ['.is-acoes .advr:not(.rep)', 'Conselheiro', 'A lista do que está parado ou esquecido neste turno: pesquisa não escolhida, vaga de política livre, governador sem posto, fronteira em risco. Cada linha tem o botão que resolve. Zere a lista antes de encerrar o turno.', tutTab('imp', 'acoes')],
   ['.is-acoes .rep', 'Desde o seu último turno', 'A partir da segunda rodada, este quadro abre o seu turno com o que mudou enquanto os rivais jogavam: territórios que você perdeu e para quem, ações contra você, o que aconteceu no seu império e o saldo de cada rival. O território que mudou de mãos pisca no mapa.', tutTab('imp', 'acoes')],
-  ['#cards', 'Cartas', 'Você ganha uma carta em cada turno em que conquista um território, até cinco na mão. Cada carta dá uma vantagem pontual, e usá-la não gasta ação. Guarde as melhores para a batalha decisiva.', tutTab('imp', 'acoes')],
+  ['#cards', 'Cartas', 'Você ganha uma carta de guerra em cada turno em que conquista um território, e uma carta de gestão a cada cívica adotada ou maravilha concluída, até cinco na mão. Cada carta dá uma vantagem pontual, e usá-la não gasta ação. Quem joga em paz também enche a mão.', tutTab('imp', 'acoes')],
   ['#works .kpis', 'Painel de Obras', 'O resumo da construção no império: quantos territórios estão em obra, quantos produzem pelo foco e em quantos ainda há algo a construir. Fila vazia não é pendência: a produção vira o recurso do foco, e você troca o foco na própria lista.', tutTab('obr', 'fil')],
   ['#works .stabs', 'Filas, Construir e Cadeias', 'Filas mostra o que cada território está construindo e quanto falta. Construir lista as obras por finalidade (comida, ouro, saber, defesa, cultura) e diz onde cada uma cabe. Cadeias mostra o que cada obra libera depois, para você planejar com antecedência.', tutTab('obr', 'fil')],
   ['#works .rbox', 'A fila de um território', 'Cada território tem a própria fila, com até três obras (cinco com a tecnologia de administração). A produção do território paga a obra aos poucos, turno a turno, e o prazo estimado aparece ao lado. Escolha a obra aqui ou clicando no território no mapa.', tutTab('obr', 'fil')],
