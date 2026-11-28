@@ -2412,7 +2412,7 @@ function buildMap() {
   const cap = innerWidth <= 820 && G.player && G.F[G.player] && m.terr[G.F[G.player].capI];
   if (cap) { vb.w = m.w * .5; vb.h = m.h * .5; vb.x = Math.max(0, Math.min(m.w - vb.w, cap.x - vb.w / 2)); vb.y = Math.max(0, Math.min(m.h - vb.h, cap.y - vb.h / 2)); }
   // v69 (UI-38): chão da cidade se desfaz no terreno em vez de ficar num disco com sombra
-  const cg = Object.entries(CITY).map(([k, c]) => `<radialGradient id="cg_${k}"><stop offset="0" stop-color="${c.g}" stop-opacity=".95"/><stop offset=".6" stop-color="${c.g}" stop-opacity=".9"/><stop offset="1" stop-color="${c.g}" stop-opacity="0"/></radialGradient>`).join('');
+  const cg = '<radialGradient id="cg_soil"><stop offset="0" stop-color="#5d5138" stop-opacity=".5"/><stop offset=".55" stop-color="#5d5138" stop-opacity=".32"/><stop offset="1" stop-color="#5d5138" stop-opacity="0"/></radialGradient>' + Object.entries(CITY).map(([k, c]) => `<radialGradient id="cg_${k}"><stop offset="0" stop-color="${c.g}" stop-opacity=".8"/><stop offset=".5" stop-color="${c.g}" stop-opacity=".55"/><stop offset="1" stop-color="${c.g}" stop-opacity="0"/></radialGradient>`).join('');
   let h = `<defs>${cg}<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${REB.c}"/><rect width="2" height="6" fill="#00000055"/></pattern><pattern id="fora" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#2a313b"/><rect width="1.4" height="7" fill="#ffffff12"/></pattern>${terrDefs()}${svDefs()}</defs><rect x="${-m.w}" y="${-m.h}" width="${m.w * 3}" height="${m.h * 3}" class="sea"/>`;
   if (m.bg) h += `<path d="${m.bg}" class="bgl"><title>Terra fora do jogo</title></path>`;
   const RL = typeof RELIEF !== 'undefined' && RELIEF[G.sc.map]; // relevo real (maps/relevo.js)
@@ -2436,7 +2436,7 @@ function setVB() {
   const r = svg.getBoundingClientRect(), u = upp(), k = u * Math.max(.62, Math.min(1, r.width / 900));
   // v53: cada cidade cabe no próprio território: a escala segue a distância até o vizinho mais próximo
   const nn = nnD(); // v29: as construções crescem com o zoom
-  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(3.3, nn[i] / u / 100); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
+  B.forEach((g, i) => { const t = G.m.terr[i]; g.setAttribute('transform', `translate(${t.x},${t.y}) scale(${k})`); const z = Math.min(5.5, nn[i] / u / 100); g.firstChild.toggleAttribute('hidden', z < .8); g.firstChild.setAttribute('transform', `scale(${z.toFixed(2)})`); }); // cidade que ficaria miúda não é desenhada: de longe o mapa mostra só cores, tropas e nomes
   svg.classList.toggle('names', (1 / u) * Math.sqrt(G.m.w * G.m.h / G.N) > 85);
   if (svg.classList.contains('names')) declutter(k);
 }
@@ -2460,7 +2460,7 @@ const TMARK = {
 const bx = (x, y, w, h, d, f, t, s) => `<path d="M${x} ${y}v${-h}h${w}v${h}z" fill="${f}"/><path d="M${x} ${y - h}l${d} ${-d * .6}h${w}l${-d} ${d * .6}z" fill="${t}"/><path d="M${x + w} ${y - h}l${d} ${-d * .6}v${h}l${-d} ${d * .6}z" fill="${s}"/>`;
 const hs = (x, y, w, h, d, r, wl, wd, rf, rd) => `<path d="M${x} ${y}v${-h}h${w}v${h}z" fill="${wl}"/><path d="M${x + w} ${y}v${-h}l${d / 2} ${-r}l${d / 2} ${r - d * .6}v${h}z" fill="${wd}"/><path d="M${x - .35} ${y - h}h${w + .7}l${d / 2 - .35} ${-r}h${-w}z" fill="${rf}"/><path d="M${x + d / 2 - .1} ${y - h - r}h${w}" stroke="${rd}" stroke-width=".45" fill="none"/>`;
 const pg = (x, y, w, d, f) => `<path d="M${x} ${y}l${d} ${-d * .6}h${w}l${-d} ${d * .6}z" fill="${f}"/>`;
-const SHD = '<ellipse cx=".8" cy="4.3" rx="6.2" ry="1.9" fill="#000" opacity=".3" stroke="none"/>';
+const SHD = '<ellipse cx=".4" cy="2.6" rx="9.5" ry="4.6" fill="url(#cg_soil)" stroke="none"/>';
 const tree = (x, y, c1, c2) => `<path d="M${x} ${y}v-1.2" stroke="#5a3d22" stroke-width=".5"/><path d="M${x - 1.5} ${y - 1}l1.5 -2.6l1.5 2.6z" fill="${c1}"/><path d="M${x - 1.1} ${y - 2.4}l1.1 -2.2l1.1 2.2z" fill="${c2}"/>`;
 const SV = {
   farm: SHD + pg(-6, 4.2, 5, 3, '#cdb648') + pg(-.8, 4.2, 5, 3, '#7fae4a') + pg(-4.2, 2.4, 5, 3, '#9cc25a') + pg(1, 2.4, 4.4, 3, '#d9c260') + '<path d="M-5 3.6l3 -1.8M-3.8 3.6l3 -1.8M-2.6 3.6l3 -1.8M2 1.8l3 -1.8M3.2 1.8l3 -1.8" stroke="#8a7a22" stroke-width=".3" fill="none"/>' + hs(2.4, -.2, 2.4, 1.3, 1.3, 1, '#e6d8b6', '#b9a680', '#a8563a', '#7a3a26'),
@@ -2487,7 +2487,7 @@ const SVY = { food: 'farm', prod: 'ind', gold: 'mkt', sci: 'sci', pre: 'tmpl', s
 const svOf = k => { const S = STRUCT[k]; if (!S || S.road) return null; if (S.wonder) return 'won'; for (const c in SVK) if (SVK[c].split(' ').includes(k)) return c; return S.def ? 'fort' : S.air ? 'air' : S.rf || S.atk ? 'mil' : S.nav ? 'port' : SVZ[S.z] || SVY[Object.keys(S.y || {})[0]] || 'ind'; };
 // v53 (UI-27): símbolos das melhorias e cidades geradas. A cidade é um conjunto de prédios em volume sobre um chão batido,
 // com estilo por era e cenário; cresce de aldeia a metrópole, ganha muralha com porte ou fortificação e um marco no centro.
-const svDefs = () => Object.entries(SV).map(([k, d]) => `<symbol id="sv-${k}" viewBox="-7 -7 14 14" overflow="visible"><g stroke="#17120d" stroke-width=".28" stroke-linejoin="round" stroke-linecap="round">${d}</g></symbol>`).join('');
+const svDefs = () => Object.entries(SV).map(([k, d]) => `<symbol id="sv-${k}" viewBox="-7 -7 14 14" overflow="visible"><g stroke="#2b2219" stroke-width=".15" stroke-linejoin="round" stroke-linecap="round">${d}</g></symbol>`).join('');
 const CITY = {
   anc: { w: '#dcc79e', d: '#b39a6e', t: '#ead9b4', g: '#bfa878', flat: 1, mix: ['#b5533a', '#7c3524'] },
   med: { w: '#e8dcc2', d: '#b5a585', t: '#b5533a', r: '#7c3524', g: '#b9a67e' },
@@ -2498,28 +2498,60 @@ const CITY = {
 };
 const cityStyle = () => ({ ant: 'anc', pre: 'anc', med: 'med', fan: 'med', jap: 'jp', pol: 'gun', gf: 'mod' })[G.sc.tech] || 'ind';
 const cityMemo = new Map();
-function cityHtml(i, lv, wall, cap, urb = []) {
-  const st = cityStyle(), key = [G.sc.id, i, lv, wall, cap, st, urb.map(u => u.join(':'))].join(); if (cityMemo.has(key)) return cityMemo.get(key);
-  const C = CITY[st], n = [3, 6, 10, 15][lv - 1], rx = [5.5, 8, 11, 14][lv - 1] + urb.length * .7, ry = rx * .42; let s = i * 7919 + 13;
-  const r = () => (s = (s * 9301 + 49297) % 233280) / 233280, B = [];
-  for (let k = 0; k < n; k++) { const a = r() * 6.283, q = Math.sqrt(r()) * .92, x = Math.cos(a) * q * rx, y = Math.sin(a) * q * ry, w = 2 + r() * 1.5, h = C.tall ? 2 + r() * (1 + lv * C.tall) : C.flat ? 1.2 + r() * 1.1 : .9 + r() * .5; B.push([y, C.mix && r() < .4 ? hs(x - w / 2, y, w, .9, 1.5, 1.3, C.w, C.d, ...C.mix) : C.flat ? bx(x - w / 2, y, w, h, 1.3, C.w, C.t, C.d) + (C.tall ? `<path d="M${x - w / 2 + .5} ${y - h + .8}h${w - 1}M${x - w / 2 + .5} ${y - h + 1.8}h${w - 1}" stroke="#eaf3fa" stroke-width=".3" opacity=".8"/>` : `<rect x="${x - .35}" y="${y - .9}" width=".7" height=".9" fill="#5a4630" stroke="none"/>`) : hs(x - w / 2, y, w, h, 1.5, 1.5, C.w, C.d, C.t, C.r)]); }
-  if (lv >= 2) { // marco no centro: templo em degraus, torre de menagem, torre de castelo ou arranha-céu
+// v75 (UI-40): a cidade assenta no terreno. Em vez de um prato oval com prédios soltos, há uma mancha urbana irregular
+// que se desfaz no relevo, ruas que saem dela e seguem pelos caminhos, quarteirões de casas pequenas com sombra,
+// muralha poligonal acompanhando a mancha, hortas e arvoredo na borda conforme o terreno.
+const CQ = .5, cityR = (L, n) => [5.5, 8, 11, 14][L - 1] + n * .7;
+const CTREE = { f: [14, '#2c6e3f', '#3f9156'], s: [16, '#1f5f38', '#2f8048'], p: [7, '#3d7d42', '#57a05a'], c: [7, '#3d7d42', '#57a05a'], h: [6, '#44763f', '#5f9655'], e: [3, '#6f8444', '#8aa058'], m: [3, '#3a6a45', '#4f8a5a'], t: [2, '#4a6a58', '#63877a'], d: [0], w: [0] };
+const CPLOT = { p: ['#b9b14e', '#86a850', '#cdbb5c'], c: ['#b9b14e', '#86a850', '#cdbb5c'], h: ['#9aa652', '#b5a955', '#7e9c4e'], e: ['#b8a95e', '#a59a52', '#c4b468'], f: ['#86a850', '#9db257', '#7a9c4c'], s: ['#7fa64e', '#93ad52', '#6f9648'] };
+function cityHtml(i, lv, wall, cap, urb = [], ter = 'p') {
+  const st = cityStyle(), key = [G.sc.id, i, lv, wall, cap, st, ter, urb.map(u => u.join(':'))].join(); if (cityMemo.has(key)) return cityMemo.get(key);
+  const C = CITY[st], rx = cityR(lv, urb.length), ry = rx * CQ, f1 = v => v.toFixed(1); let s = i * 7919 + 13;
+  const r = () => (s = (s * 9301 + 49297) % 233280) / 233280, B = [], NO = ' stroke="none"';
+  // mancha urbana: dez pontos de raio variado, ligados em curva
+  const P = Array.from({ length: 10 }, (_, k) => { const a = k * .6283, f = .88 + r() * .26; return [Math.cos(a) * rx * f, Math.sin(a) * ry * f]; });
+  const blob = z => { const q = P.map(p => [p[0] * z, p[1] * z]), m = (a, b) => f1((a[0] + b[0]) / 2) + ' ' + f1((a[1] + b[1]) / 2); return 'M' + m(q[9], q[0]) + q.map((p, k) => `Q${f1(p[0])} ${f1(p[1])} ${m(p, q[(k + 1) % 10])}`).join('') + 'Z'; };
+  const road = C.tall ? '#6b6f74' : '#dcc898';
+  let g = `<path d="${blob(1.7)}" fill="url(#cg_soil)"${NO}/><path d="${blob(1.04)}" fill="${C.g}" fill-opacity=".5"${NO}/>`;
+  // ruas: duas vias principais que atravessam a mancha e continuam para fora, mais um anel nas cidades grandes
+  const j = () => f1((r() - .5) * ry * .5);
+  g += `<g fill="none" stroke="${road}" stroke-linecap="round"><path d="M${f1(-rx * 1.45)} ${j()}Q${f1(-rx * .4)} ${j()} 0 0T${f1(rx * 1.45)} ${j()}" stroke-width=".8"/><path d="M${j()} ${f1(-ry * 1.4)}Q${j()} ${f1(-ry * .5)} 0 0T0 ${f1(ry * 1.5)}" stroke-width=".8"/>${lv >= 3 ? `<path d="${blob(.58)}" stroke-width=".5"/>` : ''}</g>`;
+  // hortas e arvoredo em volta, conforme o terreno do território
+  const pl = CPLOT[ter], tr = CTREE[ter] || CTREE.p;
+  if (pl) for (let k = 0; k < 2 + lv; k++) { const a = r() * 6.283, x = Math.cos(a) * rx * 1.28, y = Math.sin(a) * ry * 1.3; if (Math.abs(x) > 1.6 && Math.abs(y) > .9) g += `<path d="M${f1(x - 1.6)} ${f1(y + .5)}l1.3 -1h2.4l-1.3 1z" fill="${pl[k % 3]}" fill-opacity=".75"${NO}/>`; }
+  const tree2 = (x, y) => `<ellipse cx="${f1(x + .35)}" cy="${f1(y + .25)}" rx=".8" ry=".4" fill="#000" fill-opacity=".2"${NO}/><circle cx="${f1(x)}" cy="${f1(y - .5)}" r=".8" fill="${tr[1]}"${NO}/><circle cx="${f1(x - .22)}" cy="${f1(y - .75)}" r=".48" fill="${tr[2]}"${NO}/>`;
+  for (let k = 0; k < (tr[0] || 0) * (wall ? .6 : 1); k++) { const a = r() * 6.283, q = 1.12 + r() * .42, x = Math.cos(a) * rx * q, y = Math.sin(a) * ry * q; if (Math.abs(x) > 1.2 && Math.abs(y) > .7) B.push([y < 0 ? -99 : y, tree2(x, y)]); }
+  // marco no centro e obras urbanas em seus quarteirões
+  if (lv >= 2) {
     const m = st === 'anc' ? bx(-3, 0, 5, 1.2, 2, '#d3bc8c', '#efdfb8', '#a88e60') + bx(-2.1, -1.2, 3.4, 1.2, 1.6, '#d9c394', '#f2e3c0', '#ae9466') + bx(-1.2, -2.4, 1.8, 1.3, 1.1, '#e0cb9c', '#f6e9c8', '#b49a6c') + '<path d="M-2.6 0v-1M-1.4 0v-1M-.2 0v-1M1 0v-1" stroke="#fff6dc" stroke-width=".35"/>'
       : st === 'jp' ? bx(-2.8, 0, 4.6, 1.6, 1.8, '#d9d2c2', '#efe9dc', '#aaa291') + `<path d="M-3.6 -1.5h6.2l1.6 -1h-6.2z" fill="${C.t}"/>` + bx(-2, -1.9, 3.2, 1.5, 1.4, '#f1eadb', '#fbf6ea', '#c6bca6') + `<path d="M-2.8 -3.3h4.8l1.4 -.9h-4.8z" fill="${C.t}"/>` + bx(-1.2, -3.6, 1.8, 1.3, 1, '#f1eadb', '#fbf6ea', '#c6bca6') + `<path d="M-1.9 -4.8l1.6 -1.6l1.7 1.6l1 -.6l-1.6 -1.7z" fill="${C.r}"/><path d="M-1.9 -4.8h3.3l1 -.6" fill="none" stroke="${C.r}" stroke-width=".5"/>`
       : C.tall ? bx(-1.6, 0, 2.6, 3 + lv * C.tall, 1.4, C.w, C.t, C.d) + `<path d="M-1.1 ${-2.4 - lv * C.tall}v${1.8 + lv * C.tall}M-.2 ${-2.4 - lv * C.tall}v${1.8 + lv * C.tall}" stroke="#eaf3fa" stroke-width=".25" opacity=".8"/><path d="M-.3 ${-3.4 - lv * C.tall}v-1.6" stroke="#d9483a" stroke-width=".3"/>`
       : bx(-2, 0, 3.4, 3.6, 1.8, '#b8b2aa', '#d8d2ca', '#8a847c') + '<path d="M-2 -3.6v-.8h.8v.8h.9v-.8h.9v.8h.8v-.8" fill="none" stroke="#b8b2aa" stroke-width=".6"/>' + `<path d="M-1.2 -4l1.4 -3.2l1.4 3.2z" fill="${st === 'med' ? '#b5533a' : '#66727f'}"/><path d="M1.6 -4l-1.4 -3.2l1 -.6l1.4 3.2z" fill="${st === 'med' ? '#7c3524' : '#434d58'}"/><rect x="-.9" y="-1.4" width="1" height="1.4" fill="#2a2420" stroke="none"/>`;
-    B.push([.1, `<g transform="scale(1.5)">${m}</g>`]);
+    B.push([-.9, `<path d="M-2.6 -1h5.4l1.6 .9h-5.4z" fill="#000" fill-opacity=".22"${NO}/><g transform="translate(.4,-1) scale(1.15)">${m}</g>`]);
   }
-  urb.forEach(([v, n], k) => { const a = -2.5 + k * 6.283 / urb.length, x = Math.cos(a) * rx * .66, y = Math.sin(a) * ry * .66; B.push([y, `<g transform="translate(${x.toFixed(1)},${(y - 2.2).toFixed(1)}) scale(.52)"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title>${SV[v].replace(SHD, '')}</g>`]); });
+  const U = urb.map(([v, n], k) => { const a = -2.5 + k * 6.283 / urb.length, x = Math.cos(a) * rx * .6, y = Math.sin(a) * ry * .6 + .4; B.push([y, `<g transform="translate(${f1(x)},${f1(y - 2)}) scale(.5)"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title>${SV[v].replace(SHD, '')}</g>`]); return [x, y]; });
+  // quarteirões: casas em fileiras, deixando livres as ruas, a praça do marco e os lotes das obras
+  const dx = lv >= 4 ? 2.7 : 2.4, dy = 1.5;
+  for (let b = -Math.ceil(ry / dy); b <= ry / dy; b++) for (let a = -Math.ceil(rx / dx); a <= rx / dx; a++) {
+    const x = a * dx + (b & 1 ? dx / 2 : 0) + (r() - .5) * .6, y = b * dy + (r() - .5) * .4;
+    if (Math.hypot(x / rx, y / ry) > .8 || Math.abs(x) < .8 || (y > -.4 && y < 1.3) || (lv >= 2 && Math.abs(x - .6) < 3.6 && y > -2.2 && y < 2.6) || U.some(p => Math.abs(x - p[0]) < 3 && y - p[1] > -1.3 && y - p[1] < 1.5)) continue;
+    house(x, y);
+  }
+  // arrabaldes: casas fora da mancha, ao longo das vias que saem da cidade
+  if (lv >= 2) for (let k = 0; k < lv * 3; k++) { const e = k % 4, d = 1.14 + r() * .42, o = (r() < .5 ? -1 : 1) * (.8 + r() * .7); e < 2 ? house((e ? 1 : -1) * rx * d, o + .5) : house(o * 1.3, (e > 2 ? 1 : -1) * ry * d + .4); }
+  function house(x, y) {
+    const q = Math.min(1, Math.hypot(x / rx, y / ry)), w = 1.25 + r() * .8, t = r(), u = r(), x0 = x - w / 2, h = C.tall ? 1.3 + t * (1 + lv * C.tall) * (1.15 - q) * 1.5 : C.flat ? .8 + t * .7 : .65 + t * .4;
+    B.push([y, `<path d="M${f1(x0 + .2)} ${f1(y)}h${f1(w)}l1 .55h${f1(-w)}z" fill="#000" fill-opacity=".22"${NO}/>` + (C.mix && u < .4 ? hs(x0, y, w, .7, 1.1, 1, C.w, C.d, ...C.mix) : C.flat ? bx(x0, y, w, h, 1, C.w, C.t, C.d) + (C.tall && h > 2 ? `<path d="M${f1(x0 + .3)} ${f1(y - h + .7)}h${f1(w - .6)}M${f1(x0 + .3)} ${f1(y - h + 1.5)}h${f1(w - .6)}" stroke="#eaf3fa" stroke-width=".22" opacity=".8"/>` : '') : hs(x0, y, w, h, 1.1, 1, C.w, C.d, C.t, C.r))]);
+  }
   B.sort((a, b) => a[0] - b[0]);
-  const wf = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 0 ${2 * rx + 2.8} 0`, wb = `M${-rx - 1.4} 0a${rx + 1.4} ${ry + 1.1} 0 0 1 ${2 * rx + 2.8} 0`;
-  const wl = (d, f) => `<path d="${d}" fill="none" stroke="#4d4842" stroke-width="2.3" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="${f}" stroke-width="1.8" transform="translate(0,-.9)"/><path d="${d}" fill="none" stroke="#e4dfd6" stroke-width=".7" stroke-dasharray=".9 .6" transform="translate(0,-2)"/>`, tw = (x, y) => bx(x - .9, y + .7, 1.8, 3.2, 1, '#b4aea6', '#ded8d0', '#857f77') + `<path d="M${x - .9} ${y - 2.5}v-.6h.6v.6h.6v-.6h.6v.6" fill="none" stroke="#b4aea6" stroke-width=".4"/>`;
-  const trees = wall ? '' : [0, 1, 2, 3].map(k => tree((k % 2 ? 1 : -1) * (rx + .6 - k * .5), (k < 2 ? -1 : 1) * ry * .55, '#2f7a45', '#46a25e')).join('');
-  const h = `<g class="city" stroke="#17120d" stroke-width=".25" stroke-linejoin="round" stroke-linecap="round"><ellipse rx="${rx + 4.2}" ry="${ry + 3}" fill="url(#cg_${st})" stroke="none"/>`
-    + (wall ? wl(wb, '#8f8981') : trees)
-    + B.filter(b => b[0] <= .1).map(b => b[1]).join('') + B.filter(b => b[0] > .1).map(b => b[1]).join('')
-    + (wall ? `${wl(wf, '#a39d95')}${tw(-rx - 1.2, .2)}${tw(rx + 1.2, .2)}${tw(-rx * .55, ry + .4)}${tw(rx * .55, ry + .4)}<path d="M-.9 ${ry + 1.3}v-1.5a.9 .9 0 0 1 1.8 0v1.5z" fill="#221c18"/>` : '')
-    + (cap ? `<path d="M0 ${-ry - 1}v-${lv >= 2 ? 9 : 5}" stroke="#3a2a18" stroke-width=".35"/><path d="M0 ${-ry - (lv >= 2 ? 10 : 6)}h3l-.9 .9l.9 .9h-3z" fill="#f2c94c"/>` : '') + '</g>';
+  // muralha: polígono que acompanha a mancha, com torre em cada canto e portão onde a rua sai
+  const W = P.map(p => [p[0] * 1.08, p[1] * 1.08 + .2]), seg = (a, b, f) => { const d = `M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`; return `<path d="${d}" stroke="#5c564e" stroke-width=".95" fill="none"/><path d="${d}" stroke="${f}" stroke-width=".7" fill="none" transform="translate(0,-.4)"/><path d="${d}" stroke="#ece7dd" stroke-width=".28" stroke-dasharray=".6 .45" fill="none" transform="translate(0,-.78)"/>`; };
+  const tw = p => bx(p[0] - .5, p[1] + .35, 1, 1.6, .6, '#b4aea6', '#ded8d0', '#857f77');
+  const back = [], front = []; if (wall) W.forEach((p, k) => { const n = W[(k + 1) % 10], fr = p[1] + n[1] > .4; (fr ? front : back).push(seg(p, n, fr ? '#b3ada3' : '#9a948b')); (p[1] > .2 ? front : back).push(tw(p)); });
+  const gt = W[2][0] / (W[2][0] - W[3][0]), gyy = W[2][1] + (W[3][1] - W[2][1]) * gt;
+  const h = `<g class="city" stroke="#2b2219" stroke-width=".13" stroke-opacity=".75" stroke-linejoin="round" stroke-linecap="round">${g}${back.join('')}${B.map(b => b[1]).join('')}${front.join('')}`
+    + (wall ? `<path d="M-.8 ${f1(gyy + .5)}v-1.4a.8 .8 0 0 1 1.6 0v1.4z" fill="#221c18"/>` : '')
+    + (cap ? `<path d="M0 ${-ry - 1}v-${lv >= 2 ? 9 : 5}" stroke="#3a2a18" stroke-width=".35" stroke-opacity="1"/><path d="M0 ${-ry - (lv >= 2 ? 10 : 6)}h3l-.9 .9l.9 .9h-3z" fill="#f2c94c"/>` : '') + '</g>';
   cityMemo.set(key, h); return h;
 }
 // melhorias em volta do emblema; a cidade fica acima dele, sobre o terreno
@@ -2530,10 +2562,10 @@ function svHtml(i) {
   for (const k of G.bld[i]) { const v = svOf(k); if (v === 'fort') wall = true; if (v) c.set(v, (c.get(v) || 0) + 1); }
   if (has && wall) c.delete('fort'); // a fortificação vira a muralha da cidade
   const urb = has ? [...c].filter(([v]) => URB.has(v)) : []; urb.forEach(([v]) => c.delete(v));
-  const L = Math.min(4, lv), cy = -15 - [2.3, 3.4, 4.6, 5.9][L - 1] * 1.6;
-  const city = has ? `<g transform="translate(0,${cy}) scale(1.6)"><title>${esc(pName(i))}${wall ? ' · murada' : ''}</title>${cityHtml(i, L, wall || (L >= 3 && !CITY[cityStyle()].tall), !!capOwner(i), urb)}</g>` : '';
+  const L = Math.min(4, lv), RY = cityR(L, urb.length) * CQ, cy = -14 - RY * 1.6;
+  const city = has ? `<g transform="translate(0,${cy}) scale(1.6)"><title>${esc(pName(i))}${wall ? ' · murada' : ''}</title>${cityHtml(i, L, wall || (L >= 3 && !CITY[cityStyle()].tall), !!capOwner(i), urb, G.ter[i])}</g>` : '';
   // caminhos de terra saem do portão até a guarnição e até cada melhoria rural
-  const gy = has ? cy + ([2.3, 3.4, 4.6, 5.9][L - 1] + urb.length * .3 + 1.6) * 1.6 : 0, rural = [...c].slice(0, SVP.length);
+  const gy = has ? cy + (RY + .6) * 1.6 : 0, rural = [...c].slice(0, SVP.length);
   const ways = has ? `<path class="svr" d="M0 ${gy}V-11${rural.map((_, k) => { const [x, y] = SVP[k]; return `M0 ${gy}Q${x * .25} ${y + 4} ${x} ${y + 4}`; }).join('')}"/>` : '';
   return ways + city + rural.map(([v, n], s) => { const [x, y] = SVP[s], z = v === 'won' ? 1.5 : 1.25; return `<g transform="translate(${x},${y}) scale(${z})"><title>${SVN[v] + (n > 1 ? ' ×' + n : '')}</title><use href="#sv-${v}" x="-7" y="-7" width="14" height="14"/>${n > 1 ? `<text x="5" y="6.5" class="svn">${n}</text>` : ''}</g>`; }).join('');
 }
@@ -2541,7 +2573,7 @@ const terrDefs = () => Object.entries(TERR).map(([k, T]) => `<pattern id="tr-${k
 // faixa da cor do dono por dentro do contorno (recorte do próprio território); feita só quando a visão de relevo abre
 function ribbons() {
   const R = $('#rib'); if (!R) return;
-  const on = G.lens === 'rel'; R.style.display = on ? '' : 'none'; if (!on) return;
+  const on = G.lens === 'rel' || ((G.lens || 'own') === 'own' && !!$('#relc')); R.style.display = on ? '' : 'none'; if (!on) return;
   if (!ribOn) { R.innerHTML = G.m.terr.map((t, i) => `<clipPath id="ck${i}"><path d="${t.d}"/></clipPath><path class="rb" d="${t.d}" clip-path="url(#ck${i})"/>`).join(''); ribOn = true; }
   const ps = R.querySelectorAll('path.rb');
   for (let i = 0; i < G.N; i++) { const o = G.own[i], show = (real(o) || o === 'reb') && !(G.seen && !G.seen.has(i)); ps[i].style.display = show ? '' : 'none'; if (show) ps[i].setAttribute('stroke', Fa(o).c); }
@@ -2664,13 +2696,14 @@ function renderMap() {
   const net = G.lens === 'net' ? netOf(G.player) : null;
   drawBorders(); ribbons();
   { const rv = $('#rivers'); if (rv) rv.style.display = G.lens === 'rel' || G.lens === 'ter' ? '' : 'none'; } // v69: rios só nas lentes de relevo e terreno
-  const hasRL = !!$('#relc'); if (hasRL) { $('#relc').style.display = G.lens === 'rel' ? '' : 'none'; $('#relS').style.display = G.lens === 'rel' ? 'none' : ''; }
+  const hasRL = !!$('#relc'), own = (G.lens || 'own') === 'own', relOn = hasRL && (G.lens === 'rel' || own); if (hasRL) { $('#relc').style.display = relOn ? '' : 'none'; $('#relS').style.display = relOn ? 'none' : ''; } // v75 (UI-40): na lente Dono o relevo colorido fica à mostra sob a cor da facção
   for (let i = 0; i < G.N; i++) {
     const o = G.own[i], F = Fa(o);
     const L = o === 'off' ? 'own' : G.lens || 'own', z = zonesAt(i)[0];
     P[i].setAttribute('fill', L === 'net' ? (net.core.has(i) ? '#c9a227' : net.linked.has(i) ? '#7d6a2a' : o === G.player ? '#5b3a34' : '#2a323d') : L === 'ter' ? TERR[G.ter[i]].c : L === 'rel' ? (hasRL ? '#0000' : `url(#tr-${G.ter[i]})`) : L === 'zon' ? (z ? ZC[STRUCT[z].z] : '#2a323d') : L === 'res' ? (G.dep[i].some(d => DEP[d].lux) ? '#6d4f86' : G.dep[i].length ? '#4f5d6e' : '#2a323d') : o === 'reb' ? 'url(#hatch)' : o === 'neu' && $('#relS') ? '#8b8a7a' : F.c);
     const fog = !!G.seen && !G.seen.has(i); if (fog) P[i].setAttribute('fill', '#161b22'); // MC-11
-    P[i].setAttribute('stroke', L === 'rel' && !fog ? (hasRL ? '#0000' : TERR[G.ter[i]].c) : P[i].getAttribute('fill')); // fecha as frestas entre partes do mesmo território
+    const tint = hasRL && L === 'own' && o !== 'off' && !fog; P[i].setAttribute('fill-opacity', tint ? (o === 'neu' ? .16 : o === 'reb' ? .5 : .36) : 1); P[i].classList.toggle('tint', tint);
+    P[i].setAttribute('stroke', (L === 'rel' || tint) && !fog ? (hasRL ? '#0000' : TERR[G.ter[i]].c) : P[i].getAttribute('fill')); // fecha as frestas entre partes do mesmo território
     P[i].classList.toggle('off', o === 'off');
     const g = B[i]; g.toggleAttribute('hidden', o === 'off' || fog);
     g.querySelector('.bc').setAttribute('fill', F.c); g.querySelector('.bn').textContent = G.tr[i];

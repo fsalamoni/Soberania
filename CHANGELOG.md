@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v75 — 28/11/2026 · Cidades assentadas no relevo e cores de facção translúcidas (UI-40)
+
+Pedido do Flavio: as cidades continuavam parecendo peças soltas; ele quer a cidade dentro do mapa, mesclada e interligada ao relevo, as cores das facções mais transparentes e um visual mais próximo de um mapa de civilização. Arte original, sem copiar nada de outros jogos.
+
+- **Relevo à mostra na lente Dono.** Nos mapas com relevo, a lente Dono passa a mostrar o relevo colorido por baixo; a cor da facção vira um véu translúcido (36%; neutros 16%, rebeldes 50% com hachura) e a fronteira ganha a faixa na cor do dono. Névoa e territórios fora do cenário seguem opacos. As demais lentes não mudam.
+- **Cidade assentada no terreno.** Sai o prato oval com contorno; entra uma mancha urbana irregular que se desfaz no chão, com duas vias principais que atravessam a cidade e continuam pelos caminhos, anel viário nas cidades grandes, quarteirões de casas pequenas com sombra, praça diante do marco e lotes para as obras urbanas.
+- **Arrabaldes, hortas e arvoredo.** Casas fora dos muros ao longo das vias, canteiros na borda e árvores conforme o terreno do território (mais em floresta e selva, nenhuma no deserto).
+- **Muralha que acompanha a cidade.** Muro baixo poligonal com torre em cada canto e portão onde a via sai, no lugar do anel oval grosso.
+- **Traço mais leve.** Contorno fino nas construções e nas obras rurais, que agora pousam num chão que se desfaz no terreno; caminhos contínuos no lugar do tracejado. Arranha-céus mais altos no centro nas eras industrial e moderna.
+- **Cidade maior de perto.** O teto de ampliação da cidade com o zoom subiu de 3,3 para 5,5, sempre limitado ao tamanho do território.
+- Teste novo na bateria para o véu translúcido, a faixa de fronteira e a cidade sem prato.
+
 ## v74 — 27/11/2026 · Gestão do turno pela barra de baixo, painel sob demanda, região que só produz e formato para tablet (UI-39, P-14)
 
 Pedido do Flavio: a gestão estava repetida, tudo ficava na lateral com rolagem enorme, a barra de baixo quase não era usada e região sem obra cobrava uma escolha mesmo quando a ideia era só produzir.
